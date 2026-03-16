@@ -303,8 +303,7 @@ function Sync-Month {
         [string]$FolderPath,
         [string]$SheetName,
         [object]$Workbook,
-        [array]$ValidAccounts,
-        [object]$Categories
+        [array]$ValidAccounts
     )
 
     $receipts = @()
@@ -654,7 +653,7 @@ foreach ($m in $monthsToSync) {
     Write-Host ""
     Write-Host "Syncing  : $($m.FolderPath)"
     try {
-        $result = Sync-Month -FolderPath $m.FolderPath -SheetName $m.SheetName -Workbook $workbook -ValidAccounts $validAccounts -Categories $categories
+        $result = Sync-Month -FolderPath $m.FolderPath -SheetName $m.SheetName -Workbook $workbook -ValidAccounts $validAccounts
         $syncResults += [PSCustomObject]@{ SheetName = $m.SheetName; Result = $result }
     } catch {
         Write-Host "  Error    : Unhandled exception syncing '$($m.SheetName)': $_" -ForegroundColor Red
