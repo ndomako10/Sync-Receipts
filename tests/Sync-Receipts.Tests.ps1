@@ -138,6 +138,14 @@ Describe 'Parse-Receipt' {
             $r = Parse-Receipt -Stem '260301 Shop -$1234.56 Card 9999'
             $r.Amount | Should -Be '-1234.56'
         }
+
+        It 'preserves the negative sign and strips the dollar sign' {
+            $r = Parse-Receipt -Stem '260301 Costco -$52.37 Card 1234'
+            $r.OK     | Should -Be $true
+            $r.Amount | Should -Be '-52.37'
+            $r.Amount | Should -Match '^-'
+            $r.Amount | Should -Not -Match '\$'
+        }
     }
 
     Context 'invalid filenames' {
