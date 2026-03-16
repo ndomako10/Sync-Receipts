@@ -109,6 +109,7 @@ function Get-Categories {
 }
 
 function Set-CategoryNamedRanges {
+    [CmdletBinding(SupportsShouldProcess)]
     param(
         [object]$Workbook,
         [object]$CatSheet,
@@ -122,15 +123,17 @@ function Set-CategoryNamedRanges {
         $CatSheet.Cells.Item(1, 1),
         $CatSheet.Cells.Item(1, $catCount)
     ).Address($true, $true, 1)
-    try {
-        $existing = $Workbook.Names.Item("Category")
-        if ($existing) { $existing.Delete() }
-    } catch {}
-    try {
-        $Workbook.Names.Add("Category", "=$headerRef") | Out-Null
-        Write-Host "  Range    : 'Category' header range -> $headerRef"
-    } catch {
-        Write-Host "  Range ERR: Could not add 'Category' named range: $_" -ForegroundColor Red
+    if ($PSCmdlet.ShouldProcess("named range 'Category' in workbook", "Set")) {
+        try {
+            $existing = $Workbook.Names.Item("Category")
+            if ($existing) { $existing.Delete() }
+        } catch {}
+        try {
+            $Workbook.Names.Add("Category", "=$headerRef") | Out-Null
+            Write-Host "  Range    : 'Category' header range -> $headerRef"
+        } catch {
+            Write-Host "  Range ERR: Could not add 'Category' named range: $_" -ForegroundColor Red
+        }
     }
 
     # One named range per category, named exactly after the category (e.g. "Food", "Housing").
@@ -140,20 +143,22 @@ function Set-CategoryNamedRanges {
         $subcats   = $Categories[$catName]
         $rowCount  = $subcats.Count
         $rangeName = $catName
-        try {
-            $existing = $Workbook.Names.Item($rangeName)
-            if ($existing) { $existing.Delete() }
-        } catch {}
         if ($rowCount -gt 0) {
             $rangeRef = "Category!" + $CatSheet.Range(
                 $CatSheet.Cells.Item(2, $col),
                 $CatSheet.Cells.Item($rowCount + 1, $col)
             ).Address($true, $true, 1)
-            try {
-                $Workbook.Names.Add($rangeName, "=$rangeRef") | Out-Null
-                Write-Host "  Range    : '$rangeName' -> $rangeRef"
-            } catch {
-                Write-Host "  Range ERR: '$rangeName' -> $_" -ForegroundColor Red
+            if ($PSCmdlet.ShouldProcess("named range '$rangeName' in workbook", "Set")) {
+                try {
+                    $existing = $Workbook.Names.Item($rangeName)
+                    if ($existing) { $existing.Delete() }
+                } catch {}
+                try {
+                    $Workbook.Names.Add($rangeName, "=$rangeRef") | Out-Null
+                    Write-Host "  Range    : '$rangeName' -> $rangeRef"
+                } catch {
+                    Write-Host "  Range ERR: '$rangeName' -> $_" -ForegroundColor Red
+                }
             }
         } else {
             Write-Host "  Range    : '$rangeName' skipped (no subcategories)" -ForegroundColor Yellow
@@ -164,6 +169,7 @@ function Set-CategoryNamedRanges {
 
 
 function Set-SubcategoryValidationXml {
+    [CmdletBinding(SupportsShouldProcess)]
     param(
         [string]$WorkbookPath,
         [array]$SyncResults
@@ -287,9 +293,13 @@ function Set-SubcategoryValidationXml {
         [System.IO.File]::WriteAllBytes($tempPath, $bytes)
 
         # Step 6: Replace original
-        Copy-Item $tempPath $WorkbookPath -Force
+        if ($PSCmdlet.ShouldProcess($WorkbookPath, "Overwrite with patched copy")) {
+            Copy-Item $tempPath $WorkbookPath -Force
+            Write-Host "XmlPatch : Done"
+        } else {
+            Write-Host "XmlPatch : Skipped (WhatIf)" -ForegroundColor Yellow
+        }
         Remove-Item $tempPath -Force
-        Write-Host "XmlPatch : Done"
 
     } catch {
         Write-Host "XmlPatch : ERROR - $_" -ForegroundColor Red

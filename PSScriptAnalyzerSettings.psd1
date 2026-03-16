@@ -15,11 +15,6 @@
         # Empty catch blocks are used intentionally as silent COM probes, e.g.
         # try { $sheet = $wb.Sheets.Item("Name") } catch {}
         # where a missing sheet is handled by checking for $null on the next line.
-        'PSAvoidUsingEmptyCatchBlock',
-
-        # Set-CategoryNamedRanges and Set-SubcategoryValidationXml are internal helpers
-        # that change state by design. ShouldProcess (-WhatIf/-Confirm) is not
-        # appropriate for a non-interactive batch script.
-        'PSUseShouldProcessForStateChangingFunctions'
+        'PSAvoidUsingEmptyCatchBlock'
     )
 }
