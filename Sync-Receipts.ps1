@@ -17,9 +17,11 @@
 # RECEIPTS_ROOT from config.bat and pass it as -ReceiptsRoot.
 #
 # Parameters:
-#   -ReceiptsRoot : Path to the folder containing Receipts.xlsx and year subfolders.
+#   -ReceiptsRoot : Path to the folder containing year subfolders (and normally Receipts.xlsx).
 #                   Must be provided explicitly; the script's own folder is not the data root.
 #   -YearMonth    : YYMM to sync (e.g. "2603"). Defaults to current month.
+#   -WorkbookPath : Full path to the .xlsx workbook to write into. Overrides the default
+#                   Receipts.xlsx lookup in ReceiptsRoot. Useful for testing.
 #   -All          : Sync every month folder found under every year folder.
 #   -KillExcel    : Kill any running EXCEL.EXE processes before starting. Use when a
 #                   previous run crashed and left Excel holding the file lock.
@@ -27,6 +29,7 @@
 param (
     [string]$ReceiptsRoot = $PSScriptRoot,
     [string]$YearMonth    = (Get-Date -Format "yyMM"),
+    [string]$WorkbookPath = "",
     [switch]$All,
     [switch]$KillExcel
 )
@@ -250,7 +253,13 @@ function Set-SubcategoryValidationXml {
                 " sqref=`"H2:H$lastRow`" xr:uid=`"{$guid2}`">" +
                 '<formula1>INDIRECT(G2)</formula1></dataValidation>' +
                 '</dataValidations>'
-            $sheetXml = $sheetXml.Replace('</worksheet>', "$dvXml</worksheet>")
+            if ($sheetXml -match '<hyperlinks') {
+                $sheetXml = $sheetXml -replace '<hyperlinks', "$dvXml<hyperlinks"
+            } elseif ($sheetXml -match '<tableParts') {
+                $sheetXml = $sheetXml -replace '<tableParts', "$dvXml<tableParts"
+            } else {
+                $sheetXml = $sheetXml.Replace('</worksheet>', "$dvXml</worksheet>")
+            }
             $entries[$zipPath] = [System.Text.Encoding]::UTF8.GetBytes($sheetXml)
             Write-Host "XmlPatch : '$sheetName' XML patched"
         }
@@ -528,20 +537,27 @@ if (-not (Test-Path $ReceiptsRoot)) {
     exit 1
 }
 
+# If -WorkbookPath was not provided, locate Receipts.xlsx in ReceiptsRoot.
 # Prefer Receipts.xlsx exactly. Fall back to the first .xlsx only if it is not found,
 # so that backup copies (e.g. "Receipts - Copy.xlsx") are never targeted by accident.
-$workbookFile = Get-ChildItem -Path $ReceiptsRoot -Filter "Receipts.xlsx" -File | Select-Object -First 1
-if (-not $workbookFile) {
-    Write-Host "Warning  : Receipts.xlsx not found, falling back to first .xlsx in folder" -ForegroundColor Yellow
-    $workbookFile = Get-ChildItem -Path $ReceiptsRoot -Filter "*.xlsx" -File |
-                    Where-Object { $_.Name -notmatch "copy|backup" } |
-                    Select-Object -First 1
+if ($WorkbookPath -eq "") {
+    $workbookFile = Get-ChildItem -Path $ReceiptsRoot -Filter "Receipts.xlsx" -File | Select-Object -First 1
+    if (-not $workbookFile) {
+        Write-Host "Warning  : Receipts.xlsx not found, falling back to first .xlsx in folder" -ForegroundColor Yellow
+        $workbookFile = Get-ChildItem -Path $ReceiptsRoot -Filter "*.xlsx" -File |
+                        Where-Object { $_.Name -notmatch "copy|backup" } |
+                        Select-Object -First 1
+    }
+    if (-not $workbookFile) {
+        Write-Error "No suitable .xlsx workbook found in '$ReceiptsRoot'"
+        exit 1
+    }
+    $WorkbookPath = $workbookFile.FullName
 }
-if (-not $workbookFile) {
-    Write-Error "No suitable .xlsx workbook found in '$ReceiptsRoot'"
+if (-not (Test-Path $WorkbookPath)) {
+    Write-Error "Workbook not found: '$WorkbookPath'"
     exit 1
 }
-$WorkbookPath = $workbookFile.FullName
 Write-Host "Workbook : $WorkbookPath"
 
 $monthsToSync = @()

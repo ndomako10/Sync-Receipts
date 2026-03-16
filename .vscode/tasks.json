@@ -82,6 +82,22 @@
             "problemMatcher": []
         },
         {
+            "label": "Sync: Test workbook (current month)",
+            "type": "shell",
+            "command": "cmd",
+            "args": [
+                "/c",
+                "call \"${workspaceFolder}\\config.bat\" && powershell -NoProfile -ExecutionPolicy Bypass -NonInteractive -File \"${workspaceFolder}\\Sync-Receipts.ps1\" -ReceiptsRoot \"%RECEIPTS_ROOT%\" -WorkbookPath \"${workspaceFolder}\\tests\\Receipts (test).xlsx\""
+            ],
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
             "label": "Sync: Current month (KillExcel)",
             "type": "shell",
             "command": "cmd",
