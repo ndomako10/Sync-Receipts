@@ -1,0 +1,16 @@
+# Local config (contains machine name and username — see config.template.bat)
+config.bat
+
+# Machine-specific deployment script
+Deploy-SyncReceipts.bat
+
+# Excel workbooks (contain personal financial data)
+*.xlsx
+*.xls
+
+# Receipt files (personal financial documents)
+Receipts/
+
+# Windows artifacts
+Thumbs.db
+desktop.ini

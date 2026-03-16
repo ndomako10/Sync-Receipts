@@ -1,0 +1,563 @@
+# Sync-Receipts.ps1
+#
+# Syncs receipt filenames from a month folder into a table in a pre-existing Excel workbook.
+# The sheet is named in YYMM format (e.g. "2603" for March 2026).
+# The table stays in sync with folder contents - rows are added or removed to match.
+# Filenames that cannot be parsed are added with blank fields and flagged.
+# Account numbers are validated against the Account sheet.
+# Category and Subcategory dropdowns are populated from the Category sheet.
+#
+# Usage:
+#   .\Sync-Receipts.ps1
+#   .\Sync-Receipts.ps1 -ReceiptsRoot "\\Server\Share\Receipts"
+#   .\Sync-Receipts.ps1 -YearMonth "2603"
+#   .\Sync-Receipts.ps1 -All
+#   .\Sync-Receipts.ps1 -KillExcel
+#
+# Parameters:
+#   -ReceiptsRoot : Path to the root Receipts folder. Defaults to the script's own folder.
+#   -YearMonth    : YYMM to sync (e.g. "2603"). Defaults to current month.
+#   -All          : Sync every month folder found under every year folder.
+#   -KillExcel    : Kill any running EXCEL.EXE processes before starting. Use when a
+#                   previous run crashed and left Excel holding the file lock.
+
+param (
+    [string]$ReceiptsRoot = $PSScriptRoot,
+    [string]$YearMonth    = (Get-Date -Format "yyMM"),
+    [switch]$All,
+    [switch]$KillExcel
+)
+
+# ---------------------------------------------------------------------------
+# FUNCTIONS
+# ---------------------------------------------------------------------------
+
+function Parse-Receipt {
+    param([string]$Stem)
+    $pattern = '^(\d{6})\s+(.+?)\s+(-?\$[\d]+\.[\d]{2})\s+(Card|Cash|Checking|Savings)(?:\s+(\d{4}|xxxx))?$'
+    if ($Stem -match $pattern) {
+        $date = $null
+        try {
+            $date = [datetime]::ParseExact($Matches[1], "yyMMdd", $null)
+        } catch {
+            Write-Host "  Warning  : Could not parse date '$($Matches[1])' in '$Stem': $_" -ForegroundColor Yellow
+            return @{ OK=$false; Date=$null; Vendor=""; Amount=""; Method=""; Account="" }
+        }
+        $vendor  = $Matches[2].Trim()
+        $amount  = $Matches[3] -replace '[^0-9.\-]', ''
+        $method  = $Matches[4]
+        $account = if ($Matches[5]) { $Matches[5] } else { "" }
+        return @{ OK=$true; Date=$date; Vendor=$vendor; Amount=$amount; Method=$method; Account=$account }
+    }
+    return @{ OK=$false; Date=$null; Vendor=""; Amount=""; Method=""; Account="" }
+}
+
+function Get-ValidAccounts {
+    param([object]$Workbook)
+    Write-Host "Debug    : Get-ValidAccounts start"
+    $accounts = @()
+    $accSheet = $null
+    try { $accSheet = $Workbook.Sheets.Item("Account") } catch {}
+    if (-not $accSheet) {
+        Write-Host "  Warning  : Account sheet not found - account validation skipped" -ForegroundColor Yellow
+        return $accounts
+    }
+    Write-Host "Debug    : Account sheet found"
+    $row = 2
+    while ($true) {
+        $val = $null
+        try { $val = $accSheet.Cells.Item($row, 1).Value2 } catch { break }
+        if ($null -eq $val -or "$val" -eq "") { break }
+        $acct = $val.ToString().Trim().PadLeft(4, "0")
+        if ($accounts -notcontains $acct) { $accounts += $acct }
+        $row++
+    }
+    Write-Host "Debug    : Get-ValidAccounts end - $($accounts.Count) account(s)"
+    return $accounts
+}
+
+function Get-Categories {
+    param([object]$Workbook)
+    Write-Host "Debug    : Get-Categories start"
+    $catSheet = $null
+    try { $catSheet = $Workbook.Sheets.Item("Category") } catch {}
+    if (-not $catSheet) {
+        Write-Host "  Warning  : Category sheet not found - dropdowns skipped" -ForegroundColor Yellow
+        return $null
+    }
+    Write-Host "Debug    : Category sheet found"
+    $categories = [ordered]@{}
+    $col = 1
+    while ($true) {
+        $catName = $null
+        try { $catName = $catSheet.Cells.Item(1, $col).Value2 } catch { break }
+        if ($null -eq $catName -or "$catName" -eq "") { break }
+        $subcats = @()
+        $row = 2
+        while ($true) {
+            $sub = $null
+            try { $sub = $catSheet.Cells.Item($row, $col).Value2 } catch { break }
+            if ($null -eq $sub -or "$sub" -eq "") { break }
+            $subcats += "$sub".Trim()
+            $row++
+        }
+        $categories["$catName".Trim()] = $subcats
+        $col++
+    }
+    Write-Host "Debug    : Get-Categories end - $($categories.Count) group(s)"
+    return $categories
+}
+
+function Set-CategoryNamedRanges {
+    param(
+        [object]$Workbook,
+        [object]$CatSheet,
+        [object]$Categories
+    )
+
+    # Named range "Category" covers the header row (all category names).
+    # This is used directly as the source for the Category column dropdown.
+    $catCount  = $Categories.Keys.Count
+    $headerRef = "Category!" + $CatSheet.Range(
+        $CatSheet.Cells.Item(1, 1),
+        $CatSheet.Cells.Item(1, $catCount)
+    ).Address($true, $true, 1)
+    try {
+        $existing = $Workbook.Names.Item("Category")
+        if ($existing) { $existing.Delete() }
+    } catch {}
+    try {
+        $Workbook.Names.Add("Category", "=$headerRef") | Out-Null
+        Write-Host "  Range    : 'Category' header range -> $headerRef"
+    } catch {
+        Write-Host "  Range ERR: Could not add 'Category' named range: $_" -ForegroundColor Red
+    }
+
+    # One named range per category, named exactly after the category (e.g. "Food", "Housing").
+    # These are referenced by =INDIRECT(G2) for the Subcategory dropdown.
+    $col = 1
+    foreach ($catName in $Categories.Keys) {
+        $subcats   = $Categories[$catName]
+        $rowCount  = $subcats.Count
+        $rangeName = $catName
+        try {
+            $existing = $Workbook.Names.Item($rangeName)
+            if ($existing) { $existing.Delete() }
+        } catch {}
+        if ($rowCount -gt 0) {
+            $rangeRef = "Category!" + $CatSheet.Range(
+                $CatSheet.Cells.Item(2, $col),
+                $CatSheet.Cells.Item($rowCount + 1, $col)
+            ).Address($true, $true, 1)
+            try {
+                $Workbook.Names.Add($rangeName, "=$rangeRef") | Out-Null
+                Write-Host "  Range    : '$rangeName' -> $rangeRef"
+            } catch {
+                Write-Host "  Range ERR: '$rangeName' -> $_" -ForegroundColor Red
+            }
+        } else {
+            Write-Host "  Range    : '$rangeName' skipped (no subcategories)" -ForegroundColor Yellow
+        }
+        $col++
+    }
+}
+
+
+function Sync-Month {
+    param(
+        [string]$FolderPath,
+        [string]$SheetName,
+        [object]$Workbook,
+        [array]$ValidAccounts,
+        [object]$Categories
+    )
+
+    $receipts = @()
+    try {
+        Get-ChildItem -Path $FolderPath -File -ErrorAction Stop | Sort-Object Name | ForEach-Object {
+            $parsed = Parse-Receipt -Stem $_.BaseName
+            $receipts += [PSCustomObject]@{
+                FilePath = $_.FullName
+                FileName = $_.Name
+                Date     = $parsed.Date
+                Vendor   = $parsed.Vendor
+                Amount   = $parsed.Amount
+                Method   = $parsed.Method
+                Account  = $parsed.Account
+                ParseOK  = $parsed.OK
+            }
+        }
+    } catch {
+        Write-Host "  Error    : Could not read folder '$FolderPath': $_" -ForegroundColor Red
+        return $null
+    }
+    Write-Host "  Files    : $($receipts.Count) receipt(s) found"
+
+    $sheet = $null
+    try { $sheet = $Workbook.Sheets.Item($SheetName) } catch {}
+    if (-not $sheet) {
+        try {
+            $sheet      = $Workbook.Sheets.Add()
+            $sheet.Name = $SheetName
+            Write-Host "  Sheet    : '$SheetName' created"
+        } catch {
+            Write-Host "  Error    : Could not create sheet '$SheetName': $_" -ForegroundColor Red
+            return $null
+        }
+    } else {
+        Write-Host "  Sheet    : '$SheetName' found"
+    }
+
+    # A=File Name  B=Date  C=Vendor  D=Amount  E=Method  F=Account  G=Category  H=Subcategory  I=Flag
+    $COL_FILENAME    = 1
+    $COL_DATE        = 2
+    $COL_VENDOR      = 3
+    $COL_AMOUNT      = 4
+    $COL_METHOD      = 5
+    $COL_ACCOUNT     = 6
+    $COL_CATEGORY    = 7
+    $COL_SUBCATEGORY = 8
+    $COL_FLAG        = 9
+    $NUM_COLS        = 9
+
+    if ($sheet.ListObjects.Count -gt 0) {
+        try {
+            $sheet.ListObjects.Item(1).Unlist()
+            Write-Host "  Sheet    : Existing table unlisted"
+        } catch {
+            Write-Host "  Warning  : Could not unlist existing table: $_" -ForegroundColor Yellow
+        }
+    }
+    try {
+        $lastRow = $sheet.UsedRange.Rows.Count
+        if ($lastRow -gt 1) {
+            $sheet.Range($sheet.Cells.Item(1,1), $sheet.Cells.Item($lastRow, $NUM_COLS)).Clear()
+            Write-Host "  Sheet    : Cleared $lastRow existing row(s)"
+        }
+    } catch {
+        Write-Host "  Warning  : Could not clear existing sheet content: $_" -ForegroundColor Yellow
+    }
+
+    $headers = @("File Name", "Date", "Vendor", "Amount", "Method", "Account", "Category", "Subcategory", "Flag")
+    for ($c = 1; $c -le $NUM_COLS; $c++) {
+        $sheet.Cells.Item(1, $c).Value2 = $headers[$c-1]
+    }
+
+    $catColLetter = [char](64 + $COL_CATEGORY)
+
+    $row = 2
+    foreach ($r in $receipts) {
+
+        $cell = $sheet.Cells.Item($row, $COL_FILENAME)
+        try {
+            $sheet.Hyperlinks.Add($cell, $r.FilePath, [System.Reflection.Missing]::Value, "Open receipt file", $r.FileName) | Out-Null
+        } catch {
+            Write-Host "  Warning  : Could not add hyperlink for '$($r.FileName)': $_" -ForegroundColor Yellow
+            $cell.Value2 = $r.FileName
+        }
+
+        try {
+            if ($r.Date) {
+                $sheet.Cells.Item($row, $COL_DATE).Value2       = [double]$r.Date.ToOADate()
+                $sheet.Cells.Item($row, $COL_DATE).NumberFormat = "d-mmm"
+            }
+            $sheet.Cells.Item($row, $COL_VENDOR).Value2        = $r.Vendor
+            $sheet.Cells.Item($row, $COL_METHOD).Value2        = $r.Method
+            $sheet.Cells.Item($row, $COL_ACCOUNT).NumberFormat = "@"
+            $sheet.Cells.Item($row, $COL_ACCOUNT).Value2       = $r.Account
+            if ($r.Amount -ne "") {
+                $sheet.Cells.Item($row, $COL_AMOUNT).Value2 = [double]$r.Amount
+            }
+        } catch {
+            Write-Host "  Warning  : Error writing data cells for row $row ('$($r.FileName)'): $_" -ForegroundColor Yellow
+        }
+
+        $flag = ""
+        if (-not $r.ParseOK) {
+            $flag = "Could not parse filename"
+        } elseif ($r.Account -eq "0000") {
+            $flag = "Unknown account number"
+        } elseif ($r.Account -ne "" -and $r.Account -ne "xxxx" -and $ValidAccounts.Count -gt 0 -and $ValidAccounts -notcontains $r.Account) {
+            $flag = "Account not in Account sheet"
+        }
+        if ($flag -ne "") {
+            try {
+                $sheet.Cells.Item($row, $COL_FLAG).Value2 = $flag
+            } catch {
+                Write-Host "  Warning  : Could not write flag for row ${row}: $_" -ForegroundColor Yellow
+            }
+        }
+
+        $row++
+    }
+
+    $dataEnd    = $row - 1
+    Write-Host "  Rows     : header=1, data=2..$dataEnd ($(($dataEnd - 1)) row(s))"
+    $tableRange = $sheet.Range($sheet.Cells.Item(1,1), $sheet.Cells.Item($dataEnd, $NUM_COLS))
+    $table = $null
+    try {
+        $table      = $sheet.ListObjects.Add(1, $tableRange, [System.Reflection.Missing]::Value, 1)
+        $table.Name = "Receipts_$SheetName"
+        Write-Host "  Table    : 'Receipts_$SheetName' created over $($tableRange.Address())"
+    } catch {
+        Write-Host "  Warning  : Could not create table 'Receipts_$SheetName': $_" -ForegroundColor Yellow
+    }
+
+    if ($table) {
+        try {
+            $table.ListColumns.Item($COL_AMOUNT).DataBodyRange.NumberFormat = '$#,##0.00;[Red]($#,##0.00)'
+        } catch {
+            Write-Host "  Warning  : Could not set Amount number format: $_" -ForegroundColor Yellow
+        }
+    }
+
+    # Apply Category validation via COM.
+    if ($dataEnd -ge 2 -and $Categories -and $Categories.Count -gt 0) {
+        try {
+            $catRange = $sheet.Range($sheet.Cells.Item(2, $COL_CATEGORY), $sheet.Cells.Item($dataEnd, $COL_CATEGORY))
+            $catRange.Validation.Delete()
+            $catRange.Validation.Add(3, 1, 1, "=Category") | Out-Null
+            Write-Host "  Validation: Category dropdown set"
+        } catch {
+            Write-Host "  Warning  : Could not set Category validation: $_" -ForegroundColor Yellow
+        }
+    }
+
+    for ($r2 = 2; $r2 -le $dataEnd; $r2++) {
+        $flagVal = $sheet.Cells.Item($r2, $COL_FLAG).Value2
+        if ($flagVal -ne "" -and $null -ne $flagVal) {
+            $sheet.Cells.Item($r2, $COL_FLAG).Font.ColorIndex = 3
+            $sheet.Cells.Item($r2, $COL_FLAG).Font.Bold       = $true
+        }
+    }
+
+    $sumRow    = $dataEnd + 2
+    $flagCount = ($receipts | Where-Object {
+        -not $_.ParseOK -or
+        $_.Account -eq "0000" -or
+        ($_.Account -ne "" -and $_.Account -ne "xxxx" -and $ValidAccounts.Count -gt 0 -and $ValidAccounts -notcontains $_.Account)
+    }).Count
+
+    $amtColLetter = [char](64 + $COL_AMOUNT)
+    try {
+        $sheet.Cells.Item($sumRow, $COL_VENDOR).Value2       = "Total"
+        $sheet.Cells.Item($sumRow, $COL_VENDOR).Font.Bold    = $true
+        $sheet.Cells.Item($sumRow, $COL_AMOUNT).Formula      = "=SUM(${amtColLetter}2:${amtColLetter}$dataEnd)"
+        $sheet.Cells.Item($sumRow, $COL_AMOUNT).NumberFormat = '$#,##0.00;[Red]($#,##0.00)'
+        $sheet.Cells.Item($sumRow, $COL_AMOUNT).Font.Bold    = $true
+        if ($flagCount -gt 0) {
+            $sheet.Cells.Item($sumRow, $COL_FLAG).Value2          = "$flagCount flagged"
+            $sheet.Cells.Item($sumRow, $COL_FLAG).Font.ColorIndex = 3
+            $sheet.Cells.Item($sumRow, $COL_FLAG).Font.Bold       = $true
+        }
+        Write-Host "  Total    : Written to row $sumRow"
+    } catch {
+        Write-Host "  Warning  : Could not write total row: $_" -ForegroundColor Yellow
+    }
+
+    $sheet.Columns.Item($COL_FILENAME).ColumnWidth    = 55
+    $sheet.Columns.Item($COL_DATE).ColumnWidth        = 12
+    $sheet.Columns.Item($COL_VENDOR).ColumnWidth      = 28
+    $sheet.Columns.Item($COL_AMOUNT).ColumnWidth      = 14
+    $sheet.Columns.Item($COL_METHOD).ColumnWidth      = 12
+    $sheet.Columns.Item($COL_ACCOUNT).ColumnWidth     = 12
+    $sheet.Columns.Item($COL_CATEGORY).ColumnWidth    = 20
+    $sheet.Columns.Item($COL_SUBCATEGORY).ColumnWidth = 20
+    $sheet.Columns.Item($COL_FLAG).ColumnWidth        = 28
+
+    try {
+        $null = $sheet.Activate()
+        $null = $sheet.Cells.Item(2, 1).Select()
+        $excel.ActiveWindow.FreezePanes = $true
+    } catch {
+        Write-Host "  Warning  : Could not set freeze panes: $_" -ForegroundColor Yellow
+    }
+
+    $parsed   = ($receipts | Where-Object { $_.ParseOK }).Count
+    $unparsed = ($receipts | Where-Object { -not $_.ParseOK }).Count
+    Write-Host "  Written  : $parsed receipt(s)"
+    if ($unparsed -gt 0) {
+        Write-Host "  Unparsed : $unparsed (flagged in sheet)" -ForegroundColor Yellow
+    }
+
+    return [PSCustomObject]@{
+        DataEndRow = $dataEnd
+    }
+}
+
+# ---------------------------------------------------------------------------
+# MAIN
+# ---------------------------------------------------------------------------
+
+if (-not (Test-Path $ReceiptsRoot)) {
+    Write-Error "Receipts folder not found: '$ReceiptsRoot'"
+    exit 1
+}
+
+# Prefer Receipts.xlsx exactly. Fall back to the first .xlsx only if it is not found,
+# so that backup copies (e.g. "Receipts - Copy.xlsx") are never targeted by accident.
+$workbookFile = Get-ChildItem -Path $ReceiptsRoot -Filter "Receipts.xlsx" -File | Select-Object -First 1
+if (-not $workbookFile) {
+    Write-Host "Warning  : Receipts.xlsx not found, falling back to first .xlsx in folder" -ForegroundColor Yellow
+    $workbookFile = Get-ChildItem -Path $ReceiptsRoot -Filter "*.xlsx" -File |
+                    Where-Object { $_.Name -notmatch "copy|backup" } |
+                    Select-Object -First 1
+}
+if (-not $workbookFile) {
+    Write-Error "No suitable .xlsx workbook found in '$ReceiptsRoot'"
+    exit 1
+}
+$WorkbookPath = $workbookFile.FullName
+Write-Host "Workbook : $WorkbookPath"
+
+$monthsToSync = @()
+if ($All) {
+    Get-ChildItem -Path $ReceiptsRoot -Directory | Where-Object { $_.Name -match '^\d{4}$' } | ForEach-Object {
+        Get-ChildItem -Path $_.FullName -Directory | Where-Object { $_.Name -match '^\d{4}' } | ForEach-Object {
+            $monthsToSync += [PSCustomObject]@{
+                SheetName  = $_.Name.Substring(0, 4)
+                FolderPath = $_.FullName
+            }
+        }
+    }
+    Write-Host "Found    : $($monthsToSync.Count) month folder(s) to sync"
+} else {
+    $year        = "20" + $YearMonth.Substring(0, 2)
+    $monthFolder = Get-ChildItem -Path (Join-Path $ReceiptsRoot $year) -Directory |
+                   Where-Object { $_.Name -match "^$YearMonth" } |
+                   Select-Object -First 1
+    if (-not $monthFolder) {
+        Write-Error "Could not find a folder matching '$YearMonth*' under '$ReceiptsRoot\$year'"
+        exit 1
+    }
+    $monthsToSync += [PSCustomObject]@{
+        SheetName  = $YearMonth
+        FolderPath = $monthFolder.FullName
+    }
+}
+
+# Kill any lingering EXCEL.EXE processes before starting, if requested or if the
+# file is locked. -KillExcel forces this; otherwise it is offered as a recovery step.
+$xlsxName = [System.IO.Path]::GetFileName($WorkbookPath)
+if ($KillExcel) {
+    $procs = Get-Process -Name "EXCEL" -ErrorAction SilentlyContinue
+    if ($procs) {
+        Write-Host "KillExcel: Stopping $($procs.Count) EXCEL.EXE process(es)..."
+        $procs | Stop-Process -Force
+        Start-Sleep -Seconds 2
+        Write-Host "KillExcel: Done"
+    } else {
+        Write-Host "KillExcel: No EXCEL.EXE processes found"
+    }
+}
+
+$excel               = New-Object -ComObject Excel.Application
+$excel.Visible       = $false
+$excel.DisplayAlerts = $false
+
+try {
+    $stream = [System.IO.File]::Open($WorkbookPath, 'Open', 'Read', 'None')
+    $stream.Close()
+} catch {
+    $procs = Get-Process -Name "EXCEL" -ErrorAction SilentlyContinue
+    if ($procs) {
+        Write-Host "Error    : '$xlsxName' is locked by $($procs.Count) EXCEL.EXE process(es):" -ForegroundColor Red
+        $procs | ForEach-Object { Write-Host "           PID $($_.Id)  Started $($_.StartTime)" -ForegroundColor Red }
+        Write-Host "           Re-run with -KillExcel to terminate them automatically." -ForegroundColor Yellow
+    } else {
+        Write-Host "Error    : '$xlsxName' is locked but no EXCEL.EXE found." -ForegroundColor Red
+        Write-Host "           Another process or the OS may be holding the file." -ForegroundColor Yellow
+    }
+    $excel.Quit()
+    exit 1
+}
+
+try {
+    $workbook = $excel.Workbooks.Open($WorkbookPath)
+} catch {
+    $errMsg = $_.Exception.Message
+    Write-Host "Error    : Excel COM threw an exception opening the workbook." -ForegroundColor Red
+    Write-Host "           Path   : $WorkbookPath" -ForegroundColor Red
+    Write-Host "           Detail : $errMsg" -ForegroundColor Red
+    Write-Host ""
+    Write-Host "Likely causes:" -ForegroundColor Yellow
+    Write-Host "  1. The file is corrupted. Restore Receipts.xlsx from a backup, then re-run." -ForegroundColor Yellow
+    Write-Host "     Restore Receipts.xlsx from a backup, then re-run." -ForegroundColor Yellow
+    Write-Host "  2. Excel blocked the file because it is on a network share." -ForegroundColor Yellow
+    Write-Host "     Try opening it manually in Excel first and click Enable Editing." -ForegroundColor Yellow
+    Write-Host "  3. A previous Excel process is still running invisibly." -ForegroundColor Yellow
+    Write-Host "     Re-run with -KillExcel to terminate it automatically, or end EXCEL.EXE in Task Manager." -ForegroundColor Yellow
+    $excel.Quit()
+    exit 1
+}
+if (-not $workbook) {
+    Write-Error "Failed to open workbook (Open returned null): $WorkbookPath"
+    $excel.Quit()
+    exit 1
+}
+
+Write-Host "Debug    : Workbook opened successfully"
+Write-Host "Debug    : Calling Get-ValidAccounts"
+$validAccounts = @()
+try {
+    $validAccounts = Get-ValidAccounts -Workbook $workbook
+} catch {
+    Write-Host "  Warning  : Error in Get-ValidAccounts: $_" -ForegroundColor Yellow
+}
+
+Write-Host "Debug    : Calling Get-Categories"
+$categories = $null
+try {
+    $categories = Get-Categories -Workbook $workbook
+} catch {
+    Write-Host "  Warning  : Error in Get-Categories: $_" -ForegroundColor Yellow
+}
+
+if ($categories) {
+    $catSheet = $null
+    try { $catSheet = $workbook.Sheets.Item("Category") } catch {}
+    if ($catSheet) {
+        try {
+            Set-CategoryNamedRanges -Workbook $workbook -CatSheet $catSheet -Categories $categories
+            Write-Host "Categories: $($categories.Count) category/subcategory group(s) loaded"
+        } catch {
+            Write-Host "Warning  : Error in Set-CategoryNamedRanges: $_" -ForegroundColor Yellow
+        }
+    }
+}
+Write-Host "Accounts : $($validAccounts.Count) account(s) loaded"
+
+$syncResults = @()
+foreach ($m in $monthsToSync) {
+    Write-Host ""
+    Write-Host "Syncing  : $($m.FolderPath)"
+    try {
+        $result = Sync-Month -FolderPath $m.FolderPath -SheetName $m.SheetName -Workbook $workbook -ValidAccounts $validAccounts -Categories $categories
+        $syncResults += [PSCustomObject]@{ SheetName = $m.SheetName; Result = $result }
+    } catch {
+        Write-Host "  Error    : Unhandled exception syncing '$($m.SheetName)': $_" -ForegroundColor Red
+        Write-Host "             Skipping this month and continuing." -ForegroundColor Yellow
+        $syncResults += [PSCustomObject]@{ SheetName = $m.SheetName; Result = $null }
+    }
+}
+
+try {
+    $workbook.Save()
+    Write-Host "Workbook : Saved"
+} catch {
+    Write-Host "Error    : Failed to save workbook: $_" -ForegroundColor Red
+}
+try {
+    $workbook.Close()
+} catch {
+    Write-Host "Warning  : Exception closing workbook: $_" -ForegroundColor Yellow
+}
+try {
+    $excel.Quit()
+    [System.Runtime.Interopservices.Marshal]::ReleaseComObject($excel) | Out-Null
+} catch {
+    Write-Host "Warning  : Exception quitting Excel: $_" -ForegroundColor Yellow
+}
+
+Write-Host ""
+Write-Host "Done!"
