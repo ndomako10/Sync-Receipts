@@ -163,6 +163,141 @@ function Set-CategoryNamedRanges {
 }
 
 
+function Set-SubcategoryValidationXml {
+    param(
+        [string]$WorkbookPath,
+        [array]$SyncResults
+    )
+    Write-Host "XmlPatch : Start"
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    $tempPath = $WorkbookPath + ".tmp"
+    try {
+        # Step 1: Read all zip entries into memory
+        $entries = [System.Collections.Generic.Dictionary[string,byte[]]]::new()
+        $srcZip = [System.IO.Compression.ZipFile]::OpenRead($WorkbookPath)
+        foreach ($e in $srcZip.Entries) {
+            $ms = New-Object System.IO.MemoryStream
+            $e.Open().CopyTo($ms)
+            $entries[$e.FullName] = $ms.ToArray()
+        }
+        $srcZip.Dispose()
+        Write-Host "XmlPatch : Read $($entries.Count) entries"
+
+        # Step 2: Resolve sheet name -> zip path via workbook.xml.rels (XML DOM, not regex)
+        $wbDoc = [System.Xml.XmlDocument]::new()
+        $wbDoc.LoadXml([System.Text.Encoding]::UTF8.GetString($entries['xl/workbook.xml']))
+        $nsWb = [System.Xml.XmlNamespaceManager]::new($wbDoc.NameTable)
+        $nsWb.AddNamespace("main", "http://schemas.openxmlformats.org/spreadsheetml/2006/main")
+        $nsWb.AddNamespace("r", "http://schemas.openxmlformats.org/officeDocument/2006/relationships")
+
+        $relsDoc = [System.Xml.XmlDocument]::new()
+        $relsDoc.LoadXml([System.Text.Encoding]::UTF8.GetString($entries['xl/_rels/workbook.xml.rels']))
+        $nsRels = [System.Xml.XmlNamespaceManager]::new($relsDoc.NameTable)
+        $nsRels.AddNamespace("rel", "http://schemas.openxmlformats.org/package/2006/relationships")
+
+        foreach ($sr in $SyncResults) {
+            if (-not $sr.Result -or $sr.Result.DataEndRow -lt 2) {
+                Write-Host "XmlPatch : Skipping '$($sr.SheetName)' (no data)"
+                continue
+            }
+            $lastRow   = $sr.Result.DataEndRow
+            $sheetName = $sr.SheetName
+
+            $sheetNode = $wbDoc.SelectSingleNode("//main:sheet[@name='$sheetName']", $nsWb)
+            if (-not $sheetNode) {
+                Write-Host "XmlPatch : '$sheetName' not found in workbook.xml" -ForegroundColor Yellow
+                continue
+            }
+            $rId = $sheetNode.GetAttribute("id", "http://schemas.openxmlformats.org/officeDocument/2006/relationships")
+
+            $relNode = $relsDoc.SelectSingleNode("//rel:Relationship[@Id='$rId']", $nsRels)
+            if (-not $relNode) {
+                Write-Host "XmlPatch : rId '$rId' not found in workbook.xml.rels" -ForegroundColor Yellow
+                continue
+            }
+            $zipPath = "xl/" + $relNode.GetAttribute("Target")
+
+            if (-not $entries.ContainsKey($zipPath)) {
+                Write-Host "XmlPatch : Entry '$zipPath' not in zip" -ForegroundColor Yellow
+                continue
+            }
+            Write-Host "XmlPatch : Patching '$sheetName' -> $zipPath (rows 2..$lastRow)"
+
+            # Step 3: Patch sheet XML -- remove existing dataValidations, inject both
+            $sheetXml = [System.Text.Encoding]::UTF8.GetString($entries[$zipPath])
+            $sheetXml = [System.Text.RegularExpressions.Regex]::Replace(
+                $sheetXml,
+                '<dataValidations[^>]*>.*?</dataValidations>',
+                '',
+                [System.Text.RegularExpressions.RegexOptions]::Singleline
+            )
+            $guid1 = [System.Guid]::NewGuid().ToString().ToUpper()
+            $guid2 = [System.Guid]::NewGuid().ToString().ToUpper()
+            $dvXml = '<dataValidations count="2">' +
+                '<dataValidation type="list" allowBlank="1" showInputMessage="1" showErrorMessage="1"' +
+                " sqref=`"G2:G$lastRow`" xr:uid=`"{$guid1}`">" +
+                '<formula1>Category</formula1></dataValidation>' +
+                '<dataValidation type="list" allowBlank="1" showInputMessage="1" showErrorMessage="1"' +
+                " sqref=`"H2:H$lastRow`" xr:uid=`"{$guid2}`">" +
+                '<formula1>INDIRECT(G2)</formula1></dataValidation>' +
+                '</dataValidations>'
+            $sheetXml = $sheetXml.Replace('</worksheet>', "$dvXml</worksheet>")
+            $entries[$zipPath] = [System.Text.Encoding]::UTF8.GetBytes($sheetXml)
+            Write-Host "XmlPatch : '$sheetName' XML patched"
+        }
+
+        # Step 4: Write new zip
+        if (Test-Path $tempPath) { Remove-Item $tempPath -Force }
+        $dstZip = [System.IO.Compression.ZipFile]::Open($tempPath, [System.IO.Compression.ZipArchiveMode]::Create)
+        foreach ($kvp in $entries.GetEnumerator()) {
+            $e2 = $dstZip.CreateEntry($kvp.Key, [System.IO.Compression.CompressionLevel]::Optimal)
+            $s  = $e2.Open()
+            $s.Write($kvp.Value, 0, $kvp.Value.Length)
+            $s.Close()
+        }
+        $dstZip.Dispose()
+        Write-Host "XmlPatch : New zip written"
+
+        # Step 5: Binary-patch zip headers
+        # Excel requires flag_bits=0x0006 in local file headers and
+        # version_made_by=45 + flag_bits=0x0006 in central directory headers.
+        # .NET ZipArchive writes 0x0000 and 20 respectively, which Excel rejects.
+        $bytes = [System.IO.File]::ReadAllBytes($tempPath)
+        $patchCount = 0
+        for ($i = 0; $i -lt $bytes.Length - 4; $i++) {
+            if ($bytes[$i] -eq 0x50 -and $bytes[$i+1] -eq 0x4B) {
+                if ($bytes[$i+2] -eq 0x03 -and $bytes[$i+3] -eq 0x04) {
+                    $bytes[$i+6] = 0x06; $bytes[$i+7] = 0x00
+                    $patchCount++
+                }
+                if ($bytes[$i+2] -eq 0x01 -and $bytes[$i+3] -eq 0x02) {
+                    $bytes[$i+4] = 0x2D; $bytes[$i+5] = 0x00
+                    $bytes[$i+8] = 0x06; $bytes[$i+9] = 0x00
+                    $patchCount++
+                }
+            }
+        }
+        Write-Host "XmlPatch : Patched $patchCount zip header(s)"
+
+        if ($bytes.Length -lt 1024) {
+            Write-Host "XmlPatch : ERROR - temp file too small ($($bytes.Length) bytes), aborting" -ForegroundColor Red
+            Remove-Item $tempPath -Force -ErrorAction SilentlyContinue
+            return
+        }
+        [System.IO.File]::WriteAllBytes($tempPath, $bytes)
+
+        # Step 6: Replace original
+        Copy-Item $tempPath $WorkbookPath -Force
+        Remove-Item $tempPath -Force
+        Write-Host "XmlPatch : Done"
+
+    } catch {
+        Write-Host "XmlPatch : ERROR - $_" -ForegroundColor Red
+        if (Test-Path $tempPath) { Remove-Item $tempPath -Force -ErrorAction SilentlyContinue }
+    }
+}
+
+
 function Sync-Month {
     param(
         [string]$FolderPath,
@@ -243,8 +378,6 @@ function Sync-Month {
         $sheet.Cells.Item(1, $c).Value2 = $headers[$c-1]
     }
 
-    $catColLetter = [char](64 + $COL_CATEGORY)
-
     $row = 2
     foreach ($r in $receipts) {
 
@@ -311,17 +444,6 @@ function Sync-Month {
         }
     }
 
-    # Apply Category validation via COM.
-    if ($dataEnd -ge 2 -and $Categories -and $Categories.Count -gt 0) {
-        try {
-            $catRange = $sheet.Range($sheet.Cells.Item(2, $COL_CATEGORY), $sheet.Cells.Item($dataEnd, $COL_CATEGORY))
-            $catRange.Validation.Delete()
-            $catRange.Validation.Add(3, 1, 1, "=Category") | Out-Null
-            Write-Host "  Validation: Category dropdown set"
-        } catch {
-            Write-Host "  Warning  : Could not set Category validation: $_" -ForegroundColor Yellow
-        }
-    }
 
     for ($r2 = 2; $r2 -le $dataEnd; $r2++) {
         $flagVal = $sheet.Cells.Item($r2, $COL_FLAG).Value2
@@ -558,6 +680,8 @@ try {
 } catch {
     Write-Host "Warning  : Exception quitting Excel: $_" -ForegroundColor Yellow
 }
+
+Set-SubcategoryValidationXml -WorkbookPath $WorkbookPath -SyncResults $syncResults
 
 Write-Host ""
 Write-Host "Done!"
