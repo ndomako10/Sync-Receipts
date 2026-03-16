@@ -11,6 +11,9 @@ Deploy-SyncReceipts.bat
 # Receipt files (personal financial documents)
 Receipts/
 
+# Claude Code local state
+.claude/
+
 # Windows artifacts
 Thumbs.db
 desktop.ini
