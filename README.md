@@ -1,6 +1,6 @@
 # Sync-Receipts
 
-A PowerShell automation tool that syncs receipt files into a formatted Excel workbook. Metadata is encoded directly in receipt filenames — no manual data entry.
+A PowerShell automation tool that syncs receipt files into a formatted Excel workbook. Metadata is encoded directly in receipt filenames -- no manual data entry.
 
 ## How It Works
 
@@ -17,7 +17,7 @@ Examples:
 260301 Landlord -$1200.00 Checking 4455.pdf
 ```
 
-Running a `.bat` launcher triggers the PowerShell script, which parses every receipt in the target month folder and writes a formatted table into `Receipts.xlsx` — one sheet per month (e.g. `2603` for March 2026).
+Running a `.bat` launcher triggers the PowerShell script, which parses every receipt in the target month folder and writes a formatted table into `Receipts.xlsx` -- one sheet per month (e.g. `2603` for March 2026).
 
 ## Prerequisites
 
@@ -29,18 +29,23 @@ Running a `.bat` launcher triggers the PowerShell script, which parses every rec
 
 1. Copy `config.template.bat` to `config.bat`
 2. Edit `config.bat` and set:
-   - `RECEIPTS_ROOT` — path to the folder containing `Receipts.xlsx` and your year/month subfolders
-   - `DOWNLOADS_DIR` — your Downloads folder (used by `Deploy-SyncReceipts.bat`)
+   - `RECEIPTS_ROOT` -- path to the folder containing `Receipts.xlsx` and your year/month receipt subfolders
 3. Make sure `Receipts.xlsx` exists in `RECEIPTS_ROOT` with an **Account** sheet and a **Category** sheet (see [Workbook Structure](#workbook-structure))
 
 ## Folder Structure
 
+The script files and the data are kept in separate locations. `RECEIPTS_ROOT` is set in `config.bat`.
+
 ```
-RECEIPTS_ROOT\
-    Receipts.xlsx
+Script files (e.g. C:\Scripts\Sync-Receipts\):
+    config.bat               <- gitignored; sets RECEIPTS_ROOT
+    config.template.bat
     Sync-Receipts.ps1
     Run-SyncReceipts.bat
     Run-SyncAllReceipts.bat
+
+RECEIPTS_ROOT (e.g. \\Server\Share\Receipts\):
+    Receipts.xlsx
     2026\
         2603 - March\
             260301 Vendor $10.00 Card 1234.pdf
@@ -55,19 +60,19 @@ RECEIPTS_ROOT\
 
 | File | Action |
 |------|--------|
-| `Run-SyncReceipts.bat` | Sync the current month |
-| `Run-SyncAllReceipts.bat` | Sync all month folders across all years |
+| `Run-SyncReceipts.bat` | Sync the current month (reads `RECEIPTS_ROOT` from `config.bat`) |
+| `Run-SyncAllReceipts.bat` | Sync all month folders across all years (reads `RECEIPTS_ROOT` from `config.bat`) |
 
-Add `-KillExcel` to the PowerShell command inside `Run-SyncReceipts.bat` if Excel crashed and is holding the file locked.
+To force-close a crashed Excel instance holding the file locked, run the **Sync: Current month (KillExcel)** VS Code task, or add `-KillExcel` to the PowerShell command inside `Run-SyncReceipts.bat`.
 
 ## Script Parameters
 
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `-ReceiptsRoot` | Script's own folder | Path to the root Receipts folder |
-| `-YearMonth` | Current month (yyMM) | Specific month to sync, e.g. `2603` |
-| `-All` | — | Sync every month folder under every year folder |
-| `-KillExcel` | — | Kill any running `EXCEL.EXE` before starting |
+| Parameter | Description |
+|-----------|-------------|
+| `-ReceiptsRoot` | **Required.** Path to the folder containing `Receipts.xlsx` and year subfolders. Set via `config.bat`. |
+| `-YearMonth` | YYMM to sync (e.g. `2603`). Defaults to current month. |
+| `-All` | Sync every month folder under every year folder. |
+| `-KillExcel` | Kill any running `EXCEL.EXE` before starting. |
 
 ## Workbook Structure
 
@@ -75,7 +80,7 @@ Add `-KillExcel` to the PowerShell command inside `Run-SyncReceipts.bat` if Exce
 Column A, row 2 downward: 4-digit account numbers. Used to validate accounts parsed from filenames. If the sheet is missing, validation is skipped.
 
 ### Category Sheet
-Row 1: category headers (e.g. `Food`, `Housing`, `Gas`). Rows 2+: subcategories under each column. Used to populate Category dropdowns and named ranges. If the sheet is missing, dropdowns are skipped.
+Row 1: category headers (e.g. `Food`, `Housing`, `Gas`). Rows 2+: subcategories under each column. Used to populate Category and Subcategory dropdowns via named ranges.
 
 ### Month Sheets (e.g. `2603`)
 Created or overwritten on each run. Contains a 9-column table:
@@ -89,13 +94,9 @@ Created or overwritten on each run. Contains a 9-column table:
 | E | Method | `Card`, `Cash`, `Checking`, or `Savings` |
 | F | Account | 4-digit number, text formatted |
 | G | Category | Dropdown from Category sheet |
-| H | Subcategory | Dropdown (see known issues) |
+| H | Subcategory | Dropdown filtered by selected Category via `INDIRECT` |
 | I | Flag | Parse errors, unknown accounts |
-
-## Known Issues
-
-See [ISSUES.md](ISSUES.md).
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT -- see [LICENSE](LICENSE).

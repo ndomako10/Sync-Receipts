@@ -8,14 +8,17 @@
 # Category and Subcategory dropdowns are populated from the Category sheet.
 #
 # Usage:
-#   .\Sync-Receipts.ps1
 #   .\Sync-Receipts.ps1 -ReceiptsRoot "\\Server\Share\Receipts"
-#   .\Sync-Receipts.ps1 -YearMonth "2603"
-#   .\Sync-Receipts.ps1 -All
-#   .\Sync-Receipts.ps1 -KillExcel
+#   .\Sync-Receipts.ps1 -ReceiptsRoot "\\Server\Share\Receipts" -YearMonth "2603"
+#   .\Sync-Receipts.ps1 -ReceiptsRoot "\\Server\Share\Receipts" -All
+#   .\Sync-Receipts.ps1 -ReceiptsRoot "\\Server\Share\Receipts" -KillExcel
+#
+# Normally invoked via Run-SyncReceipts.bat or Run-SyncAllReceipts.bat, which read
+# RECEIPTS_ROOT from config.bat and pass it as -ReceiptsRoot.
 #
 # Parameters:
-#   -ReceiptsRoot : Path to the root Receipts folder. Defaults to the script's own folder.
+#   -ReceiptsRoot : Path to the folder containing Receipts.xlsx and year subfolders.
+#                   Must be provided explicitly; the script's own folder is not the data root.
 #   -YearMonth    : YYMM to sync (e.g. "2603"). Defaults to current month.
 #   -All          : Sync every month folder found under every year folder.
 #   -KillExcel    : Kill any running EXCEL.EXE processes before starting. Use when a
