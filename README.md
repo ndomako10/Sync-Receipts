@@ -82,6 +82,7 @@ To force-close a crashed Excel instance holding the file locked, run the **Sync:
 |-----------|-------------|
 | `-ReceiptsRoot` | **Required.** Path to the folder containing year subfolders and per-year workbooks. Set via `config.bat`. |
 | `-YearMonth` | YYMM to sync (e.g. `2603`). Defaults to current month. |
+| `-Year` | 4-digit year (e.g. `2026`). Syncs all month folders under that year. Mutually exclusive with `-YearMonth` and `-All`. |
 | `-WorkbookPath` | Full path to a specific `.xlsx` to write into. Overrides the default per-year path (e.g. `2026.xlsx`). Useful for testing. |
 | `-All` | Sync every month folder under every year folder. |
 | `-KillExcel` | Kill any running `EXCEL.EXE` before starting. |

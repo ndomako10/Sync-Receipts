@@ -21,6 +21,7 @@
 #   -ReceiptsRoot : Path to the folder containing year subfolders and per-year workbooks.
 #                   Must be provided explicitly; the script's own folder is not the data root.
 #   -YearMonth    : YYMM to sync (e.g. "2603"). Defaults to current month.
+#   -Year         : 4-digit year (e.g. "2026"). Syncs all month folders under that year.
 #   -WorkbookPath : Full path to the .xlsx workbook to write into. Overrides the default
 #                   per-year workbook path ({year}.xlsx in ReceiptsRoot). Useful for testing.
 #   -All          : Sync every month folder found under every year folder.
@@ -30,6 +31,7 @@
 param (
     [string]$ReceiptsRoot = $PSScriptRoot,
     [string]$YearMonth    = (Get-Date -Format "yyMM"),
+    [string]$Year         = "",
     [string]$WorkbookPath = "",
     [switch]$All,
     [switch]$KillExcel
@@ -693,6 +695,19 @@ if (-not (Test-Path $ReceiptsRoot)) {
     exit 1
 }
 
+# Validate mutually exclusive mode flags.
+$modeCount = 0
+if ($All)          { $modeCount++ }
+if ($Year -ne "")  { $modeCount++ }
+if ($modeCount -gt 1) {
+    Write-Error "-All and -Year are mutually exclusive. Specify only one."
+    exit 1
+}
+if ($Year -ne "" -and $YearMonth -ne (Get-Date -Format "yyMM")) {
+    Write-Error "-Year and -YearMonth are mutually exclusive. Specify only one."
+    exit 1
+}
+
 # Gather months grouped by year.
 # Each year maps to an array of {SheetName, FolderPath} objects.
 $yearGroups = @{}
@@ -714,16 +729,36 @@ if ($All) {
         }
     $totalMonths = ($yearGroups.Values | ForEach-Object { $_.Count } | Measure-Object -Sum).Sum
     Write-Host "Found    : $($yearGroups.Count) year(s), $totalMonths month folder(s) to sync"
+} elseif ($Year -ne "") {
+    $yearDir = Join-Path $ReceiptsRoot $Year
+    if (-not (Test-Path $yearDir)) {
+        Write-Error "Year folder not found: '$yearDir'"
+        exit 1
+    }
+    Get-ChildItem -Path $yearDir -Directory |
+        Where-Object { $_.Name -match '^\d{4}' } |
+        ForEach-Object {
+            if (-not $yearGroups.ContainsKey($Year)) { $yearGroups[$Year] = @() }
+            $yearGroups[$Year] += [PSCustomObject]@{
+                SheetName  = $_.Name.Substring(0, 4)
+                FolderPath = $_.FullName
+            }
+        }
+    if ($yearGroups.Count -eq 0 -or $yearGroups[$Year].Count -eq 0) {
+        Write-Error "No month folders found under '$yearDir'"
+        exit 1
+    }
+    Write-Host "Found    : $($yearGroups[$Year].Count) month folder(s) to sync for $Year"
 } else {
-    $year        = "20" + $YearMonth.Substring(0, 2)
-    $monthFolder = Get-ChildItem -Path (Join-Path $ReceiptsRoot $year) -Directory |
+    $yearSingle  = "20" + $YearMonth.Substring(0, 2)
+    $monthFolder = Get-ChildItem -Path (Join-Path $ReceiptsRoot $yearSingle) -Directory |
                    Where-Object { $_.Name -match "^$YearMonth" } |
                    Select-Object -First 1
     if (-not $monthFolder) {
-        Write-Error "Could not find a folder matching '$YearMonth*' under '$ReceiptsRoot\$year'"
+        Write-Error "Could not find a folder matching '$YearMonth*' under '$ReceiptsRoot\$yearSingle'"
         exit 1
     }
-    $yearGroups[$year] = @([PSCustomObject]@{ SheetName = $YearMonth; FolderPath = $monthFolder.FullName })
+    $yearGroups[$yearSingle] = @([PSCustomObject]@{ SheetName = $YearMonth; FolderPath = $monthFolder.FullName })
 }
 
 # Kill any lingering EXCEL.EXE processes before starting, if requested.
