@@ -29,6 +29,22 @@ type(scope): short description
 | `refactor` | Code change with no behaviour change |
 | `chore` | Tooling, gitignore, config |
 
+| Scope | Files / area |
+|-------|-------------|
+| `ps1` | Sync-Receipts.ps1 (general; use a narrower scope when one applies) |
+| `logging` | Write-Log function and console output |
+| `categories` | Categories feature: Get-Categories, Sync-CategorySheet, Categories.json |
+| `accounts` | Accounts feature: Get-ValidAccounts, Accounts.xlsx, Accounts.template.xlsx |
+| `sync-month` | Sync-Month function |
+| `parse-receipt` | Parse-Receipt function |
+| `xml` | Set-SubcategoryValidationXml XML patching |
+| `tests` | tests/Sync-Receipts.Tests.ps1 |
+| `readme` | README.md |
+| `claude.md` | CLAUDE.md |
+| `ci` | GitHub Actions workflows (.github/) |
+| `config` | config.bat, .vscode/, batch launcher files |
+| `changelog` | CHANGELOG.md |
+
 **Versioning:**
 - `MAJOR` -- breaking changes (file format changes, removed parameters, renamed files)
 - `MINOR` -- new features
