@@ -6,7 +6,7 @@ A PowerShell script (`Sync-Receipts.ps1`) that uses Excel COM automation to pars
 
 ## Coding rules
 
-- **Always add error handling and debug output** -- every new block needs `try/catch` and `Write-Log` calls (use `-Tag WARN` for warnings, `-Tag ERROR` for errors, `-Tag VERB` for diagnostic detail)
+- **Always add error handling and debug output** -- every new block needs `try/catch` and `Write-SyncLog` calls (use `-Tag WARN` for warnings, `-Tag ERROR` for errors, `-Tag VERB` for diagnostic detail)
 - **Never use `$variable:` in double-quoted strings** -- PowerShell interprets the colon as a drive separator; use `${variable}:` instead
 - **No smart quotes or em-dashes** -- the file must be pure ASCII. Non-ASCII characters break PowerShell parsing on the network share. Verify after any edit: `[System.Text.Encoding]::ASCII.GetByteCount($content) -eq $content.Length`
 - **Propose changes before making them** -- do not edit code without confirmation
@@ -32,7 +32,7 @@ type(scope): short description
 | Scope | Files / area |
 |-------|-------------|
 | `ps1` | Sync-Receipts.ps1 (general; use a narrower scope when one applies) |
-| `logging` | Write-Log function and console output |
+| `logging` | Write-SyncLog function and console output |
 | `categories` | Categories feature: Get-Categories, Sync-CategorySheet, Categories.json |
 | `accounts` | Accounts feature: Get-ValidAccounts, Accounts.xlsx, Accounts.template.xlsx |
 | `sync-month` | Sync-Month function |
@@ -72,7 +72,7 @@ The script files live in their own directory. The data (per-year workbooks and r
 
 | Function | Purpose |
 |----------|---------|
-| `Write-Log` | Writes timestamped, tagged log lines to the console; routes VERB-tagged messages to `Write-Verbose` |
+| `Write-SyncLog` | Writes timestamped, tagged log lines to the console; routes VERB-tagged messages to `Write-Verbose` |
 | `Parse-Receipt` | Regex-parses a receipt filename stem into date, vendor, amount, method, account |
 | `Read-PreservedCategoryValues` | Pure helper: extracts Category/Subcategory keyed by File Name from a 2D string array (no COM dependency; unit-testable) |
 | `Get-ValidAccounts` | Reads 4-digit account numbers from `Accounts.xlsx` in `ReceiptsRoot`; falls back to Account sheet |
