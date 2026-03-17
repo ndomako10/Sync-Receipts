@@ -348,7 +348,6 @@ function Set-CategoryNamedRanges {
     [CmdletBinding(SupportsShouldProcess)]
     param(
         [object]$Workbook,
-        [object]$CatSheet,
         [object]$Categories
     )
 
@@ -1007,7 +1006,7 @@ foreach ($yearEntry in ($yearGroups.GetEnumerator() | Sort-Object Key)) {
         }
         if ($catSheet) {
             try {
-                Set-CategoryNamedRanges -Workbook $workbook -CatSheet $catSheet -Categories $categories
+                Set-CategoryNamedRanges -Workbook $workbook -Categories $categories
                 Write-Log "Named ranges: $($categories.Count) category/subcategory group(s) configured" -Tag INFO
             } catch {
                 Write-Log "Named ranges: error in Set-CategoryNamedRanges -- $_" -Tag WARN
