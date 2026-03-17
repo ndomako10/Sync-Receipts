@@ -4,18 +4,10 @@
 # Run with: Invoke-Pester ./tests
 
 BeforeAll {
-    $script:scriptPath = Join-Path (Split-Path $PSScriptRoot -Parent) 'Sync-Receipts.ps1'
+    $script:scriptPath    = Join-Path (Split-Path $PSScriptRoot -Parent) 'Sync-Receipts.ps1'
+    $script:settingsPath  = Join-Path (Join-Path (Split-Path $PSScriptRoot -Parent) '.config') 'PSScriptAnalyzerSettings.psd1'
 
-    # Rules suppressed intentionally -- see PSScriptAnalyzerSettings.psd1 for rationale
-    $script:excludeRules = @(
-        'PSUseApprovedVerbs',
-        'PSUseSingularNouns',
-        'PSAvoidUsingWriteHost',
-        'PSUseShouldProcessForStateChangingFunctions',
-        'PSAvoidUsingEmptyCatchBlock'
-    )
-
-    $script:results = Invoke-ScriptAnalyzer -Path $script:scriptPath -ExcludeRule $script:excludeRules
+    $script:results = Invoke-ScriptAnalyzer -Path $script:scriptPath -Settings $script:settingsPath
 }
 
 Describe 'PSScriptAnalyzer -- Sync-Receipts.ps1' {

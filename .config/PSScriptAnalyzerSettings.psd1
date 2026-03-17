@@ -12,6 +12,10 @@
         # user-facing log. Write-Output would pollute the pipeline incorrectly.
         'PSAvoidUsingWriteHost',
 
+        # ShouldProcess is not implemented on Set- helpers because they are internal
+        # functions called within a single script session, not exported cmdlets.
+        'PSUseShouldProcessForStateChangingFunctions',
+
         # Empty catch blocks are used intentionally as silent COM probes, e.g.
         # try { $sheet = $wb.Sheets.Item("Name") } catch {}
         # where a missing sheet is handled by checking for $null on the next line.
