@@ -11,6 +11,31 @@ A PowerShell script (`Sync-Receipts.ps1`) that uses Excel COM automation to pars
 - **No smart quotes or em-dashes** -- the file must be pure ASCII. Non-ASCII characters break PowerShell parsing on the network share. Verify after any edit: `[System.Text.Encoding]::ASCII.GetByteCount($content) -eq $content.Length`
 - **Propose changes before making them** -- do not edit code without confirmation
 
+## Versioning and commits
+
+This project uses [Semantic Versioning](https://semver.org) and [Conventional Commits](https://www.conventionalcommits.org).
+
+**Commit message format:**
+```
+type(scope): short description
+```
+
+| Type | When |
+|------|------|
+| `feat` | New feature |
+| `fix` | Bug fix |
+| `docs` | Documentation only |
+| `test` | Test additions or changes |
+| `refactor` | Code change with no behaviour change |
+| `chore` | Tooling, gitignore, config |
+
+**Versioning:**
+- `MAJOR` -- breaking changes (file format changes, removed parameters, renamed files)
+- `MINOR` -- new features
+- `PATCH` -- bug fixes, docs, tests
+- Version is tracked in the `Sync-Receipts.ps1` header and git tags (`v0.4.0`)
+- `CHANGELOG.md` is updated manually when tagging a release
+
 ## Architecture
 
 ```

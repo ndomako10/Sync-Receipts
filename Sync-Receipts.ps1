@@ -1,4 +1,4 @@
-# Sync-Receipts.ps1
+# Sync-Receipts.ps1  v0.4.0
 #
 # Syncs receipt filenames from a month folder into a table in a pre-existing Excel workbook.
 # The sheet is named in YYMM format (e.g. "2603" for March 2026).
