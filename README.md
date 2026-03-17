@@ -30,8 +30,9 @@ Running a `.bat` launcher triggers the PowerShell script, which parses every rec
 1. Copy `config.template.bat` to `config.bat`
 2. Edit `config.bat` and set:
    - `RECEIPTS_ROOT` -- path to the folder containing `Receipts.xlsx` and your year/month receipt subfolders
-3. Make sure `Receipts.xlsx` exists in `RECEIPTS_ROOT` (see [Workbook Structure](#workbook-structure))
-4. Optionally edit `Categories.json` in the script folder to customise your categories
+3. Copy `Accounts.template.xlsx` to `RECEIPTS_ROOT\Accounts.xlsx`, replace the example rows with your own accounts
+4. Make sure `Receipts.xlsx` exists in `RECEIPTS_ROOT` (see [Workbook Structure](#workbook-structure))
+5. Optionally edit `Categories.json` in the script folder to customise your categories
 
 ## Folder Structure
 
@@ -41,6 +42,7 @@ The script files and the data are kept in separate locations. `RECEIPTS_ROOT` is
 Script files (e.g. C:\Scripts\Sync-Receipts\):
     config.bat               <- gitignored; sets RECEIPTS_ROOT
     config.template.bat
+    Accounts.template.xlsx   <- copy to RECEIPTS_ROOT\Accounts.xlsx and fill in your accounts
     Categories.json          <- category/subcategory definitions; edit to customise
     Sync-Receipts.ps1
     Run-SyncReceipts.bat
@@ -83,7 +85,17 @@ To force-close a crashed Excel instance holding the file locked, run the **Sync:
 No longer used by the script. Account data is now read from `Accounts.xlsx` in `RECEIPTS_ROOT`. The sheet can be kept for reference or removed.
 
 ### Accounts.xlsx
-A dedicated Excel workbook at `RECEIPTS_ROOT\Accounts.xlsx`. Column A, row 2 downward: 4-digit account numbers used to validate accounts parsed from filenames. Additional columns (Account Holder, Bank, Card Type, Card Company) are optional and ignored by the script. If the file is absent, the script falls back to the Account sheet in `Receipts.xlsx` with a deprecation warning. If neither exists, account validation is skipped.
+A dedicated Excel workbook at `RECEIPTS_ROOT\Accounts.xlsx`. Copy from `Accounts.template.xlsx` and fill in your accounts. The script reads **Last 4** (column A) for validation; all other columns are for human reference only.
+
+| Column | Header | Notes |
+|--------|--------|-------|
+| A | Last 4 | 4-digit account identifier used by the script |
+| B | Holder | Account owner |
+| C | Institution | Bank, credit union, or fintech |
+| D | Network | Visa, Mastercard, Amex, Discover (blank for non-card) |
+| E | Type | Credit, Debit, Checking, Savings, Cash |
+
+If `Accounts.xlsx` is absent, the script falls back to the Account sheet in `Receipts.xlsx` with a deprecation warning. If neither exists, account validation is skipped.
 
 ### Category Sheet
 No longer used by the script. Category and subcategory data is now read from `Categories.json` in the script folder. The sheet can be kept for reference or removed.

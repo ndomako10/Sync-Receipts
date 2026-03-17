@@ -8,6 +8,9 @@ Deploy-SyncReceipts.bat
 *.xlsx
 *.xls
 
+# Template files are safe to commit (no personal data)
+!Accounts.template.xlsx
+
 # Receipt files (personal financial documents)
 Receipts/
 
