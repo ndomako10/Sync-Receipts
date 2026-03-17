@@ -1,6 +1,9 @@
 # Sync-Receipts
 
 [![Tests](https://github.com/ndomako10/Sync-Receipts/actions/workflows/tests.yml/badge.svg)](https://github.com/ndomako10/Sync-Receipts/actions/workflows/tests.yml)
+[![GitHub release](https://img.shields.io/github/v/release/ndomako10/Sync-Receipts)](https://github.com/ndomako10/Sync-Receipts/releases/latest)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![PowerShell 5.0+](https://img.shields.io/badge/PowerShell-5.0%2B-blue)](https://github.com/PowerShell/PowerShell)
 
 A PowerShell automation tool that syncs receipt files into a formatted Excel workbook. Metadata is encoded directly in receipt filenames -- no manual data entry.
 
