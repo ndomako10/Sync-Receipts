@@ -85,9 +85,9 @@ function Get-ValidAccounts {
 function Get-Categories {
     param([string]$ReceiptsRoot)
     Write-Host "Debug    : Get-Categories start"
-    $jsonPath = Join-Path $ReceiptsRoot "categories.json"
+    $jsonPath = Join-Path $ReceiptsRoot "Categories.json"
     if (-not (Test-Path $jsonPath)) {
-        Write-Host "  Warning  : categories.json not found in '$ReceiptsRoot' - dropdowns skipped" -ForegroundColor Yellow
+        Write-Host "  Warning  : Categories.json not found in '$ReceiptsRoot' - dropdowns skipped" -ForegroundColor Yellow
         return $null
     }
     try {
@@ -99,7 +99,7 @@ function Get-Categories {
         Write-Host "Debug    : Get-Categories end - $($categories.Count) group(s)"
         return $categories
     } catch {
-        Write-Host "  Warning  : Failed to parse categories.json: $_" -ForegroundColor Yellow
+        Write-Host "  Warning  : Failed to parse Categories.json: $_" -ForegroundColor Yellow
         return $null
     }
 }

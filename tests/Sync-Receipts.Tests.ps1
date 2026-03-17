@@ -185,11 +185,11 @@ Describe 'Parse-Receipt' {
 # ---------------------------------------------------------------------------
 Describe 'Get-Categories' {
 
-    Context 'reading from categories.json' {
+    Context 'reading from Categories.json' {
 
         It 'returns an ordered hashtable with the correct keys' {
             $json = '{"Food":["Groceries","Restaurants"],"Housing":["Rent / Mortgage","HOA Fees"]}'
-            $path = Join-Path $TestDrive 'categories.json'
+            $path = Join-Path $TestDrive 'Categories.json'
             Set-Content $path $json
             $result = Get-Categories -ReceiptsRoot $TestDrive
             $result              | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
@@ -199,7 +199,7 @@ Describe 'Get-Categories' {
 
         It 'preserves category order from the JSON file' {
             $json = '{"Zebra":["Z1"],"Apple":["A1"],"Mango":["M1"]}'
-            $path = Join-Path $TestDrive 'categories.json'
+            $path = Join-Path $TestDrive 'Categories.json'
             Set-Content $path $json
             $result = Get-Categories -ReceiptsRoot $TestDrive
             @($result.Keys)[0] | Should -Be 'Zebra'
@@ -209,7 +209,7 @@ Describe 'Get-Categories' {
 
         It 'returns subcategories as a string array' {
             $json = '{"Food":["Groceries","Restaurants","Fast Food"]}'
-            $path = Join-Path $TestDrive 'categories.json'
+            $path = Join-Path $TestDrive 'Categories.json'
             Set-Content $path $json
             $result = Get-Categories -ReceiptsRoot $TestDrive
             $result['Food'].Count | Should -Be 3
@@ -217,14 +217,14 @@ Describe 'Get-Categories' {
             $result['Food'][2]    | Should -Be 'Fast Food'
         }
 
-        It 'returns null when categories.json is absent' {
+        It 'returns null when Categories.json is absent' {
             $emptyDir = Join-Path $TestDrive 'empty'
             New-Item $emptyDir -ItemType Directory -Force | Out-Null
             Get-Categories -ReceiptsRoot $emptyDir | Should -BeNullOrEmpty
         }
 
-        It 'returns null and does not throw when categories.json is malformed' {
-            $path = Join-Path $TestDrive 'categories.json'
+        It 'returns null and does not throw when Categories.json is malformed' {
+            $path = Join-Path $TestDrive 'Categories.json'
             Set-Content $path 'not valid json {'
             { Get-Categories -ReceiptsRoot $TestDrive } | Should -Not -Throw
             Get-Categories -ReceiptsRoot $TestDrive | Should -BeNullOrEmpty
