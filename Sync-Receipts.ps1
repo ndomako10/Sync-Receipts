@@ -781,6 +781,14 @@ foreach ($yearEntry in ($yearGroups.GetEnumerator() | Sort-Object Key)) {
         Write-Host "Creating : $xlsxName (new workbook)"
         try {
             $workbook = $excel.Workbooks.Add()
+            # Remove default blank sheets (e.g. Sheet1) added by Excel on Workbooks.Add().
+            # DisplayAlerts is already false so no confirmation prompt is shown.
+            $sheetsToDelete = @()
+            foreach ($s in $workbook.Sheets) { $sheetsToDelete += $s }
+            foreach ($s in $sheetsToDelete) {
+                try { $s.Delete() } catch {}
+            }
+            Write-Host "Creating : Removed $($sheetsToDelete.Count) default sheet(s)"
             $workbook.SaveAs($wbPath)
         } catch {
             $errMsg = $_.Exception.Message
