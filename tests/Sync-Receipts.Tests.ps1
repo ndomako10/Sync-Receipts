@@ -12,15 +12,17 @@ BeforeAll {
     $ast.FindAll(
         { $args[0] -is [System.Management.Automation.Language.FunctionDefinitionAst] },
         $false
-    ) | ForEach-Object { Invoke-Expression $_.Extent.Text }
+    ) | ForEach-Object { . ([scriptblock]::Create($_.Extent.Text)) }
 
     # Helper: create a minimal well-formed xlsx using .NET ZipArchive
     function New-MinimalXlsx {
+        [CmdletBinding(SupportsShouldProcess)]
         param(
             [string]$Path,
             [string]$SheetName = '2603',
             [string]$SheetXml  = $null
         )
+        if (-not $PSCmdlet.ShouldProcess($Path, 'Create')) { return }
         if (-not $SheetXml) {
             $SheetXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
                 '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"' +
