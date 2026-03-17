@@ -64,6 +64,7 @@ Script files (e.g. C:\Scripts\Sync-Receipts\):
     Sync-Receipts.ps1
     Run-SyncReceipts.bat
     Run-SyncAllReceipts.bat
+    Kill-Excel.bat           <- force-closes hung EXCEL.EXE processes
 
 RECEIPTS_ROOT (e.g. \\Server\Share\Receipts\):
     2026.xlsx                <- created automatically on first sync for that year
@@ -86,7 +87,7 @@ RECEIPTS_ROOT (e.g. \\Server\Share\Receipts\):
 | `Run-SyncReceipts.bat` | Sync the current month (reads `RECEIPTS_ROOT` from `config.bat`) |
 | `Run-SyncAllReceipts.bat` | Sync all month folders across all years (reads `RECEIPTS_ROOT` from `config.bat`) |
 
-To force-close a crashed Excel instance holding the file locked, run the **Sync: Current month (KillExcel)** VS Code task, or add `-KillExcel` to the PowerShell command inside `Run-SyncReceipts.bat`.
+To force-close a crashed Excel instance holding the file locked, double-click `Kill-Excel.bat`, run the **Sync: Current month (KillExcel)** VS Code task, or add `-KillExcel` to the PowerShell command inside `Run-SyncReceipts.bat`.
 
 ## Script Parameters
 
@@ -136,10 +137,10 @@ Created or overwritten on each run. Contains a 9-column table:
 | C | Vendor | |
 | D | Amount | Currency formatted; negative = expense |
 | E | Method | `Card`, `Cash`, `Checking`, or `Savings` |
-| F | Account | 4-digit number, text formatted |
+| F | Account | 4-digit number, or `xxxx` (obfuscated) / `----` (unknown), text formatted |
 | G | Category | Dropdown from Category sheet |
 | H | Subcategory | Dropdown filtered by selected Category via `INDIRECT` |
-| I | Flag | Parse errors, unknown accounts |
+| I | Flag | Parse errors; account flags: `Account obfuscated`, `Account unknown`, `Account not in Accounts.xlsx` |
 
 ## License
 

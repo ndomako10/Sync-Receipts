@@ -11,6 +11,7 @@
 # Usage:
 #   .\Sync-Receipts.ps1 -ReceiptsRoot "\\Server\Share\Receipts"
 #   .\Sync-Receipts.ps1 -ReceiptsRoot "\\Server\Share\Receipts" -YearMonth "2603"
+#   .\Sync-Receipts.ps1 -ReceiptsRoot "\\Server\Share\Receipts" -Year 2026
 #   .\Sync-Receipts.ps1 -ReceiptsRoot "\\Server\Share\Receipts" -All
 #   .\Sync-Receipts.ps1 -ReceiptsRoot "\\Server\Share\Receipts" -KillExcel
 #

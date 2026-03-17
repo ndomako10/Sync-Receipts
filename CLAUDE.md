@@ -41,10 +41,12 @@ type(scope): short description
 ```
 config.bat                <- local machine settings (gitignored); sets RECEIPTS_ROOT
 config.template.bat       <- generic template committed to git
+Accounts.template.xlsx    <- copy to RECEIPTS_ROOT\Accounts.xlsx and fill in accounts
 Categories.json           <- category/subcategory definitions; committed, edit directly
 Sync-Receipts.ps1         <- core automation (Excel COM)
 Run-SyncReceipts.bat      <- launcher: calls config.bat, syncs current month
 Run-SyncAllReceipts.bat   <- launcher: calls config.bat, syncs all months (-All)
+Kill-Excel.bat            <- standalone utility: force-closes hung EXCEL.EXE processes
 Deploy-SyncReceipts.bat   <- machine-specific deployment helper (gitignored)
 ```
 
@@ -61,6 +63,7 @@ The script files live in their own directory. The data (per-year workbooks and r
 | `Sync-CategorySheet` | Writes category data from hashtable into the Category sheet (creates if absent, overwrites if present, hides the sheet) |
 | `Set-CategoryNamedRanges` | Creates named ranges in the workbook for Category/Subcategory dropdowns |
 | `Set-SubcategoryValidationXml` | Post-save XML patch: injects both dropdown validations and fixes zip headers |
+| `Set-MonthSheetOrder` | Sorts all month sheet tabs (4-digit YYMM names) into chronological order |
 | `Sync-Month` | Main workhorse: creates/overwrites a month sheet and writes all receipt rows |
 
 ### Excel COM patterns used
