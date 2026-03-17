@@ -663,6 +663,27 @@ function Sync-Month {
     }
 }
 
+function Set-MonthSheetOrder {
+    param([object]$Workbook)
+    # Collect all month sheets (4-digit YYMM names).
+    $monthSheets = @()
+    foreach ($s in $Workbook.Sheets) {
+        if ($s.Name -match '^\d{4}$') { $monthSheets += $s }
+    }
+    if ($monthSheets.Count -lt 2) { return }
+
+    $sorted  = $monthSheets | Sort-Object Name
+    $missing = [System.Reflection.Missing]::Value
+
+    # Move the earliest month sheet to position 1, then place each subsequent
+    # sheet immediately after the one before it.
+    $sorted[0].Move($Workbook.Sheets.Item(1))
+    for ($i = 1; $i -lt $sorted.Count; $i++) {
+        $sorted[$i].Move($missing, $sorted[$i - 1])
+    }
+    Write-Host "Sheets   : $($sorted.Count) month sheet(s) sorted chronologically"
+}
+
 # ---------------------------------------------------------------------------
 # MAIN
 # ---------------------------------------------------------------------------
@@ -850,6 +871,12 @@ foreach ($yearEntry in ($yearGroups.GetEnumerator() | Sort-Object Key)) {
             Write-Host "             Skipping this month and continuing." -ForegroundColor Yellow
             $syncResults += [PSCustomObject]@{ SheetName = $m.SheetName; Result = $null }
         }
+    }
+
+    try {
+        Set-MonthSheetOrder -Workbook $workbook
+    } catch {
+        Write-Host "  Warning  : Error sorting month sheets: $_" -ForegroundColor Yellow
     }
 
     try {
