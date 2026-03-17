@@ -30,7 +30,8 @@ Running a `.bat` launcher triggers the PowerShell script, which parses every rec
 1. Copy `config.template.bat` to `config.bat`
 2. Edit `config.bat` and set:
    - `RECEIPTS_ROOT` -- path to the folder containing `Receipts.xlsx` and your year/month receipt subfolders
-3. Make sure `Receipts.xlsx` exists in `RECEIPTS_ROOT` with an **Account** sheet and a **Category** sheet (see [Workbook Structure](#workbook-structure))
+3. Copy `categories.template.json` to `RECEIPTS_ROOT\categories.json` and edit to match your categories
+4. Make sure `Receipts.xlsx` exists in `RECEIPTS_ROOT` (see [Workbook Structure](#workbook-structure))
 
 ## Folder Structure
 
@@ -40,12 +41,14 @@ The script files and the data are kept in separate locations. `RECEIPTS_ROOT` is
 Script files (e.g. C:\Scripts\Sync-Receipts\):
     config.bat               <- gitignored; sets RECEIPTS_ROOT
     config.template.bat
+    categories.template.json <- reference copy; copy to RECEIPTS_ROOT\categories.json
     Sync-Receipts.ps1
     Run-SyncReceipts.bat
     Run-SyncAllReceipts.bat
 
 RECEIPTS_ROOT (e.g. \\Server\Share\Receipts\):
     Receipts.xlsx
+    categories.json          <- your category/subcategory definitions
     2026\
         2603 - March\
             260301 Vendor $10.00 Card 1234.pdf
@@ -80,7 +83,7 @@ To force-close a crashed Excel instance holding the file locked, run the **Sync:
 Column A, row 2 downward: 4-digit account numbers. Used to validate accounts parsed from filenames. If the sheet is missing, validation is skipped.
 
 ### Category Sheet
-Row 1: category headers (e.g. `Food`, `Housing`, `Gas`). Rows 2+: subcategories under each column. Used to populate Category and Subcategory dropdowns via named ranges.
+No longer used by the script. Category and subcategory data is now read from `categories.json` in `RECEIPTS_ROOT`. The sheet can be kept for reference or removed.
 
 ### Month Sheets (e.g. `2603`)
 Created or overwritten on each run. Contains a 9-column table:

@@ -14,15 +14,16 @@ A PowerShell script (`Sync-Receipts.ps1`) that uses Excel COM automation to pars
 ## Architecture
 
 ```
-config.bat              <- local machine settings (gitignored); sets RECEIPTS_ROOT
-config.template.bat     <- generic template committed to git
-Sync-Receipts.ps1       <- core automation (Excel COM)
-Run-SyncReceipts.bat    <- launcher: calls config.bat, syncs current month
-Run-SyncAllReceipts.bat <- launcher: calls config.bat, syncs all months (-All)
-Deploy-SyncReceipts.bat <- machine-specific deployment helper (gitignored)
+config.bat                <- local machine settings (gitignored); sets RECEIPTS_ROOT
+config.template.bat       <- generic template committed to git
+categories.template.json  <- reference category definitions; copy to RECEIPTS_ROOT\categories.json
+Sync-Receipts.ps1         <- core automation (Excel COM)
+Run-SyncReceipts.bat      <- launcher: calls config.bat, syncs current month
+Run-SyncAllReceipts.bat   <- launcher: calls config.bat, syncs all months (-All)
+Deploy-SyncReceipts.bat   <- machine-specific deployment helper (gitignored)
 ```
 
-The script files live in their own directory. The data (workbook + receipt folders) lives at `RECEIPTS_ROOT`, which is set in `config.bat`. The two locations are completely independent -- `-ReceiptsRoot` must always be provided explicitly; the script's own folder has no special meaning at runtime.
+The script files live in their own directory. The data (workbook, receipt folders, and `categories.json`) lives at `RECEIPTS_ROOT`, which is set in `config.bat`. The two locations are completely independent -- `-ReceiptsRoot` must always be provided explicitly; the script's own folder has no special meaning at runtime.
 
 ### Key functions in Sync-Receipts.ps1
 
@@ -30,7 +31,7 @@ The script files live in their own directory. The data (workbook + receipt folde
 |----------|---------|
 | `Parse-Receipt` | Regex-parses a receipt filename stem into date, vendor, amount, method, account |
 | `Get-ValidAccounts` | Reads 4-digit account numbers from the Account sheet |
-| `Get-Categories` | Reads category/subcategory data from the Category sheet |
+| `Get-Categories` | Reads category/subcategory data from `categories.json` in `ReceiptsRoot` |
 | `Set-CategoryNamedRanges` | Creates named ranges in the workbook for Category/Subcategory dropdowns |
 | `Set-SubcategoryValidationXml` | Post-save XML patch: injects both dropdown validations and fixes zip headers |
 | `Sync-Month` | Main workhorse: creates/overwrites a month sheet and writes all receipt rows |

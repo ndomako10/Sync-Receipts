@@ -83,35 +83,25 @@ function Get-ValidAccounts {
 }
 
 function Get-Categories {
-    param([object]$Workbook)
+    param([string]$ReceiptsRoot)
     Write-Host "Debug    : Get-Categories start"
-    $catSheet = $null
-    try { $catSheet = $Workbook.Sheets.Item("Category") } catch {}
-    if (-not $catSheet) {
-        Write-Host "  Warning  : Category sheet not found - dropdowns skipped" -ForegroundColor Yellow
+    $jsonPath = Join-Path $ReceiptsRoot "categories.json"
+    if (-not (Test-Path $jsonPath)) {
+        Write-Host "  Warning  : categories.json not found in '$ReceiptsRoot' - dropdowns skipped" -ForegroundColor Yellow
         return $null
     }
-    Write-Host "Debug    : Category sheet found"
-    $categories = [ordered]@{}
-    $col = 1
-    while ($true) {
-        $catName = $null
-        try { $catName = $catSheet.Cells.Item(1, $col).Value2 } catch { break }
-        if ($null -eq $catName -or "$catName" -eq "") { break }
-        $subcats = @()
-        $row = 2
-        while ($true) {
-            $sub = $null
-            try { $sub = $catSheet.Cells.Item($row, $col).Value2 } catch { break }
-            if ($null -eq $sub -or "$sub" -eq "") { break }
-            $subcats += "$sub".Trim()
-            $row++
+    try {
+        $json = Get-Content $jsonPath -Raw | ConvertFrom-Json
+        $categories = [ordered]@{}
+        $json.PSObject.Properties | ForEach-Object {
+            $categories[$_.Name] = @($_.Value)
         }
-        $categories["$catName".Trim()] = $subcats
-        $col++
+        Write-Host "Debug    : Get-Categories end - $($categories.Count) group(s)"
+        return $categories
+    } catch {
+        Write-Host "  Warning  : Failed to parse categories.json: $_" -ForegroundColor Yellow
+        return $null
     }
-    Write-Host "Debug    : Get-Categories end - $($categories.Count) group(s)"
-    return $categories
 }
 
 function Set-CategoryNamedRanges {
@@ -658,7 +648,7 @@ try {
 Write-Host "Debug    : Calling Get-Categories"
 $categories = $null
 try {
-    $categories = Get-Categories -Workbook $workbook
+    $categories = Get-Categories -ReceiptsRoot $ReceiptsRoot
 } catch {
     Write-Host "  Warning  : Error in Get-Categories: $_" -ForegroundColor Yellow
 }

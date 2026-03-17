@@ -181,6 +181,56 @@ Describe 'Parse-Receipt' {
 }
 
 # ---------------------------------------------------------------------------
+Describe 'Get-Categories' {
+
+    Context 'reading from categories.json' {
+
+        It 'returns an ordered hashtable with the correct keys' {
+            $json = '{"Food":["Groceries","Restaurants"],"Housing":["Rent / Mortgage","HOA Fees"]}'
+            $path = Join-Path $TestDrive 'categories.json'
+            Set-Content $path $json
+            $result = Get-Categories -ReceiptsRoot $TestDrive
+            $result              | Should -BeOfType [System.Collections.Specialized.OrderedDictionary]
+            $result.Keys         | Should -Contain 'Food'
+            $result.Keys         | Should -Contain 'Housing'
+        }
+
+        It 'preserves category order from the JSON file' {
+            $json = '{"Zebra":["Z1"],"Apple":["A1"],"Mango":["M1"]}'
+            $path = Join-Path $TestDrive 'categories.json'
+            Set-Content $path $json
+            $result = Get-Categories -ReceiptsRoot $TestDrive
+            @($result.Keys)[0] | Should -Be 'Zebra'
+            @($result.Keys)[1] | Should -Be 'Apple'
+            @($result.Keys)[2] | Should -Be 'Mango'
+        }
+
+        It 'returns subcategories as a string array' {
+            $json = '{"Food":["Groceries","Restaurants","Fast Food"]}'
+            $path = Join-Path $TestDrive 'categories.json'
+            Set-Content $path $json
+            $result = Get-Categories -ReceiptsRoot $TestDrive
+            $result['Food'].Count | Should -Be 3
+            $result['Food'][0]    | Should -Be 'Groceries'
+            $result['Food'][2]    | Should -Be 'Fast Food'
+        }
+
+        It 'returns null when categories.json is absent' {
+            $emptyDir = Join-Path $TestDrive 'empty'
+            New-Item $emptyDir -ItemType Directory -Force | Out-Null
+            Get-Categories -ReceiptsRoot $emptyDir | Should -BeNullOrEmpty
+        }
+
+        It 'returns null and does not throw when categories.json is malformed' {
+            $path = Join-Path $TestDrive 'categories.json'
+            Set-Content $path 'not valid json {'
+            { Get-Categories -ReceiptsRoot $TestDrive } | Should -Not -Throw
+            Get-Categories -ReceiptsRoot $TestDrive | Should -BeNullOrEmpty
+        }
+    }
+}
+
+# ---------------------------------------------------------------------------
 Describe 'Set-SubcategoryValidationXml' {
 
     Context 'happy path -- single sheet' {
