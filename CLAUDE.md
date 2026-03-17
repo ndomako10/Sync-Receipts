@@ -16,14 +16,14 @@ A PowerShell script (`Sync-Receipts.ps1`) that uses Excel COM automation to pars
 ```
 config.bat                <- local machine settings (gitignored); sets RECEIPTS_ROOT
 config.template.bat       <- generic template committed to git
-Categories.template.json  <- reference category definitions; copy to RECEIPTS_ROOT\Categories.json
+Categories.json           <- category/subcategory definitions; committed, edit directly
 Sync-Receipts.ps1         <- core automation (Excel COM)
 Run-SyncReceipts.bat      <- launcher: calls config.bat, syncs current month
 Run-SyncAllReceipts.bat   <- launcher: calls config.bat, syncs all months (-All)
 Deploy-SyncReceipts.bat   <- machine-specific deployment helper (gitignored)
 ```
 
-The script files live in their own directory. The data (workbook, receipt folders, and `Categories.json`) lives at `RECEIPTS_ROOT`, which is set in `config.bat`. The two locations are completely independent -- `-ReceiptsRoot` must always be provided explicitly; the script's own folder has no special meaning at runtime.
+The script files live in their own directory. The data (workbook and receipt folders) lives at `RECEIPTS_ROOT`, which is set in `config.bat`. `Categories.json` lives in the script directory and is read from `$PSScriptRoot`. The two locations are completely independent -- `-ReceiptsRoot` must always be provided explicitly; the script's own folder has no special meaning at runtime.
 
 ### Key functions in Sync-Receipts.ps1
 

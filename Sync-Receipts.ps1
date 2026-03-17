@@ -83,7 +83,7 @@ function Get-ValidAccounts {
 }
 
 function Get-Categories {
-    param([string]$ReceiptsRoot)
+    param([string]$ReceiptsRoot = $PSScriptRoot)
     Write-Host "Debug    : Get-Categories start"
     $jsonPath = Join-Path $ReceiptsRoot "Categories.json"
     if (-not (Test-Path $jsonPath)) {
@@ -648,7 +648,7 @@ try {
 Write-Host "Debug    : Calling Get-Categories"
 $categories = $null
 try {
-    $categories = Get-Categories -ReceiptsRoot $ReceiptsRoot
+    $categories = Get-Categories
 } catch {
     Write-Host "  Warning  : Error in Get-Categories: $_" -ForegroundColor Yellow
 }

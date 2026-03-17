@@ -30,8 +30,8 @@ Running a `.bat` launcher triggers the PowerShell script, which parses every rec
 1. Copy `config.template.bat` to `config.bat`
 2. Edit `config.bat` and set:
    - `RECEIPTS_ROOT` -- path to the folder containing `Receipts.xlsx` and your year/month receipt subfolders
-3. Copy `Categories.template.json` to `RECEIPTS_ROOT\Categories.json` and edit to match your categories
-4. Make sure `Receipts.xlsx` exists in `RECEIPTS_ROOT` (see [Workbook Structure](#workbook-structure))
+3. Make sure `Receipts.xlsx` exists in `RECEIPTS_ROOT` (see [Workbook Structure](#workbook-structure))
+4. Optionally edit `Categories.json` in the script folder to customise your categories
 
 ## Folder Structure
 
@@ -41,14 +41,13 @@ The script files and the data are kept in separate locations. `RECEIPTS_ROOT` is
 Script files (e.g. C:\Scripts\Sync-Receipts\):
     config.bat               <- gitignored; sets RECEIPTS_ROOT
     config.template.bat
-    Categories.template.json <- reference copy; copy to RECEIPTS_ROOT\Categories.json
+    Categories.json          <- category/subcategory definitions; edit to customise
     Sync-Receipts.ps1
     Run-SyncReceipts.bat
     Run-SyncAllReceipts.bat
 
 RECEIPTS_ROOT (e.g. \\Server\Share\Receipts\):
     Receipts.xlsx
-    Categories.json          <- your category/subcategory definitions
     2026\
         2603 - March\
             260301 Vendor $10.00 Card 1234.pdf
