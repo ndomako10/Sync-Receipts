@@ -22,7 +22,7 @@ Examples:
 260301 Landlord -$1200.00 Checking 4455.pdf
 ```
 
-Running a `.bat` launcher triggers the PowerShell script, which parses every receipt in the target month folder and writes a formatted table into `Receipts.xlsx` -- one sheet per month (e.g. `2603` for March 2026).
+Running a `.bat` launcher triggers the PowerShell script, which parses every receipt in the target month folder and writes a formatted table into a per-year workbook (e.g. `2026.xlsx`) -- one sheet per month (e.g. `2603` for March 2026).
 
 ## Prerequisites
 
@@ -80,15 +80,16 @@ To force-close a crashed Excel instance holding the file locked, run the **Sync:
 
 | Parameter | Description |
 |-----------|-------------|
-| `-ReceiptsRoot` | **Required.** Path to the folder containing `Receipts.xlsx` and year subfolders. Set via `config.bat`. |
+| `-ReceiptsRoot` | **Required.** Path to the folder containing year subfolders and per-year workbooks. Set via `config.bat`. |
 | `-YearMonth` | YYMM to sync (e.g. `2603`). Defaults to current month. |
+| `-WorkbookPath` | Full path to a specific `.xlsx` to write into. Overrides the default per-year path (e.g. `2026.xlsx`). Useful for testing. |
 | `-All` | Sync every month folder under every year folder. |
 | `-KillExcel` | Kill any running `EXCEL.EXE` before starting. |
 
 ## Workbook Structure
 
 ### Account Sheet
-No longer used by the script. Account data is now read from `Accounts.xlsx` in `RECEIPTS_ROOT`. The sheet can be kept for reference or removed.
+No longer used by the script. Account data is now read from `Accounts.xlsx` in `RECEIPTS_ROOT`. The sheet in the year workbook can be kept for reference or removed.
 
 ### Accounts.xlsx
 A dedicated Excel workbook at `RECEIPTS_ROOT\Accounts.xlsx`. Copy from `Accounts.template.xlsx` and fill in your accounts. The script reads **Last 4** (column A) for validation; all other columns are for human reference only.
