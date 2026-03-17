@@ -1,33 +1,94 @@
 # Sync-Receipts.ps1  v0.5.0
-#
-# Syncs receipt filenames from a month folder into a table in a per-year Excel workbook.
-# Each year gets its own workbook: 2026.xlsx, 2025.xlsx, etc., stored in ReceiptsRoot.
-# The sheet is named in YYMM format (e.g. "2603" for March 2026).
-# The table stays in sync with folder contents - rows are added or removed to match.
-# Filenames that cannot be parsed are added with blank fields and flagged.
-# Account numbers are validated against Accounts.xlsx in ReceiptsRoot.
-# Category and Subcategory dropdowns are populated from Categories.json via a generated Category sheet.
-#
-# Usage:
-#   .\Sync-Receipts.ps1 -ReceiptsRoot "\\Server\Share\Receipts"
-#   .\Sync-Receipts.ps1 -ReceiptsRoot "\\Server\Share\Receipts" -YearMonth "2603"
-#   .\Sync-Receipts.ps1 -ReceiptsRoot "\\Server\Share\Receipts" -Year 2026
-#   .\Sync-Receipts.ps1 -ReceiptsRoot "\\Server\Share\Receipts" -All
-#   .\Sync-Receipts.ps1 -ReceiptsRoot "\\Server\Share\Receipts" -KillExcel
-#
-# Normally invoked via Run-SyncReceipts.bat or Run-SyncAllReceipts.bat, which read
-# RECEIPTS_ROOT from config.bat and pass it as -ReceiptsRoot.
-#
-# Parameters:
-#   -ReceiptsRoot : Path to the folder containing year subfolders and per-year workbooks.
-#                   Must be provided explicitly; the script's own folder is not the data root.
-#   -YearMonth    : YYMM to sync (e.g. "2603"). Defaults to current month.
-#   -Year         : 4-digit year (e.g. "2026"). Syncs all month folders under that year.
-#   -WorkbookPath : Full path to the .xlsx workbook to write into. Overrides the default
-#                   per-year workbook path ({year}.xlsx in ReceiptsRoot). Useful for testing.
-#   -All          : Sync every month folder found under every year folder.
-#   -KillExcel    : Kill any running EXCEL.EXE processes before starting. Use when a
-#                   previous run crashed and left Excel holding the file lock.
+
+<#
+.SYNOPSIS
+    Syncs receipt filenames into a formatted Excel workbook, one sheet per month.
+
+.DESCRIPTION
+    Parses every receipt file in a month folder and writes a formatted table into a
+    per-year Excel workbook (e.g. 2026.xlsx) stored in ReceiptsRoot. Each year gets
+    its own workbook, created automatically on first sync. Each month gets its own
+    sheet named in YYMM format (e.g. 2603 for March 2026).
+
+    Receipt filenames encode all metadata:
+
+        YYMMDD Vendor $Amount Method [Account].ext
+
+    The Account field accepts a 4-digit last-4, or one of two placeholder tokens:
+        xxxx  - last 4 is known but intentionally omitted for privacy
+        ----  - last 4 is unknown (e.g. receipt did not print it)
+
+    Cash receipts carry no account number.
+
+    On each run the script:
+      - Reads category/subcategory definitions from Categories.json in the script folder
+      - Reads valid account numbers from Accounts.xlsx in ReceiptsRoot
+      - Creates or overwrites the month sheet(s) in the year workbook
+      - Preserves any Category and Subcategory values previously entered by the user
+      - Sorts month sheet tabs into chronological order
+      - Injects dropdown validation for Category and Subcategory columns via XML patch
+
+    Normally invoked via Run-SyncReceipts.bat or Run-SyncAllReceipts.bat, which read
+    RECEIPTS_ROOT from config.bat and pass it as -ReceiptsRoot.
+
+.PARAMETER ReceiptsRoot
+    Path to the folder containing year subfolders and per-year workbooks.
+    Must be provided explicitly; the script's own folder is not the data root.
+    Typically set via RECEIPTS_ROOT in config.bat.
+
+.PARAMETER YearMonth
+    YYMM string identifying the month to sync (e.g. "2603" for March 2026).
+    Defaults to the current month. Mutually exclusive with -Year and -All.
+
+.PARAMETER Year
+    4-digit year string (e.g. "2026"). Syncs all month folders found under
+    ReceiptsRoot\{Year}\ into a single year workbook. Mutually exclusive with
+    -YearMonth and -All.
+
+.PARAMETER WorkbookPath
+    Full path to a specific .xlsx file to write into. Overrides the default
+    per-year workbook path ({year}.xlsx in ReceiptsRoot). Intended for testing.
+
+.PARAMETER All
+    Syncs every month folder found under every year folder in ReceiptsRoot.
+    Each year is written to its own workbook. Mutually exclusive with -YearMonth
+    and -Year.
+
+.PARAMETER KillExcel
+    Force-terminates any running EXCEL.EXE processes before starting.
+    Use when a previous run crashed and left Excel holding the file locked.
+
+.EXAMPLE
+    .\Sync-Receipts.ps1 -ReceiptsRoot "\\Server\Share\Receipts"
+
+    Syncs the current month into \\Server\Share\Receipts\{year}.xlsx.
+
+.EXAMPLE
+    .\Sync-Receipts.ps1 -ReceiptsRoot "\\Server\Share\Receipts" -YearMonth "2603"
+
+    Syncs March 2026 into \\Server\Share\Receipts\2026.xlsx.
+
+.EXAMPLE
+    .\Sync-Receipts.ps1 -ReceiptsRoot "\\Server\Share\Receipts" -Year 2026
+
+    Syncs all month folders under \\Server\Share\Receipts\2026\ into 2026.xlsx.
+
+.EXAMPLE
+    .\Sync-Receipts.ps1 -ReceiptsRoot "\\Server\Share\Receipts" -All
+
+    Syncs every month folder across all years, writing each year to its own workbook.
+
+.EXAMPLE
+    .\Sync-Receipts.ps1 -ReceiptsRoot "\\Server\Share\Receipts" -KillExcel
+
+    Terminates any running Excel processes, then syncs the current month.
+
+.NOTES
+    Version : 0.5.0
+    Requires: Windows PowerShell 5.0+, Microsoft Excel 2016+
+    License : GNU General Public License v3.0
+#>
+
 
 param (
     [string]$ReceiptsRoot = $PSScriptRoot,
