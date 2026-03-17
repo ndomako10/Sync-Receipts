@@ -43,7 +43,7 @@ param (
 
 function Parse-Receipt {
     param([string]$Stem)
-    $pattern = '^(\d{6})\s+(.+?)\s+(-?\$[\d]+\.[\d]{2})\s+(Card|Cash|Checking|Savings)(?:\s+(\d{4}|xxxx))?$'
+    $pattern = '^(\d{6})\s+(.+?)\s+(-?\$[\d]+\.[\d]{2})\s+(Card|Cash|Checking|Savings)(?:\s+(\d{4}|xxxx|----))?$'
     if ($Stem -match $pattern) {
         $date = $null
         try {
@@ -556,9 +556,11 @@ function Sync-Month {
         $flag = ""
         if (-not $r.ParseOK) {
             $flag = "Could not parse filename"
-        } elseif ($r.Account -eq "0000") {
-            $flag = "Unknown account number"
-        } elseif ($r.Account -ne "" -and $r.Account -ne "xxxx" -and $ValidAccounts.Count -gt 0 -and $ValidAccounts -notcontains $r.Account) {
+        } elseif ($r.Account -eq "xxxx") {
+            $flag = "Account obfuscated"
+        } elseif ($r.Account -eq "----") {
+            $flag = "Account unknown"
+        } elseif ($r.Account -ne "" -and $ValidAccounts.Count -gt 0 -and $ValidAccounts -notcontains $r.Account) {
             $flag = "Account not in Accounts.xlsx"
         }
         if ($flag -ne "") {
@@ -614,8 +616,9 @@ function Sync-Month {
     $sumRow    = $dataEnd + 2
     $flagCount = ($receipts | Where-Object {
         -not $_.ParseOK -or
-        $_.Account -eq "0000" -or
-        ($_.Account -ne "" -and $_.Account -ne "xxxx" -and $ValidAccounts.Count -gt 0 -and $ValidAccounts -notcontains $_.Account)
+        $_.Account -eq "xxxx" -or
+        $_.Account -eq "----" -or
+        ($_.Account -ne "" -and $ValidAccounts.Count -gt 0 -and $ValidAccounts -notcontains $_.Account)
     }).Count
 
     $amtColLetter = [char](64 + $COL_AMOUNT)

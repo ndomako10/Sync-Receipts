@@ -130,6 +130,26 @@ Describe 'Parse-Receipt' {
             $r.Account | Should -Be 'xxxx'
         }
 
+        It 'accepts Card with xxxx redacted account' {
+            $r = Parse-Receipt -Stem '260301 Amazon -$34.99 Card xxxx'
+            $r.OK      | Should -Be $true
+            $r.Method  | Should -Be 'Card'
+            $r.Account | Should -Be 'xxxx'
+        }
+
+        It 'accepts Card with ---- unknown account' {
+            $r = Parse-Receipt -Stem '260301 Costco -$67.50 Card ----'
+            $r.OK      | Should -Be $true
+            $r.Method  | Should -Be 'Card'
+            $r.Account | Should -Be '----'
+        }
+
+        It 'accepts 0000 as a regular account number' {
+            $r = Parse-Receipt -Stem '260301 Shop -$5.00 Card 0000'
+            $r.OK      | Should -Be $true
+            $r.Account | Should -Be '0000'
+        }
+
         It 'accepts Card with no account' {
             $r = Parse-Receipt -Stem '260301 Amazon -$10.00 Card'
             $r.OK      | Should -Be $true

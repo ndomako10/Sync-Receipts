@@ -15,11 +15,23 @@ Receipt files are named with embedded metadata:
 YYMMDD Vendor $Amount Method [Account].ext
 ```
 
+The `Account` field is the last 4 digits of the card or account number. Two special tokens are also accepted:
+
+| Token | Meaning |
+|-------|---------|
+| `xxxx` | Last 4 is known but intentionally omitted for privacy |
+| `----` | Last 4 is unknown (e.g. receipt did not print it) |
+
+Cash receipts carry no account number.
+
 Examples:
 ```
 260316 Sunoco $5.27 Card 9080.pdf
 260313 Walmart -$58.22 Card 3232.pdf
 260301 Landlord -$1200.00 Checking 4455.pdf
+260310 CVS -$12.00 Cash.pdf
+260315 Amazon -$34.99 Card xxxx.pdf
+260320 Costco -$67.50 Card ----.pdf
 ```
 
 Running a `.bat` launcher triggers the PowerShell script, which parses every receipt in the target month folder and writes a formatted table into a per-year workbook (e.g. `2026.xlsx`) -- one sheet per month (e.g. `2603` for March 2026).
@@ -100,13 +112,13 @@ A dedicated Excel workbook at `RECEIPTS_ROOT\Accounts.xlsx`. Copy from `Accounts
 | A | Last 4 | 4-digit account identifier used by the script |
 | B | Holder | Account owner |
 | C | Institution | Bank, credit union, or fintech (e.g. MFCU, Chase, Apple Pay) |
-| D | Network | Visa, Mastercard, Amex, Discover -- **blank for bank accounts, EBT, and Cash** |
-| E | Type | `Credit`, `Debit`, `Checking`, `Savings`, `EBT`, or `Cash` |
+| D | Network | Visa, Mastercard, Amex, Discover -- **blank for bank accounts and EBT** |
+| E | Type | `Credit`, `Debit`, `Checking`, `Savings`, or `EBT` |
 
 **Notes:**
 - Bank accounts (Checking/Savings ACH): leave Network blank; set Type to `Checking` or `Savings`
 - The same Last 4 may appear on multiple rows (e.g. a bank account number shared across Checking and Savings)
-- Cash: use `0000` as Last 4, leave Institution and Network blank, set Type to `Cash`
+- Cash: no entry needed in `Accounts.xlsx` -- Cash receipts carry no account number in the filename
 - EBT: leave Network blank, set Type to `EBT`
 
 If `Accounts.xlsx` is absent, the script falls back to the Account sheet in the year workbook with a deprecation warning. If neither exists, account validation is skipped.
