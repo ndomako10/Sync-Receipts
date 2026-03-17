@@ -137,6 +137,32 @@ function Get-Categories {
     }
 }
 
+function Read-PreservedCategoryValues {
+    param([array]$SheetData)
+    $preserved = @{}
+    if ($SheetData.Count -lt 2) { return $preserved }
+    $headers = $SheetData[0]
+    $colFN = $null; $colCat = $null; $colSub = $null
+    for ($c = 0; $c -lt $headers.Count; $c++) {
+        switch ($headers[$c]) {
+            "File Name"   { $colFN  = $c }
+            "Category"    { $colCat = $c }
+            "Subcategory" { $colSub = $c }
+        }
+    }
+    if ($null -eq $colFN -or ($null -eq $colCat -and $null -eq $colSub)) { return $preserved }
+    for ($r = 1; $r -lt $SheetData.Count; $r++) {
+        $row = $SheetData[$r]
+        $fn  = if ($colFN  -lt $row.Count) { "$($row[$colFN])".Trim()  } else { "" }
+        $cat = if ($null -ne $colCat -and $colCat -lt $row.Count) { "$($row[$colCat])".Trim() } else { "" }
+        $sub = if ($null -ne $colSub -and $colSub -lt $row.Count) { "$($row[$colSub])".Trim() } else { "" }
+        if ($fn -ne "" -and ($cat -ne "" -or $sub -ne "")) {
+            $preserved[$fn] = @{ Category = $cat; Subcategory = $sub }
+        }
+    }
+    return $preserved
+}
+
 function Sync-CategorySheet {
     [CmdletBinding(SupportsShouldProcess)]
     param(
@@ -449,6 +475,31 @@ function Sync-Month {
     $COL_FLAG        = 9
     $NUM_COLS        = 9
 
+    # Preserve existing Category/Subcategory values keyed by filename.
+    # Raw cell values are extracted into a plain 2D array so the logic is
+    # handled by Read-PreservedCategoryValues (testable without COM).
+    $preserved = @{}
+    try {
+        $existingRows = $sheet.UsedRange.Rows.Count
+        $existingCols = $sheet.UsedRange.Columns.Count
+        if ($existingRows -gt 1 -and $existingCols -ge 1) {
+            $sheetData = @()
+            for ($r = 1; $r -le $existingRows; $r++) {
+                $rowData = @()
+                for ($c = 1; $c -le $existingCols; $c++) {
+                    $rowData += "$($sheet.Cells.Item($r, $c).Value2)".Trim()
+                }
+                $sheetData += ,$rowData
+            }
+            $preserved = Read-PreservedCategoryValues -SheetData $sheetData
+            if ($preserved.Count -gt 0) {
+                Write-Host "  Sheet    : Preserved $($preserved.Count) Category/Subcategory value(s)"
+            }
+        }
+    } catch {
+        Write-Host "  Warning  : Could not read existing Category/Subcategory data: $_" -ForegroundColor Yellow
+    }
+
     if ($sheet.ListObjects.Count -gt 0) {
         try {
             $sheet.ListObjects.Item(1).Unlist()
@@ -512,6 +563,16 @@ function Sync-Month {
                 $sheet.Cells.Item($row, $COL_FLAG).Value2 = $flag
             } catch {
                 Write-Host "  Warning  : Could not write flag for row ${row}: $_" -ForegroundColor Yellow
+            }
+        }
+
+        if ($preserved.ContainsKey($r.FileName)) {
+            $saved = $preserved[$r.FileName]
+            try {
+                if ($saved.Category    -ne "") { $sheet.Cells.Item($row, $COL_CATEGORY).Value2    = $saved.Category }
+                if ($saved.Subcategory -ne "") { $sheet.Cells.Item($row, $COL_SUBCATEGORY).Value2 = $saved.Subcategory }
+            } catch {
+                Write-Host "  Warning  : Could not restore Category/Subcategory for '$($r.FileName)': $_" -ForegroundColor Yellow
             }
         }
 
