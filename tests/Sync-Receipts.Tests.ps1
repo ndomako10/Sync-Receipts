@@ -289,5 +289,36 @@ Describe 'Set-SubcategoryValidationXml' {
             $results = @([PSCustomObject]@{ SheetName = '2603'; Result = $null })
             { Set-SubcategoryValidationXml -WorkbookPath $p -SyncResults $results } | Should -Not -Throw
         }
+
+        It 'inserts dataValidations before <hyperlinks> when present' {
+            $sheetXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+                '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"' +
+                ' xmlns:xr="http://schemas.microsoft.com/office/spreadsheetml/2014/revision">' +
+                '<sheetData/>' +
+                '<hyperlinks><hyperlink ref="A1"/></hyperlinks>' +
+                '<tableParts count="1"><tablePart r:id="rId1"/></tableParts>' +
+                '</worksheet>'
+            $p = Join-Path $TestDrive 'hyperlinks-order.xlsx'
+            New-MinimalXlsx -Path $p -SheetName '2603' -SheetXml $sheetXml
+            $results = @([PSCustomObject]@{ SheetName = '2603'; Result = [PSCustomObject]@{ DataEndRow = 5 } })
+            Set-SubcategoryValidationXml -WorkbookPath $p -SyncResults $results
+            $out = Get-XlsxEntry -Path $p -Entry 'xl/worksheets/sheet1.xml'
+            $out.IndexOf('<dataValidations') | Should -BeLessThan ($out.IndexOf('<hyperlinks'))
+        }
+
+        It 'inserts dataValidations before <tableParts> when no <hyperlinks> present' {
+            $sheetXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+                '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"' +
+                ' xmlns:xr="http://schemas.microsoft.com/office/spreadsheetml/2014/revision">' +
+                '<sheetData/>' +
+                '<tableParts count="1"><tablePart r:id="rId1"/></tableParts>' +
+                '</worksheet>'
+            $p = Join-Path $TestDrive 'tableparts-order.xlsx'
+            New-MinimalXlsx -Path $p -SheetName '2603' -SheetXml $sheetXml
+            $results = @([PSCustomObject]@{ SheetName = '2603'; Result = [PSCustomObject]@{ DataEndRow = 5 } })
+            Set-SubcategoryValidationXml -WorkbookPath $p -SyncResults $results
+            $out = Get-XlsxEntry -Path $p -Entry 'xl/worksheets/sheet1.xml'
+            $out.IndexOf('<dataValidations') | Should -BeLessThan ($out.IndexOf('<tableParts'))
+        }
     }
 }

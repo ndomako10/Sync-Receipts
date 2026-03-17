@@ -87,7 +87,7 @@
             "command": "cmd",
             "args": [
                 "/c",
-                "call \"${workspaceFolder}\\config.bat\" && powershell -NoProfile -ExecutionPolicy Bypass -NonInteractive -File \"${workspaceFolder}\\Sync-Receipts.ps1\" -ReceiptsRoot \"%RECEIPTS_ROOT%\" -WorkbookPath \"${workspaceFolder}\\tests\\Receipts (test).xlsx\""
+                "call \"${workspaceFolder}\\config.bat\" && powershell -NoProfile -ExecutionPolicy Bypass -NonInteractive -File \"${workspaceFolder}\\Sync-Receipts.ps1\" -ReceiptsRoot \"%RECEIPTS_ROOT_LOCAL%\" -WorkbookPath \"${workspaceFolder}\\tests\\Receipts (test).xlsx\""
             ],
             "group": "build",
             "presentation": {
