@@ -55,7 +55,7 @@ Script files (e.g. C:\Scripts\Sync-Receipts\):
 
 RECEIPTS_ROOT (e.g. \\Server\Share\Receipts\):
     Receipts.xlsx
-    Accounts.xlsx            <- account lookup table (Acct #, Holder, Bank, Type, Company)
+    Accounts.xlsx            <- account lookup table (Last 4, Holder, Institution, Network, Type)
     2026\
         2603 - March\
             260301 Vendor $10.00 Card 1234.pdf
@@ -96,9 +96,15 @@ A dedicated Excel workbook at `RECEIPTS_ROOT\Accounts.xlsx`. Copy from `Accounts
 |--------|--------|-------|
 | A | Last 4 | 4-digit account identifier used by the script |
 | B | Holder | Account owner |
-| C | Institution | Bank, credit union, or fintech |
-| D | Network | Visa, Mastercard, Amex, Discover (blank for non-card) |
-| E | Type | Credit, Debit, Checking, Savings, Cash |
+| C | Institution | Bank, credit union, or fintech (e.g. MFCU, Chase, Apple Pay) |
+| D | Network | Visa, Mastercard, Amex, Discover -- **blank for bank accounts, EBT, and Cash** |
+| E | Type | `Credit`, `Debit`, `Checking`, `Savings`, `EBT`, or `Cash` |
+
+**Notes:**
+- Bank accounts (Checking/Savings ACH): leave Network blank; set Type to `Checking` or `Savings`
+- The same Last 4 may appear on multiple rows (e.g. a bank account number shared across Checking and Savings)
+- Cash: use `0000` as Last 4, leave Institution and Network blank, set Type to `Cash`
+- EBT: leave Network blank, set Type to `EBT`
 
 If `Accounts.xlsx` is absent, the script falls back to the Account sheet in `Receipts.xlsx` with a deprecation warning. If neither exists, account validation is skipped.
 
