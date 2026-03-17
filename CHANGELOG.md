@@ -10,6 +10,25 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.5.0] - 2026-03-17
+
+### Added
+- Per-year workbooks: each year now gets its own `{year}.xlsx` (e.g. `2026.xlsx`)
+  stored directly in `RECEIPTS_ROOT`, instead of a single shared `Receipts.xlsx`
+- New workbooks are created automatically on first sync for a given year
+
+### Changed
+- MAIN block refactored to group months by year; workbook open/save/close now
+  happens inside a per-year loop rather than once for the entire run
+- `-WorkbookPath` override still supported for testing; bypasses per-year path
+- README Setup and Folder Structure updated to reflect new workbook layout
+- Script version bumped to v0.5.0
+
+### Removed
+- `Receipts.xlsx` lookup fallback logic (no longer needed)
+
+---
+
 ## [0.4.0] - 2026-03-17
 
 ### Added

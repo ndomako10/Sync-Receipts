@@ -1,6 +1,7 @@
-# Sync-Receipts.ps1  v0.4.0
+# Sync-Receipts.ps1  v0.5.0
 #
-# Syncs receipt filenames from a month folder into a table in a pre-existing Excel workbook.
+# Syncs receipt filenames from a month folder into a table in a per-year Excel workbook.
+# Each year gets its own workbook: 2026.xlsx, 2025.xlsx, etc., stored in ReceiptsRoot.
 # The sheet is named in YYMM format (e.g. "2603" for March 2026).
 # The table stays in sync with folder contents - rows are added or removed to match.
 # Filenames that cannot be parsed are added with blank fields and flagged.
@@ -17,11 +18,11 @@
 # RECEIPTS_ROOT from config.bat and pass it as -ReceiptsRoot.
 #
 # Parameters:
-#   -ReceiptsRoot : Path to the folder containing year subfolders (and normally Receipts.xlsx).
+#   -ReceiptsRoot : Path to the folder containing year subfolders and per-year workbooks.
 #                   Must be provided explicitly; the script's own folder is not the data root.
 #   -YearMonth    : YYMM to sync (e.g. "2603"). Defaults to current month.
 #   -WorkbookPath : Full path to the .xlsx workbook to write into. Overrides the default
-#                   Receipts.xlsx lookup in ReceiptsRoot. Useful for testing.
+#                   per-year workbook path ({year}.xlsx in ReceiptsRoot). Useful for testing.
 #   -All          : Sync every month folder found under every year folder.
 #   -KillExcel    : Kill any running EXCEL.EXE processes before starting. Use when a
 #                   previous run crashed and left Excel holding the file lock.
@@ -671,40 +672,27 @@ if (-not (Test-Path $ReceiptsRoot)) {
     exit 1
 }
 
-# If -WorkbookPath was not provided, locate Receipts.xlsx in ReceiptsRoot.
-# Prefer Receipts.xlsx exactly. Fall back to the first .xlsx only if it is not found,
-# so that backup copies (e.g. "Receipts - Copy.xlsx") are never targeted by accident.
-if ($WorkbookPath -eq "") {
-    $workbookFile = Get-ChildItem -Path $ReceiptsRoot -Filter "Receipts.xlsx" -File | Select-Object -First 1
-    if (-not $workbookFile) {
-        Write-Host "Warning  : Receipts.xlsx not found, falling back to first .xlsx in folder" -ForegroundColor Yellow
-        $workbookFile = Get-ChildItem -Path $ReceiptsRoot -Filter "*.xlsx" -File |
-                        Where-Object { $_.Name -notmatch "copy|backup" } |
-                        Select-Object -First 1
-    }
-    if (-not $workbookFile) {
-        Write-Error "No suitable .xlsx workbook found in '$ReceiptsRoot'"
-        exit 1
-    }
-    $WorkbookPath = $workbookFile.FullName
-}
-if (-not (Test-Path $WorkbookPath)) {
-    Write-Error "Workbook not found: '$WorkbookPath'"
-    exit 1
-}
-Write-Host "Workbook : $WorkbookPath"
-
-$monthsToSync = @()
+# Gather months grouped by year.
+# Each year maps to an array of {SheetName, FolderPath} objects.
+$yearGroups = @{}
 if ($All) {
-    Get-ChildItem -Path $ReceiptsRoot -Directory | Where-Object { $_.Name -match '^\d{4}$' } | ForEach-Object {
-        Get-ChildItem -Path $_.FullName -Directory | Where-Object { $_.Name -match '^\d{4}' } | ForEach-Object {
-            $monthsToSync += [PSCustomObject]@{
-                SheetName  = $_.Name.Substring(0, 4)
-                FolderPath = $_.FullName
-            }
+    Get-ChildItem -Path $ReceiptsRoot -Directory |
+        Where-Object { $_.Name -match '^\d{4}$' } |
+        ForEach-Object {
+            $yearDir = $_
+            $yearKey = $yearDir.Name
+            Get-ChildItem -Path $yearDir.FullName -Directory |
+                Where-Object { $_.Name -match '^\d{4}' } |
+                ForEach-Object {
+                    if (-not $yearGroups.ContainsKey($yearKey)) { $yearGroups[$yearKey] = @() }
+                    $yearGroups[$yearKey] += [PSCustomObject]@{
+                        SheetName  = $_.Name.Substring(0, 4)
+                        FolderPath = $_.FullName
+                    }
+                }
         }
-    }
-    Write-Host "Found    : $($monthsToSync.Count) month folder(s) to sync"
+    $totalMonths = ($yearGroups.Values | ForEach-Object { $_.Count } | Measure-Object -Sum).Sum
+    Write-Host "Found    : $($yearGroups.Count) year(s), $totalMonths month folder(s) to sync"
 } else {
     $year        = "20" + $YearMonth.Substring(0, 2)
     $monthFolder = Get-ChildItem -Path (Join-Path $ReceiptsRoot $year) -Directory |
@@ -714,15 +702,10 @@ if ($All) {
         Write-Error "Could not find a folder matching '$YearMonth*' under '$ReceiptsRoot\$year'"
         exit 1
     }
-    $monthsToSync += [PSCustomObject]@{
-        SheetName  = $YearMonth
-        FolderPath = $monthFolder.FullName
-    }
+    $yearGroups[$year] = @([PSCustomObject]@{ SheetName = $YearMonth; FolderPath = $monthFolder.FullName })
 }
 
-# Kill any lingering EXCEL.EXE processes before starting, if requested or if the
-# file is locked. -KillExcel forces this; otherwise it is offered as a recovery step.
-$xlsxName = [System.IO.Path]::GetFileName($WorkbookPath)
+# Kill any lingering EXCEL.EXE processes before starting, if requested.
 if ($KillExcel) {
     $procs = Get-Process -Name "EXCEL" -ErrorAction SilentlyContinue
     if ($procs) {
@@ -739,115 +722,149 @@ $excel               = New-Object -ComObject Excel.Application
 $excel.Visible       = $false
 $excel.DisplayAlerts = $false
 
-try {
-    $stream = [System.IO.File]::Open($WorkbookPath, 'Open', 'Read', 'None')
-    $stream.Close()
-} catch {
-    $procs = Get-Process -Name "EXCEL" -ErrorAction SilentlyContinue
-    if ($procs) {
-        Write-Host "Error    : '$xlsxName' is locked by $($procs.Count) EXCEL.EXE process(es):" -ForegroundColor Red
-        $procs | ForEach-Object { Write-Host "           PID $($_.Id)  Started $($_.StartTime)" -ForegroundColor Red }
-        Write-Host "           Re-run with -KillExcel to terminate them automatically." -ForegroundColor Yellow
+foreach ($yearEntry in ($yearGroups.GetEnumerator() | Sort-Object Key)) {
+    $year   = $yearEntry.Key
+    $months = $yearEntry.Value
+
+    # Resolve workbook path for this year.
+    # -WorkbookPath overrides the derived path (used for testing).
+    if ($WorkbookPath -ne "") {
+        $wbPath = $WorkbookPath
     } else {
-        Write-Host "Error    : '$xlsxName' is locked but no EXCEL.EXE found." -ForegroundColor Red
-        Write-Host "           Another process or the OS may be holding the file." -ForegroundColor Yellow
+        $wbPath = Join-Path $ReceiptsRoot "$year.xlsx"
     }
-    $excel.Quit()
-    exit 1
-}
-
-try {
-    $workbook = $excel.Workbooks.Open($WorkbookPath)
-} catch {
-    $errMsg = $_.Exception.Message
-    Write-Host "Error    : Excel COM threw an exception opening the workbook." -ForegroundColor Red
-    Write-Host "           Path   : $WorkbookPath" -ForegroundColor Red
-    Write-Host "           Detail : $errMsg" -ForegroundColor Red
+    $xlsxName = [System.IO.Path]::GetFileName($wbPath)
     Write-Host ""
-    Write-Host "Likely causes:" -ForegroundColor Yellow
-    Write-Host "  1. The file is corrupted. Restore Receipts.xlsx from a backup, then re-run." -ForegroundColor Yellow
-    Write-Host "     Restore Receipts.xlsx from a backup, then re-run." -ForegroundColor Yellow
-    Write-Host "  2. Excel blocked the file because it is on a network share." -ForegroundColor Yellow
-    Write-Host "     Try opening it manually in Excel first and click Enable Editing." -ForegroundColor Yellow
-    Write-Host "  3. A previous Excel process is still running invisibly." -ForegroundColor Yellow
-    Write-Host "     Re-run with -KillExcel to terminate it automatically, or end EXCEL.EXE in Task Manager." -ForegroundColor Yellow
-    $excel.Quit()
-    exit 1
-}
-if (-not $workbook) {
-    Write-Error "Failed to open workbook (Open returned null): $WorkbookPath"
-    $excel.Quit()
-    exit 1
-}
+    Write-Host "Workbook : $wbPath"
 
-Write-Host "Debug    : Workbook opened successfully"
-Write-Host "Debug    : Calling Get-ValidAccounts"
-$validAccounts = @()
-try {
-    $validAccounts = Get-ValidAccounts -ReceiptsRoot $ReceiptsRoot -Excel $excel -Workbook $workbook
-} catch {
-    Write-Host "  Warning  : Error in Get-ValidAccounts: $_" -ForegroundColor Yellow
-}
-
-Write-Host "Debug    : Calling Get-Categories"
-$categories = $null
-try {
-    $categories = Get-Categories
-} catch {
-    Write-Host "  Warning  : Error in Get-Categories: $_" -ForegroundColor Yellow
-}
-
-if ($categories) {
-    $catSheet = $null
-    try {
-        $catSheet = Sync-CategorySheet -Workbook $workbook -Categories $categories
-    } catch {
-        Write-Host "  Warning  : Error in Sync-CategorySheet: $_" -ForegroundColor Yellow
-    }
-    if ($catSheet) {
+    # Check for file lock before attempting to open an existing workbook.
+    if (Test-Path $wbPath) {
         try {
-            Set-CategoryNamedRanges -Workbook $workbook -CatSheet $catSheet -Categories $categories
-            Write-Host "Categories: $($categories.Count) category/subcategory group(s) loaded"
+            $stream = [System.IO.File]::Open($wbPath, 'Open', 'Read', 'None')
+            $stream.Close()
         } catch {
-            Write-Host "  Warning  : Error in Set-CategoryNamedRanges: $_" -ForegroundColor Yellow
+            $procs = Get-Process -Name "EXCEL" -ErrorAction SilentlyContinue
+            if ($procs) {
+                Write-Host "Error    : '$xlsxName' is locked by $($procs.Count) EXCEL.EXE process(es):" -ForegroundColor Red
+                $procs | ForEach-Object { Write-Host "           PID $($_.Id)  Started $($_.StartTime)" -ForegroundColor Red }
+                Write-Host "           Re-run with -KillExcel to terminate them automatically." -ForegroundColor Yellow
+            } else {
+                Write-Host "Error    : '$xlsxName' is locked but no EXCEL.EXE found." -ForegroundColor Red
+                Write-Host "           Another process or the OS may be holding the file." -ForegroundColor Yellow
+            }
+            $excel.Quit()
+            exit 1
         }
     }
-}
-Write-Host "Accounts : $($validAccounts.Count) account(s) loaded"
 
-$syncResults = @()
-foreach ($m in $monthsToSync) {
-    Write-Host ""
-    Write-Host "Syncing  : $($m.FolderPath)"
-    try {
-        $result = Sync-Month -FolderPath $m.FolderPath -SheetName $m.SheetName -Workbook $workbook -ValidAccounts $validAccounts
-        $syncResults += [PSCustomObject]@{ SheetName = $m.SheetName; Result = $result }
-    } catch {
-        Write-Host "  Error    : Unhandled exception syncing '$($m.SheetName)': $_" -ForegroundColor Red
-        Write-Host "             Skipping this month and continuing." -ForegroundColor Yellow
-        $syncResults += [PSCustomObject]@{ SheetName = $m.SheetName; Result = $null }
+    # Open the existing workbook, or create a new one if it does not exist yet.
+    $workbook = $null
+    if (Test-Path $wbPath) {
+        try {
+            $workbook = $excel.Workbooks.Open($wbPath)
+        } catch {
+            $errMsg = $_.Exception.Message
+            Write-Host "Error    : Excel COM threw an exception opening the workbook." -ForegroundColor Red
+            Write-Host "           Path   : $wbPath" -ForegroundColor Red
+            Write-Host "           Detail : $errMsg" -ForegroundColor Red
+            Write-Host ""
+            Write-Host "Likely causes:" -ForegroundColor Yellow
+            Write-Host "  1. The file is corrupted. Restore $xlsxName from a backup, then re-run." -ForegroundColor Yellow
+            Write-Host "  2. Excel blocked the file because it is on a network share." -ForegroundColor Yellow
+            Write-Host "     Try opening it manually in Excel first and click Enable Editing." -ForegroundColor Yellow
+            Write-Host "  3. A previous Excel process is still running invisibly." -ForegroundColor Yellow
+            Write-Host "     Re-run with -KillExcel to terminate it automatically, or end EXCEL.EXE in Task Manager." -ForegroundColor Yellow
+            $excel.Quit()
+            exit 1
+        }
+    } else {
+        Write-Host "Creating : $xlsxName (new workbook)"
+        try {
+            $workbook = $excel.Workbooks.Add()
+            $workbook.SaveAs($wbPath)
+        } catch {
+            $errMsg = $_.Exception.Message
+            Write-Host "Error    : Failed to create new workbook at '$wbPath': $errMsg" -ForegroundColor Red
+            $excel.Quit()
+            exit 1
+        }
     }
+    if (-not $workbook) {
+        Write-Error "Failed to open workbook (returned null): $wbPath"
+        $excel.Quit()
+        exit 1
+    }
+
+    Write-Host "Debug    : Workbook opened successfully"
+    Write-Host "Debug    : Calling Get-ValidAccounts"
+    $validAccounts = @()
+    try {
+        $validAccounts = Get-ValidAccounts -ReceiptsRoot $ReceiptsRoot -Excel $excel -Workbook $workbook
+    } catch {
+        Write-Host "  Warning  : Error in Get-ValidAccounts: $_" -ForegroundColor Yellow
+    }
+
+    Write-Host "Debug    : Calling Get-Categories"
+    $categories = $null
+    try {
+        $categories = Get-Categories
+    } catch {
+        Write-Host "  Warning  : Error in Get-Categories: $_" -ForegroundColor Yellow
+    }
+
+    if ($categories) {
+        $catSheet = $null
+        try {
+            $catSheet = Sync-CategorySheet -Workbook $workbook -Categories $categories
+        } catch {
+            Write-Host "  Warning  : Error in Sync-CategorySheet: $_" -ForegroundColor Yellow
+        }
+        if ($catSheet) {
+            try {
+                Set-CategoryNamedRanges -Workbook $workbook -CatSheet $catSheet -Categories $categories
+                Write-Host "Categories: $($categories.Count) category/subcategory group(s) loaded"
+            } catch {
+                Write-Host "  Warning  : Error in Set-CategoryNamedRanges: $_" -ForegroundColor Yellow
+            }
+        }
+    }
+    Write-Host "Accounts : $($validAccounts.Count) account(s) loaded"
+
+    $syncResults = @()
+    foreach ($m in $months) {
+        Write-Host ""
+        Write-Host "Syncing  : $($m.FolderPath)"
+        try {
+            $result = Sync-Month -FolderPath $m.FolderPath -SheetName $m.SheetName -Workbook $workbook -ValidAccounts $validAccounts
+            $syncResults += [PSCustomObject]@{ SheetName = $m.SheetName; Result = $result }
+        } catch {
+            Write-Host "  Error    : Unhandled exception syncing '$($m.SheetName)': $_" -ForegroundColor Red
+            Write-Host "             Skipping this month and continuing." -ForegroundColor Yellow
+            $syncResults += [PSCustomObject]@{ SheetName = $m.SheetName; Result = $null }
+        }
+    }
+
+    try {
+        $workbook.Save()
+        Write-Host "Workbook : Saved $xlsxName"
+    } catch {
+        Write-Host "Error    : Failed to save workbook: $_" -ForegroundColor Red
+    }
+    try {
+        $workbook.Close()
+    } catch {
+        Write-Host "Warning  : Exception closing workbook: $_" -ForegroundColor Yellow
+    }
+
+    Set-SubcategoryValidationXml -WorkbookPath $wbPath -SyncResults $syncResults
 }
 
-try {
-    $workbook.Save()
-    Write-Host "Workbook : Saved"
-} catch {
-    Write-Host "Error    : Failed to save workbook: $_" -ForegroundColor Red
-}
-try {
-    $workbook.Close()
-} catch {
-    Write-Host "Warning  : Exception closing workbook: $_" -ForegroundColor Yellow
-}
 try {
     $excel.Quit()
     [System.Runtime.Interopservices.Marshal]::ReleaseComObject($excel) | Out-Null
 } catch {
     Write-Host "Warning  : Exception quitting Excel: $_" -ForegroundColor Yellow
 }
-
-Set-SubcategoryValidationXml -WorkbookPath $WorkbookPath -SyncResults $syncResults
 
 Write-Host ""
 Write-Host "Done!"

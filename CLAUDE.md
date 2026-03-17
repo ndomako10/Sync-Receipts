@@ -33,7 +33,7 @@ type(scope): short description
 - `MAJOR` -- breaking changes (file format changes, removed parameters, renamed files)
 - `MINOR` -- new features
 - `PATCH` -- bug fixes, docs, tests
-- Version is tracked in the `Sync-Receipts.ps1` header and git tags (`v0.4.0`)
+- Version is tracked in the `Sync-Receipts.ps1` header and git tags (`v0.5.0`)
 - `CHANGELOG.md` is updated manually when tagging a release
 
 ## Architecture
@@ -48,13 +48,14 @@ Run-SyncAllReceipts.bat   <- launcher: calls config.bat, syncs all months (-All)
 Deploy-SyncReceipts.bat   <- machine-specific deployment helper (gitignored)
 ```
 
-The script files live in their own directory. The data (workbook and receipt folders) lives at `RECEIPTS_ROOT`, which is set in `config.bat`. `Categories.json` lives in the script directory and is read from `$PSScriptRoot`. The two locations are completely independent -- `-ReceiptsRoot` must always be provided explicitly; the script's own folder has no special meaning at runtime.
+The script files live in their own directory. The data (per-year workbooks and receipt folders) lives at `RECEIPTS_ROOT`, which is set in `config.bat`. Each year gets its own workbook (`2026.xlsx`, `2025.xlsx`, etc.) created automatically on first sync. `Categories.json` lives in the script directory and is read from `$PSScriptRoot`. The two locations are completely independent -- `-ReceiptsRoot` must always be provided explicitly; the script's own folder has no special meaning at runtime.
 
 ### Key functions in Sync-Receipts.ps1
 
 | Function | Purpose |
 |----------|---------|
 | `Parse-Receipt` | Regex-parses a receipt filename stem into date, vendor, amount, method, account |
+| `Read-PreservedCategoryValues` | Pure helper: extracts Category/Subcategory keyed by File Name from a 2D string array (no COM dependency; unit-testable) |
 | `Get-ValidAccounts` | Reads 4-digit account numbers from `Accounts.xlsx` in `ReceiptsRoot`; falls back to Account sheet |
 | `Get-Categories` | Reads category/subcategory data from `Categories.json` in `$PSScriptRoot` |
 | `Sync-CategorySheet` | Writes category data from hashtable into the Category sheet (creates if absent, overwrites if present, hides the sheet) |

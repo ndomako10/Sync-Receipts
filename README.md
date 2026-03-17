@@ -34,10 +34,10 @@ Running a `.bat` launcher triggers the PowerShell script, which parses every rec
 
 1. Copy `config.template.bat` to `config.bat`
 2. Edit `config.bat` and set:
-   - `RECEIPTS_ROOT` -- path to the folder containing `Receipts.xlsx` and your year/month receipt subfolders
+   - `RECEIPTS_ROOT` -- path to the folder containing your year/month receipt subfolders
 3. Copy `Accounts.template.xlsx` to `RECEIPTS_ROOT\Accounts.xlsx`, replace the example rows with your own accounts
-4. Make sure `Receipts.xlsx` exists in `RECEIPTS_ROOT` (see [Workbook Structure](#workbook-structure))
-5. Optionally edit `Categories.json` in the script folder to customise your categories
+4. Optionally edit `Categories.json` in the script folder to customise your categories
+5. Run the script -- per-year workbooks (e.g. `2026.xlsx`) are created automatically in `RECEIPTS_ROOT`
 
 ## Folder Structure
 
@@ -54,7 +54,8 @@ Script files (e.g. C:\Scripts\Sync-Receipts\):
     Run-SyncAllReceipts.bat
 
 RECEIPTS_ROOT (e.g. \\Server\Share\Receipts\):
-    Receipts.xlsx
+    2026.xlsx                <- created automatically on first sync for that year
+    2025.xlsx
     Accounts.xlsx            <- account lookup table (Last 4, Holder, Institution, Network, Type)
     2026\
         2603 - March\
@@ -106,7 +107,7 @@ A dedicated Excel workbook at `RECEIPTS_ROOT\Accounts.xlsx`. Copy from `Accounts
 - Cash: use `0000` as Last 4, leave Institution and Network blank, set Type to `Cash`
 - EBT: leave Network blank, set Type to `EBT`
 
-If `Accounts.xlsx` is absent, the script falls back to the Account sheet in `Receipts.xlsx` with a deprecation warning. If neither exists, account validation is skipped.
+If `Accounts.xlsx` is absent, the script falls back to the Account sheet in the year workbook with a deprecation warning. If neither exists, account validation is skipped.
 
 ### Category Sheet
 No longer used by the script. Category and subcategory data is now read from `Categories.json` in the script folder. The sheet can be kept for reference or removed.
