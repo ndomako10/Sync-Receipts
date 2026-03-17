@@ -4,7 +4,7 @@
 # The sheet is named in YYMM format (e.g. "2603" for March 2026).
 # The table stays in sync with folder contents - rows are added or removed to match.
 # Filenames that cannot be parsed are added with blank fields and flagged.
-# Account numbers are validated against the Account sheet.
+# Account numbers are validated against Accounts.xlsx in ReceiptsRoot.
 # Category and Subcategory dropdowns are populated from the Category sheet.
 #
 # Usage:
@@ -59,26 +59,59 @@ function Parse-Receipt {
 }
 
 function Get-ValidAccounts {
-    param([object]$Workbook)
+    param(
+        [string]$ReceiptsRoot,
+        [object]$Excel    = $null,
+        [object]$Workbook = $null
+    )
     Write-Host "Debug    : Get-ValidAccounts start"
     $accounts = @()
-    $accSheet = $null
-    try { $accSheet = $Workbook.Sheets.Item("Account") } catch {}
-    if (-not $accSheet) {
-        Write-Host "  Warning  : Account sheet not found - account validation skipped" -ForegroundColor Yellow
+    $xlsxPath = Join-Path $ReceiptsRoot "Accounts.xlsx"
+    if (Test-Path $xlsxPath) {
+        Write-Host "Debug    : Accounts.xlsx found"
+        $accWorkbook = $null
+        try {
+            $accWorkbook = $Excel.Workbooks.Open($xlsxPath, 0, $true)
+            $accSheet = $accWorkbook.Sheets.Item(1)
+            $row = 2
+            while ($true) {
+                $val = $null
+                try { $val = $accSheet.Cells.Item($row, 1).Value2 } catch { break }
+                if ($null -eq $val -or "$val" -eq "") { break }
+                $acct = $val.ToString().Trim().PadLeft(4, "0")
+                if ($accounts -notcontains $acct) { $accounts += $acct }
+                $row++
+            }
+        } catch {
+            Write-Host "  Warning  : Failed to read Accounts.xlsx: $_" -ForegroundColor Yellow
+        } finally {
+            if ($accWorkbook) { try { $accWorkbook.Close($false) } catch {} }
+        }
+        Write-Host "Debug    : Get-ValidAccounts end - $($accounts.Count) account(s)"
         return $accounts
     }
-    Write-Host "Debug    : Account sheet found"
-    $row = 2
-    while ($true) {
-        $val = $null
-        try { $val = $accSheet.Cells.Item($row, 1).Value2 } catch { break }
-        if ($null -eq $val -or "$val" -eq "") { break }
-        $acct = $val.ToString().Trim().PadLeft(4, "0")
-        if ($accounts -notcontains $acct) { $accounts += $acct }
-        $row++
+    if ($Workbook) {
+        Write-Host "  Warning  : Accounts.xlsx not found in '${ReceiptsRoot}' - falling back to Account sheet (deprecated)" -ForegroundColor Yellow
+        $accSheet = $null
+        try { $accSheet = $Workbook.Sheets.Item("Account") } catch {}
+        if (-not $accSheet) {
+            Write-Host "  Warning  : Account sheet not found - account validation skipped" -ForegroundColor Yellow
+            return $accounts
+        }
+        Write-Host "Debug    : Account sheet found"
+        $row = 2
+        while ($true) {
+            $val = $null
+            try { $val = $accSheet.Cells.Item($row, 1).Value2 } catch { break }
+            if ($null -eq $val -or "$val" -eq "") { break }
+            $acct = $val.ToString().Trim().PadLeft(4, "0")
+            if ($accounts -notcontains $acct) { $accounts += $acct }
+            $row++
+        }
+        Write-Host "Debug    : Get-ValidAccounts end - $($accounts.Count) account(s)"
+    } else {
+        Write-Host "  Warning  : Accounts.xlsx not found in '${ReceiptsRoot}' - account validation skipped" -ForegroundColor Yellow
     }
-    Write-Host "Debug    : Get-ValidAccounts end - $($accounts.Count) account(s)"
     return $accounts
 }
 
@@ -422,7 +455,7 @@ function Sync-Month {
         } elseif ($r.Account -eq "0000") {
             $flag = "Unknown account number"
         } elseif ($r.Account -ne "" -and $r.Account -ne "xxxx" -and $ValidAccounts.Count -gt 0 -and $ValidAccounts -notcontains $r.Account) {
-            $flag = "Account not in Account sheet"
+            $flag = "Account not in Accounts.xlsx"
         }
         if ($flag -ne "") {
             try {
@@ -640,7 +673,7 @@ Write-Host "Debug    : Workbook opened successfully"
 Write-Host "Debug    : Calling Get-ValidAccounts"
 $validAccounts = @()
 try {
-    $validAccounts = Get-ValidAccounts -Workbook $workbook
+    $validAccounts = Get-ValidAccounts -ReceiptsRoot $ReceiptsRoot -Excel $excel -Workbook $workbook
 } catch {
     Write-Host "  Warning  : Error in Get-ValidAccounts: $_" -ForegroundColor Yellow
 }

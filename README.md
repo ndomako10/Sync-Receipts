@@ -48,6 +48,7 @@ Script files (e.g. C:\Scripts\Sync-Receipts\):
 
 RECEIPTS_ROOT (e.g. \\Server\Share\Receipts\):
     Receipts.xlsx
+    Accounts.xlsx            <- account lookup table (Acct #, Holder, Bank, Type, Company)
     2026\
         2603 - March\
             260301 Vendor $10.00 Card 1234.pdf
@@ -79,10 +80,13 @@ To force-close a crashed Excel instance holding the file locked, run the **Sync:
 ## Workbook Structure
 
 ### Account Sheet
-Column A, row 2 downward: 4-digit account numbers. Used to validate accounts parsed from filenames. If the sheet is missing, validation is skipped.
+No longer used by the script. Account data is now read from `Accounts.xlsx` in `RECEIPTS_ROOT`. The sheet can be kept for reference or removed.
+
+### Accounts.xlsx
+A dedicated Excel workbook at `RECEIPTS_ROOT\Accounts.xlsx`. Column A, row 2 downward: 4-digit account numbers used to validate accounts parsed from filenames. Additional columns (Account Holder, Bank, Card Type, Card Company) are optional and ignored by the script. If the file is absent, the script falls back to the Account sheet in `Receipts.xlsx` with a deprecation warning. If neither exists, account validation is skipped.
 
 ### Category Sheet
-No longer used by the script. Category and subcategory data is now read from `Categories.json` in `RECEIPTS_ROOT`. The sheet can be kept for reference or removed.
+No longer used by the script. Category and subcategory data is now read from `Categories.json` in the script folder. The sheet can be kept for reference or removed.
 
 ### Month Sheets (e.g. `2603`)
 Created or overwritten on each run. Contains a 9-column table:
