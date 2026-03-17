@@ -840,14 +840,6 @@ foreach ($yearEntry in ($yearGroups.GetEnumerator() | Sort-Object Key)) {
         Write-Host "Creating : $xlsxName (new workbook)"
         try {
             $workbook = $excel.Workbooks.Add()
-            # Remove default blank sheets (e.g. Sheet1) added by Excel on Workbooks.Add().
-            # DisplayAlerts is already false so no confirmation prompt is shown.
-            $sheetsToDelete = @()
-            foreach ($s in $workbook.Sheets) { $sheetsToDelete += $s }
-            foreach ($s in $sheetsToDelete) {
-                try { $s.Delete() } catch {}
-            }
-            Write-Host "Creating : Removed $($sheetsToDelete.Count) default sheet(s)"
             $workbook.SaveAs($wbPath)
         } catch {
             $errMsg = $_.Exception.Message
@@ -909,6 +901,24 @@ foreach ($yearEntry in ($yearGroups.GetEnumerator() | Sort-Object Key)) {
             Write-Host "             Skipping this month and continuing." -ForegroundColor Yellow
             $syncResults += [PSCustomObject]@{ SheetName = $m.SheetName; Result = $null }
         }
+    }
+
+    # Remove any default blank sheets (Sheet1, Sheet2, etc.) left by Workbooks.Add().
+    # This is done after sync so the workbook always has at least one real sheet,
+    # allowing Excel to delete the default ones without error.
+    try {
+        $defaultSheets = @()
+        foreach ($s in $workbook.Sheets) {
+            if ($s.Name -match '^Sheet\d+$') { $defaultSheets += $s }
+        }
+        foreach ($s in $defaultSheets) {
+            try { $s.Delete() } catch {}
+        }
+        if ($defaultSheets.Count -gt 0) {
+            Write-Host "Cleanup  : Removed $($defaultSheets.Count) default sheet(s)"
+        }
+    } catch {
+        Write-Host "  Warning  : Error removing default sheets: $_" -ForegroundColor Yellow
     }
 
     try {
