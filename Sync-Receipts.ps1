@@ -5,7 +5,7 @@
 # The table stays in sync with folder contents - rows are added or removed to match.
 # Filenames that cannot be parsed are added with blank fields and flagged.
 # Account numbers are validated against Accounts.xlsx in ReceiptsRoot.
-# Category and Subcategory dropdowns are populated from the Category sheet.
+# Category and Subcategory dropdowns are populated from Categories.json via a generated Category sheet.
 #
 # Usage:
 #   .\Sync-Receipts.ps1 -ReceiptsRoot "\\Server\Share\Receipts"
@@ -135,6 +135,56 @@ function Get-Categories {
         Write-Host "  Warning  : Failed to parse Categories.json: $_" -ForegroundColor Yellow
         return $null
     }
+}
+
+function Sync-CategorySheet {
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
+        [object]$Workbook,
+        [object]$Categories
+    )
+    Write-Host "Debug    : Sync-CategorySheet start"
+    $catSheet = $null
+    try { $catSheet = $Workbook.Sheets.Item("Category") } catch {}
+    if (-not $catSheet) {
+        try {
+            $catSheet = $Workbook.Sheets.Add(
+                [System.Reflection.Missing]::Value,
+                $Workbook.Sheets.Item($Workbook.Sheets.Count)
+            )
+            $catSheet.Name = "Category"
+            Write-Host "  Sheet    : Created 'Category' sheet"
+        } catch {
+            Write-Host "  Error    : Could not create Category sheet: $_" -ForegroundColor Red
+            return $null
+        }
+    } else {
+        try {
+            $catSheet.Cells.Clear()
+            Write-Host "  Sheet    : Cleared existing 'Category' sheet"
+        } catch {
+            Write-Host "  Warning  : Could not clear Category sheet: $_" -ForegroundColor Yellow
+        }
+    }
+    if ($PSCmdlet.ShouldProcess("Category sheet", "Sync")) {
+        $col = 1
+        foreach ($catName in $Categories.Keys) {
+            $catSheet.Cells.Item(1, $col).Value2 = $catName
+            $subcats = $Categories[$catName]
+            for ($r = 0; $r -lt $subcats.Count; $r++) {
+                $catSheet.Cells.Item($r + 2, $col).Value2 = $subcats[$r]
+            }
+            $col++
+        }
+        try {
+            $catSheet.Visible = 0
+            Write-Host "  Sheet    : 'Category' sheet hidden"
+        } catch {
+            Write-Host "  Warning  : Could not hide Category sheet (may be the only visible sheet): $_" -ForegroundColor Yellow
+        }
+        Write-Host "Debug    : Sync-CategorySheet end - $($Categories.Count) categories written"
+    }
+    return $catSheet
 }
 
 function Set-CategoryNamedRanges {
@@ -688,13 +738,17 @@ try {
 
 if ($categories) {
     $catSheet = $null
-    try { $catSheet = $workbook.Sheets.Item("Category") } catch {}
+    try {
+        $catSheet = Sync-CategorySheet -Workbook $workbook -Categories $categories
+    } catch {
+        Write-Host "  Warning  : Error in Sync-CategorySheet: $_" -ForegroundColor Yellow
+    }
     if ($catSheet) {
         try {
             Set-CategoryNamedRanges -Workbook $workbook -CatSheet $catSheet -Categories $categories
             Write-Host "Categories: $($categories.Count) category/subcategory group(s) loaded"
         } catch {
-            Write-Host "Warning  : Error in Set-CategoryNamedRanges: $_" -ForegroundColor Yellow
+            Write-Host "  Warning  : Error in Set-CategoryNamedRanges: $_" -ForegroundColor Yellow
         }
     }
 }

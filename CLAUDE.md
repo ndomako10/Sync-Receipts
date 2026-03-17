@@ -57,6 +57,7 @@ The script files live in their own directory. The data (workbook and receipt fol
 | `Parse-Receipt` | Regex-parses a receipt filename stem into date, vendor, amount, method, account |
 | `Get-ValidAccounts` | Reads 4-digit account numbers from `Accounts.xlsx` in `ReceiptsRoot`; falls back to Account sheet |
 | `Get-Categories` | Reads category/subcategory data from `Categories.json` in `$PSScriptRoot` |
+| `Sync-CategorySheet` | Writes category data from hashtable into the Category sheet (creates if absent, overwrites if present, hides the sheet) |
 | `Set-CategoryNamedRanges` | Creates named ranges in the workbook for Category/Subcategory dropdowns |
 | `Set-SubcategoryValidationXml` | Post-save XML patch: injects both dropdown validations and fixes zip headers |
 | `Sync-Month` | Main workhorse: creates/overwrites a month sheet and writes all receipt rows |
