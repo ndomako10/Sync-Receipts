@@ -12,10 +12,12 @@ A PowerShell automation tool that syncs receipt files into a formatted Excel wor
 Receipt files are named with embedded metadata:
 
 ```
-yyMMdd Vendor $Amount Method [Account].ext
+yyMMdd Vendor $Amount [Method [Account]].ext
 ```
 
 `yyMMdd` is a [.NET ParseExact format string](https://learn.microsoft.com/en-us/dotnet/standard/base-types/custom-date-and-time-format-strings): `yy` = 2-digit year, `MM` = month, `dd` = day.
+
+`Method` and `Account` are optional. If omitted, the row is written to the workbook with both fields blank and flagged `Method missing` so the user can fill them in.
 
 The `Account` field is the last 4 digits of the card or account number. Two special tokens are also accepted:
 
@@ -28,12 +30,13 @@ Cash receipts carry no account number.
 
 Examples:
 ```
-260316 Sunoco $5.27 Card 9080.pdf
-260313 Walmart -$58.22 Card 3232.pdf
-260301 Landlord -$1200.00 Checking 4455.pdf
-260310 CVS -$12.00 Cash.pdf
-260315 Amazon -$34.99 Card xxxx.pdf
-260320 Costco -$67.50 Card ----.pdf
+260301 Landlord $1200.00 Checking 4455.pdf
+260305 CVS $12.00 Cash.pdf
+260310 Sunoco $5.27 Card 9080.pdf
+260315 Amazon $34.99 Card xxxx.pdf
+260320 Costco $67.50 Card ----.pdf
+260325 Employer -$2500.00 Savings 7890.pdf
+260328 Vendor $5.00.pdf
 ```
 
 Running a `.bat` launcher triggers the PowerShell script, which parses every receipt in the target month folder and writes a formatted table into a per-year workbook (e.g. `2026.xlsx`) -- one sheet per month (e.g. `2603` for March 2026).
@@ -146,11 +149,11 @@ Created or overwritten on each run. Contains a 9-column table:
 | B | Date | Formatted `d-mmm` |
 | C | Vendor | Name of the merchant or payee |
 | D | Amount | Currency formatted; positive = expense, negative = income |
-| E | Method | `Card`, `Cash`, `Checking`, or `Savings` |
-| F | Account | 4-digit number, or `xxxx` (obfuscated) / `----` (unknown), text formatted |
+| E | Method | `Card`, `Cash`, `Checking`, `Savings`, or blank if omitted |
+| F | Account | 4-digit number, or `xxxx` (obfuscated) / `----` (unknown), text formatted; blank if Method omitted |
 | G | Category | Dropdown; list sourced from the hidden Category sheet (auto-populated) |
 | H | Subcategory | Dropdown filtered by selected Category via `INDIRECT` |
-| I | Flag | Parse errors: `Could not parse filename`, `Month out of range`, `Day out of range`, `Invalid date`; account flags: `Account obfuscated`, `Account unknown`, `Account not in Accounts.xlsx` |
+| I | Flag | Parse errors: `Could not parse filename`, `Month out of range`, `Day out of range`, `Invalid date`; missing field: `Method missing`; account flags: `Account obfuscated`, `Account unknown`, `Account not in Accounts.xlsx` |
 
 ## License
 
