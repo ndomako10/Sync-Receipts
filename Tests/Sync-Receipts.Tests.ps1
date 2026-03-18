@@ -239,8 +239,26 @@ Describe 'ConvertFrom-ReceiptFileName' {
             $r.OK | Should -Be $false
         }
 
-        It 'returns ParseOK=false for an invalid date' {
-            $r = ConvertFrom-ReceiptFileName -Stem '999999 Amazon -$10.00 Card 1234'
+        It 'returns ParseOK=false and ParseError for an out-of-range month' {
+            $r = ConvertFrom-ReceiptFileName -Stem '261316 Amazon -$10.00 Card 1234'
+            $r.OK         | Should -Be $false
+            $r.ParseError | Should -Be 'Month out of range'
+        }
+
+        It 'returns ParseOK=false and ParseError for an out-of-range day' {
+            $r = ConvertFrom-ReceiptFileName -Stem '260332 Amazon -$10.00 Card 1234'
+            $r.OK         | Should -Be $false
+            $r.ParseError | Should -Be 'Day out of range'
+        }
+
+        It 'returns ParseOK=false and ParseError for an invalid date (e.g. Feb 31)' {
+            $r = ConvertFrom-ReceiptFileName -Stem '260231 Amazon -$10.00 Card 1234'
+            $r.OK         | Should -Be $false
+            $r.ParseError | Should -Be 'Invalid date'
+        }
+
+        It 'returns ParseOK=false for a non-receipt filename' {
+            $r = ConvertFrom-ReceiptFileName -Stem 'not a receipt'
             $r.OK | Should -Be $false
         }
 
@@ -260,6 +278,41 @@ Describe 'ConvertFrom-ReceiptFileName' {
             $r.Amount  | Should -Be ''
             $r.Method  | Should -Be ''
             $r.Account | Should -Be ''
+        }
+    }
+
+    Context '-DateFormat variations' {
+
+        It 'parses yyyyMMdd format' {
+            $r = ConvertFrom-ReceiptFileName -Stem '20260316 Sunoco $5.27 Card 9080' -DateFormat 'yyyyMMdd'
+            $r.OK     | Should -Be $true
+            $r.Date   | Should -Be ([datetime]'2026-03-16')
+            $r.Vendor | Should -Be 'Sunoco'
+        }
+
+        It 'parses yy-MM-dd format' {
+            $r = ConvertFrom-ReceiptFileName -Stem '26-03-16 CVS -$12.00 Cash' -DateFormat 'yy-MM-dd'
+            $r.OK     | Should -Be $true
+            $r.Date   | Should -Be ([datetime]'2026-03-16')
+            $r.Method | Should -Be 'Cash'
+        }
+
+        It 'returns ParseOK=false and ParseError for out-of-range month in yyyyMMdd' {
+            $r = ConvertFrom-ReceiptFileName -Stem '20261316 Amazon -$10.00 Card 1234' -DateFormat 'yyyyMMdd'
+            $r.OK         | Should -Be $false
+            $r.ParseError | Should -Be 'Month out of range'
+        }
+
+        It 'returns ParseOK=false and ParseError for out-of-range day in yy-MM-dd' {
+            $r = ConvertFrom-ReceiptFileName -Stem '26-03-32 Amazon -$10.00 Card 1234' -DateFormat 'yy-MM-dd'
+            $r.OK         | Should -Be $false
+            $r.ParseError | Should -Be 'Day out of range'
+        }
+
+        It 'returns ParseError="" on a successful parse' {
+            $r = ConvertFrom-ReceiptFileName -Stem '260316 Sunoco $5.27 Card 9080'
+            $r.OK         | Should -Be $true
+            $r.ParseError | Should -Be ''
         }
     }
 }
