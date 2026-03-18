@@ -252,6 +252,16 @@ $shortcuts = @(
         Description = "Sync the current month into the receipts workbook"
     },
     @{
+        Name        = "Run Sync Month Receipts.lnk"
+        Target      = Join-Path $launchersDir "Run-SyncMonthReceipts.bat"
+        Description = "Sync a specific month into the receipts workbook"
+    },
+    @{
+        Name        = "Run Sync Year Receipts.lnk"
+        Target      = Join-Path $launchersDir "Run-SyncYearReceipts.bat"
+        Description = "Sync all months for a specific year into the receipts workbook"
+    },
+    @{
         Name        = "Run Sync All Receipts.lnk"
         Target      = Join-Path $launchersDir "Run-SyncAllReceipts.bat"
         Description = "Sync all month folders across all years"
