@@ -216,9 +216,8 @@ function Get-ValidAccounts {
 
 .DESCRIPTION
     Reads column A (Last 4) of the first sheet in RECEIPTS_ROOT\Accounts.xlsx
-    using the provided Excel COM instance. Falls back to the Account sheet in
-    the year workbook if Accounts.xlsx is not found (deprecated path). If neither
-    source is available, returns an empty array and account validation is skipped.
+    using the provided Excel COM instance. If Accounts.xlsx is not found,
+    returns an empty array and account validation is skipped.
 
 .PARAMETER ReceiptsRoot
     Path to the folder containing Accounts.xlsx.
@@ -226,20 +225,16 @@ function Get-ValidAccounts {
 .PARAMETER Excel
     An open Excel.Application COM object used to open Accounts.xlsx.
 
-.PARAMETER Workbook
-    The year workbook COM object. Used only for the deprecated Account sheet fallback.
-
 .OUTPUTS
     [array] of 4-digit strings left-padded with zeros (e.g. @("1234", "0099")).
-    Returns an empty array if no account source is found.
+    Returns an empty array if Accounts.xlsx is not found.
 
 .EXAMPLE
-    $accounts = Get-ValidAccounts -ReceiptsRoot $ReceiptsRoot -Excel $excel -Workbook $workbook
+    $accounts = Get-ValidAccounts -ReceiptsRoot $ReceiptsRoot -Excel $excel
 #>
     param(
         [string]$ReceiptsRoot,
-        [object]$Excel    = $null,
-        [object]$Workbook = $null
+        [object]$Excel = $null
     )
     $accounts = @()
     $xlsxPath = Join-Path $ReceiptsRoot "Accounts.xlsx"
@@ -264,27 +259,6 @@ function Get-ValidAccounts {
             if ($accWorkbook) { try { $accWorkbook.Close($false) } catch {} }
         }
         Write-SyncLog "Accounts: $($accounts.Count) account(s) loaded from Accounts.xlsx" -Tag VERB
-        return $accounts
-    }
-    if ($Workbook) {
-        Write-SyncLog "Accounts: Accounts.xlsx not found in '${ReceiptsRoot}' -- falling back to Account sheet (deprecated)" -Tag WARN
-        $accSheet = $null
-        try { $accSheet = $Workbook.Sheets.Item("Account") } catch {}
-        if (-not $accSheet) {
-            Write-SyncLog "Accounts: Account sheet not found -- account validation skipped" -Tag WARN
-            return $accounts
-        }
-        Write-SyncLog "Accounts: reading from Account sheet (deprecated)" -Tag VERB
-        $row = 2
-        while ($true) {
-            $val = $null
-            try { $val = $accSheet.Cells.Item($row, 1).Value2 } catch { break }
-            if ($null -eq $val -or "$val" -eq "") { break }
-            $acct = $val.ToString().Trim().PadLeft(4, "0")
-            if ($accounts -notcontains $acct) { $accounts += $acct }
-            $row++
-        }
-        Write-SyncLog "Accounts: $($accounts.Count) account(s) loaded from Account sheet" -Tag VERB
     } else {
         Write-SyncLog "Accounts: Accounts.xlsx not found in '${ReceiptsRoot}' -- account validation skipped" -Tag WARN
     }
@@ -1260,7 +1234,7 @@ foreach ($yearEntry in ($yearGroups.GetEnumerator() | Sort-Object Key)) {
     Write-SyncLog "Accounts: loading" -Tag VERB
     $validAccounts = @()
     try {
-        $validAccounts = Get-ValidAccounts -ReceiptsRoot $ReceiptsRoot -Excel $excel -Workbook $workbook
+        $validAccounts = Get-ValidAccounts -ReceiptsRoot $ReceiptsRoot -Excel $excel
     } catch {
         Write-SyncLog "Accounts: error in Get-ValidAccounts -- $_" -Tag WARN
     }

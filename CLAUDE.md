@@ -75,7 +75,7 @@ The script files live in their own directory. The data (per-year workbooks and r
 | `Write-SyncLog` | Writes timestamped, tagged log lines to the console; routes VERB-tagged messages to `Write-Verbose` |
 | `Parse-Receipt` | Regex-parses a receipt filename stem into date, vendor, amount, method, account |
 | `Read-PreservedCategoryValues` | Pure helper: extracts Category/Subcategory keyed by File Name from a 2D string array (no COM dependency; unit-testable) |
-| `Get-ValidAccounts` | Reads 4-digit account numbers from `Accounts.xlsx` in `ReceiptsRoot`; falls back to Account sheet |
+| `Get-ValidAccounts` | Reads 4-digit account numbers from `Accounts.xlsx` in `ReceiptsRoot`; skips validation if absent |
 | `Get-Categories` | Reads category/subcategory data from `Categories.json` in `$PSScriptRoot` |
 | `Sync-CategorySheet` | Writes category data from hashtable into the Category sheet (creates if absent, overwrites if present, hides the sheet) |
 | `Get-ExcelColumnLetter` | Converts a 1-based column index to an Excel column letter (e.g. 1 -> "A", 27 -> "AA"); used to build named range address strings without COM |

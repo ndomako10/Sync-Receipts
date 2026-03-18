@@ -102,9 +102,6 @@ To force-close a crashed Excel instance holding the file locked, double-click `K
 
 ## Workbook Structure
 
-### Account Sheet
-No longer used by the script. Account data is now read from `Accounts.xlsx` in `RECEIPTS_ROOT`. The sheet in the year workbook can be kept for reference or removed.
-
 ### Accounts.xlsx
 A dedicated Excel workbook at `RECEIPTS_ROOT\Accounts.xlsx`. Copy from `Accounts.template.xlsx` and fill in your accounts. The script reads **Last 4** (column A) for validation; all other columns are for human reference only.
 
@@ -122,10 +119,10 @@ A dedicated Excel workbook at `RECEIPTS_ROOT\Accounts.xlsx`. Copy from `Accounts
 - Cash: no entry needed in `Accounts.xlsx` -- Cash receipts carry no account number in the filename
 - EBT: leave Network blank, set Type to `EBT`
 
-If `Accounts.xlsx` is absent, the script falls back to the Account sheet in the year workbook with a deprecation warning. If neither exists, account validation is skipped.
+If `Accounts.xlsx` is absent, account validation is skipped.
 
 ### Category Sheet
-No longer used by the script. Category and subcategory data is now read from `Categories.json` in the script folder. The sheet can be kept for reference or removed.
+Written and maintained automatically by the script on every run; hidden in the tab bar. Category and subcategory data is sourced from `Categories.json` -- no manual maintenance needed.
 
 ### Month Sheets (e.g. `2603`)
 Created or overwritten on each run. Contains a 9-column table:
@@ -138,7 +135,7 @@ Created or overwritten on each run. Contains a 9-column table:
 | D | Amount | Currency formatted; negative = expense |
 | E | Method | `Card`, `Cash`, `Checking`, or `Savings` |
 | F | Account | 4-digit number, or `xxxx` (obfuscated) / `----` (unknown), text formatted |
-| G | Category | Dropdown from Category sheet |
+| G | Category | Dropdown; list sourced from the hidden Category sheet (auto-populated) |
 | H | Subcategory | Dropdown filtered by selected Category via `INDIRECT` |
 | I | Flag | Parse errors; account flags: `Account obfuscated`, `Account unknown`, `Account not in Accounts.xlsx` |
 
