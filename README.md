@@ -109,6 +109,7 @@ To force-close a crashed Excel instance holding the file locked, run the **Sync:
 | `-YearMonth` | YYMM to sync (e.g. `2603`). Defaults to current month. |
 | `-Year` | 4-digit year (e.g. `2026`). Syncs all month folders under that year. Mutually exclusive with `-YearMonth` and `-All`. |
 | `-WorkbookPath` | Full path to a specific `.xlsx` to write into. Overrides the default per-year path (e.g. `2026.xlsx`). Useful for testing. |
+| `-DateFormat` | [.NET ParseExact format string](https://learn.microsoft.com/en-us/dotnet/standard/base-types/custom-date-and-time-format-strings) for the date portion of receipt filenames. Default: `yyMMdd`. Set `DATE_FORMAT` in `Config.bat` to change. |
 | `-All` | Sync every month folder under every year folder. |
 | `-KillExcel` | Kill any running `EXCEL.EXE` before starting. |
 
@@ -149,7 +150,7 @@ Created or overwritten on each run. Contains a 9-column table:
 | F | Account | 4-digit number, or `xxxx` (obfuscated) / `----` (unknown), text formatted |
 | G | Category | Dropdown; list sourced from the hidden Category sheet (auto-populated) |
 | H | Subcategory | Dropdown filtered by selected Category via `INDIRECT` |
-| I | Flag | Parse errors; account flags: `Account obfuscated`, `Account unknown`, `Account not in Accounts.xlsx` |
+| I | Flag | Parse errors: `Could not parse filename`, `Month out of range`, `Day out of range`, `Invalid date`; account flags: `Account obfuscated`, `Account unknown`, `Account not in Accounts.xlsx` |
 
 ## License
 
