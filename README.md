@@ -51,7 +51,7 @@ Running a `.bat` launcher triggers the PowerShell script, which parses every rec
    - Copy `Accounts.template.xlsx` to `RECEIPTS_ROOT\Accounts.xlsx` (skipped if already present)
    - Create `Run Sync Receipts.lnk` and `Run Sync All Receipts.lnk` shortcuts in `RECEIPTS_ROOT`
 2. Open `RECEIPTS_ROOT\Accounts.xlsx` and replace the example rows with your own accounts
-3. Optionally edit `Categories.json` in the script folder to customise your categories
+3. Optionally edit `Categories.json` in the repo folder to customise your categories
 4. Run the script -- per-year workbooks (e.g. `2026.xlsx`) are created automatically in `RECEIPTS_ROOT`
 
 `Setup.bat` is safe to re-run -- it skips steps that are already complete.
