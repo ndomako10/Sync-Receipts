@@ -8,34 +8,58 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+---
+
+## [1.0.0] - 2026-03-17
+
 ### Added
+- `Initialize-SyncReceipts.ps1` (via `Setup.bat`): one-time setup script that checks
+  prerequisites, creates `Config\Config.bat` from the template, copies
+  `Accounts.template.xlsx` to `RECEIPTS_ROOT\Accounts.xlsx`, and creates `.lnk`
+  shortcuts in `RECEIPTS_ROOT`
 - `Write-SyncLog` helper: centralised console logging with `[HH:mm:ss]` timestamp
   and fixed-width type tags (`STEP`, `INFO`, `WARN`, `ERROR`, `VERB`); VERB routes
   to `Write-Verbose` and is shown only with `-Verbose`
 - `Get-ExcelColumnLetter` pure-PowerShell helper: converts a 1-based column index
-  to an Excel column letter string (e.g. 1 -> "A", 27 -> "AA"); eliminates COM
-  calls on hidden sheets in `Set-CategoryNamedRanges`
-- Pester tests for `Write-SyncLog` and `Get-ExcelColumnLetter`
+  to an Excel column letter string (e.g. 1 -> "A", 27 -> "AA")
+- Expanded Pester test suite: `Write-SyncLog`, `Get-ExcelColumnLetter`, multi-sheet
+  XML patching, account-required validation for `Card`/`Checking`/`Savings`
+- PSScriptAnalyzer lint tests for both `Sync-Receipts.ps1` and `Initialize-SyncReceipts.ps1`
 - Comment-based help (`.SYNOPSIS`, `.DESCRIPTION`, `.PARAMETER`, `.OUTPUTS`,
-  `.EXAMPLE`) added to all functions in `Sync-Receipts.ps1`
+  `.EXAMPLE`) on all functions in `Sync-Receipts.ps1`
 - `CONTRIBUTING.md`: prerequisites, test instructions, coding rules, commit format
+- `SECURITY.md`: security policy and considerations
 - `.editorconfig`: consistent indentation and line endings across file types
 - Dependabot configured for weekly GitHub Actions dependency checks
 - Bug report and feature request issue templates
 
-### Changed
-- All `Write-Host` calls replaced with `Write-SyncLog`; output now includes
-  timestamps and type tags throughout the script
+### Changed (breaking)
+- Repo reorganised into subfolders: `Scripts/`, `Launchers/`, `Tests/`, `Config/`
+- `Config\Config.bat` is now the expected location for machine-local config
+  (previously at repo root)
+- `Config.template.bat`, `Accounts.template.xlsx`, and `Categories.json` moved
+  into `Config/`
+- `Parse-Receipt` renamed to `ConvertFrom-ReceiptFileName`
+- `Sync-Month` renamed to `Write-MonthSheet`
+- `Sync-CategorySheet` renamed to `Write-CategorySheet`
+- `Setup.ps1` renamed to `Initialize-SyncReceipts.ps1`
+- `Card`, `Checking`, and `Savings` payment methods now require an account number;
+  filenames without one are rejected with `OK=$false`
+- All `Write-Host` calls replaced with `Write-SyncLog`
 - `Set-CategoryNamedRanges` builds address strings in pure PowerShell via
   `Get-ExcelColumnLetter`; no longer accesses the hidden Category sheet via COM
 - Repo made public
 
 ### Fixed
+- `Initialize-SyncReceipts.ps1` now correctly reads and creates `Config\Config.bat`
+  (was looking at repo root after Config/ reorganisation)
 - Script hang on existing workbooks: `Set-CategoryNamedRanges` previously called
   COM range methods on the hidden Category sheet, which deadlocks headless Excel
   when opening an existing workbook (closes #22)
 - `Write-SyncLog` renamed from `Write-Log` to avoid `PSAvoidOverwritingBuiltInCmdlets`
   violation under `pwsh` / PowerShell Core (closes #24)
+- `pushd/popd` added to all batch launchers to handle UNC path working directories
+  (closes #27)
 
 ### Removed
 - Deprecated Account sheet fallback from `Get-ValidAccounts`: if `Accounts.xlsx`
