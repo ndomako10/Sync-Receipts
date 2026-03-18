@@ -8,6 +8,40 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- `Write-SyncLog` helper: centralised console logging with `[HH:mm:ss]` timestamp
+  and fixed-width type tags (`STEP`, `INFO`, `WARN`, `ERROR`, `VERB`); VERB routes
+  to `Write-Verbose` and is shown only with `-Verbose`
+- `Get-ExcelColumnLetter` pure-PowerShell helper: converts a 1-based column index
+  to an Excel column letter string (e.g. 1 -> "A", 27 -> "AA"); eliminates COM
+  calls on hidden sheets in `Set-CategoryNamedRanges`
+- Pester tests for `Write-SyncLog` and `Get-ExcelColumnLetter`
+- Comment-based help (`.SYNOPSIS`, `.DESCRIPTION`, `.PARAMETER`, `.OUTPUTS`,
+  `.EXAMPLE`) added to all functions in `Sync-Receipts.ps1`
+- `CONTRIBUTING.md`: prerequisites, test instructions, coding rules, commit format
+- `.editorconfig`: consistent indentation and line endings across file types
+- Dependabot configured for weekly GitHub Actions dependency checks
+- Bug report and feature request issue templates
+
+### Changed
+- All `Write-Host` calls replaced with `Write-SyncLog`; output now includes
+  timestamps and type tags throughout the script
+- `Set-CategoryNamedRanges` builds address strings in pure PowerShell via
+  `Get-ExcelColumnLetter`; no longer accesses the hidden Category sheet via COM
+- Repo made public
+
+### Fixed
+- Script hang on existing workbooks: `Set-CategoryNamedRanges` previously called
+  COM range methods on the hidden Category sheet, which deadlocks headless Excel
+  when opening an existing workbook (closes #22)
+- `Write-SyncLog` renamed from `Write-Log` to avoid `PSAvoidOverwritingBuiltInCmdlets`
+  violation under `pwsh` / PowerShell Core (closes #24)
+
+### Removed
+- Deprecated Account sheet fallback from `Get-ValidAccounts`: if `Accounts.xlsx`
+  is absent, account validation is now skipped (previously fell back to the Account
+  sheet in the year workbook with a deprecation warning)
+
 ---
 
 ## [0.5.0] - 2026-03-17
