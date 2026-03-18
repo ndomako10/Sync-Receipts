@@ -113,7 +113,7 @@ To force-close a crashed Excel instance holding the file locked, run the **Sync:
 ## Workbook Structure
 
 ### Accounts.xlsx
-A dedicated Excel workbook at `RECEIPTS_ROOT\Accounts.xlsx`. Copy from `Accounts.template.xlsx` and fill in your accounts. The script reads **Last 4** (column A) for validation; all other columns are for human reference only.
+A dedicated Excel workbook at `RECEIPTS_ROOT\Accounts.xlsx`. Copy from `Config\Accounts.template.xlsx` and fill in your accounts. The script reads **Last 4** (column A) for validation; all other columns are for human reference only.
 
 | Column | Header | Notes |
 |--------|--------|-------|

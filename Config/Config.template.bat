@@ -4,6 +4,6 @@
 :: Path to the root Receipts folder (network share or local path)
 set "RECEIPTS_ROOT=C:\Users\YOUR-USERNAME\Documents\Receipts"
 
-:: Local drive equivalent of RECEIPTS_ROOT, used by Tests/run-sync-test.bat
-:: to avoid UNC path latency. Set to the same folder via its drive letter.
+:: Local drive equivalent of RECEIPTS_ROOT, used by VS Code tasks
+:: to avoid UNC path latency. Set to the same folder via a local drive letter.
 set "RECEIPTS_ROOT_LOCAL=C:\Users\YOUR-USERNAME\Documents\Receipts"

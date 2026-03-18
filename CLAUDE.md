@@ -35,8 +35,8 @@ type(scope): short description
 | `logging` | Write-SyncLog function and console output |
 | `categories` | Categories feature: Get-Categories, Write-CategorySheet, Config/Categories.json |
 | `accounts` | Accounts feature: Get-ValidAccounts, Accounts.xlsx, Config/Accounts.template.xlsx |
-| `sync-month` | Write-MonthSheet function |
-| `parse-receipt` | ConvertFrom-ReceiptFileName function |
+| `write-month` | Write-MonthSheet function |
+| `convert-receipt` | ConvertFrom-ReceiptFileName function |
 | `xml` | Set-SubcategoryValidationXml XML patching |
 | `tests` | Tests/Sync-Receipts.Tests.ps1, Tests/Lint.Tests.ps1 |
 | `readme` | README.md |

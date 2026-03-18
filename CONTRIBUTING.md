@@ -54,14 +54,15 @@ type(scope): short description
 | `logging` | Write-SyncLog and console output |
 | `categories` | Categories feature |
 | `accounts` | Accounts feature |
-| `sync-month` | Write-MonthSheet function |
-| `parse-receipt` | ConvertFrom-ReceiptFileName function |
+| `write-month` | Write-MonthSheet function |
+| `convert-receipt` | ConvertFrom-ReceiptFileName function |
 | `xml` | Set-SubcategoryValidationXml |
 | `tests` | Tests/ |
 | `readme` | README.md |
 | `ci` | GitHub Actions |
-| `config` | Config.bat, .vscode/, batch files |
+| `config` | Config.bat, Config/ subfolder, .vscode/, batch launcher files |
 | `changelog` | CHANGELOG.md |
+| `security` | SECURITY.md |
 
 ## Submitting a Pull Request
 
