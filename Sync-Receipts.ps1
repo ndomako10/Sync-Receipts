@@ -160,6 +160,36 @@ function Write-SyncLog {
 }
 
 function Parse-Receipt {
+<#
+.SYNOPSIS
+    Parses a receipt filename stem into its metadata components.
+
+.DESCRIPTION
+    Applies a regex to a filename stem (no extension) in the expected format:
+
+        YYMMDD Vendor $Amount Method [Account]
+
+    Returns a hashtable with the extracted fields. If the stem does not match
+    the pattern, OK is $false and all other values are empty/null.
+
+.PARAMETER Stem
+    The filename without its extension (e.g. "260316 Sunoco $5.27 Card 9080").
+
+.OUTPUTS
+    Hashtable with keys:
+        OK      [bool]     -- $true if the filename matched the expected pattern
+        Date    [datetime] -- parsed transaction date; $null if OK is $false
+        Vendor  [string]   -- vendor name
+        Amount  [string]   -- numeric amount string (e.g. "5.27" or "-34.99")
+        Method  [string]   -- payment method: Card, Cash, Checking, or Savings
+        Account [string]   -- last 4 digits, "xxxx", "----", or "" for Cash
+
+.EXAMPLE
+    Parse-Receipt -Stem "260316 Sunoco $5.27 Card 9080"
+
+.EXAMPLE
+    Parse-Receipt -Stem "260310 CVS -$12.00 Cash"
+#>
     param([string]$Stem)
     $pattern = '^(\d{6})\s+(.+?)\s+(-?\$[\d]+\.[\d]{2})\s+(Card|Cash|Checking|Savings)(?:\s+(\d{4}|xxxx|----))?$'
     if ($Stem -match $pattern) {
@@ -180,6 +210,32 @@ function Parse-Receipt {
 }
 
 function Get-ValidAccounts {
+<#
+.SYNOPSIS
+    Returns a list of valid 4-digit account numbers from Accounts.xlsx.
+
+.DESCRIPTION
+    Reads column A (Last 4) of the first sheet in RECEIPTS_ROOT\Accounts.xlsx
+    using the provided Excel COM instance. Falls back to the Account sheet in
+    the year workbook if Accounts.xlsx is not found (deprecated path). If neither
+    source is available, returns an empty array and account validation is skipped.
+
+.PARAMETER ReceiptsRoot
+    Path to the folder containing Accounts.xlsx.
+
+.PARAMETER Excel
+    An open Excel.Application COM object used to open Accounts.xlsx.
+
+.PARAMETER Workbook
+    The year workbook COM object. Used only for the deprecated Account sheet fallback.
+
+.OUTPUTS
+    [array] of 4-digit strings left-padded with zeros (e.g. @("1234", "0099")).
+    Returns an empty array if no account source is found.
+
+.EXAMPLE
+    $accounts = Get-ValidAccounts -ReceiptsRoot $ReceiptsRoot -Excel $excel -Workbook $workbook
+#>
     param(
         [string]$ReceiptsRoot,
         [object]$Excel    = $null,
@@ -236,6 +292,25 @@ function Get-ValidAccounts {
 }
 
 function Get-Categories {
+<#
+.SYNOPSIS
+    Reads category and subcategory definitions from Categories.json.
+
+.DESCRIPTION
+    Loads Categories.json from the specified directory and returns an ordered
+    hashtable where each key is a category name and each value is an array of
+    subcategory strings. Returns $null if the file is missing or cannot be parsed.
+
+.PARAMETER ReceiptsRoot
+    Directory containing Categories.json. Defaults to $PSScriptRoot (the script folder).
+
+.OUTPUTS
+    [ordered hashtable] mapping category name -> [string[]] subcategory list,
+    or $null if the file is missing or invalid.
+
+.EXAMPLE
+    $categories = Get-Categories -ReceiptsRoot $PSScriptRoot
+#>
     param([string]$ReceiptsRoot = $PSScriptRoot)
     $jsonPath = Join-Path $ReceiptsRoot "Categories.json"
     if (-not (Test-Path $jsonPath)) {
@@ -258,6 +333,35 @@ function Get-Categories {
 }
 
 function Read-PreservedCategoryValues {
+<#
+.SYNOPSIS
+    Extracts Category and Subcategory values from a 2D sheet data array.
+
+.DESCRIPTION
+    Pure PowerShell helper with no COM dependency. Accepts a 2D array of strings
+    representing a sheet's cell values (row 0 = headers, subsequent rows = data)
+    and returns a hashtable mapping File Name -> { Category, Subcategory }.
+
+    Only rows where File Name is non-empty and at least one of Category or
+    Subcategory is non-empty are included. Used by Sync-Month to preserve
+    user-entered values across re-syncs without re-reading cells via COM.
+
+.PARAMETER SheetData
+    A 2D array of string arrays. The first element is a header row that must
+    contain "File Name", "Category", and/or "Subcategory" columns (any order).
+
+.OUTPUTS
+    [hashtable] mapping filename string -> @{ Category=[string]; Subcategory=[string] }.
+    Returns an empty hashtable if the input has fewer than 2 rows or the required
+    columns are absent.
+
+.EXAMPLE
+    $data = @(
+        @("File Name", "Date", "Category", "Subcategory"),
+        @("260316 Sunoco $5.27 Card 9080.pdf", "16-Mar", "Auto", "Fuel")
+    )
+    Read-PreservedCategoryValues -SheetData $data
+#>
     param([array]$SheetData)
     $preserved = @{}
     if ($SheetData.Count -lt 2) { return $preserved }
@@ -284,6 +388,31 @@ function Read-PreservedCategoryValues {
 }
 
 function Sync-CategorySheet {
+<#
+.SYNOPSIS
+    Writes category and subcategory data into a hidden Category sheet in the workbook.
+
+.DESCRIPTION
+    Creates the Category sheet if it does not already exist, or clears and rewrites
+    it if it does. Each column represents one category: the header cell (row 1) holds
+    the category name and the cells below hold its subcategory values. The sheet is
+    hidden after writing so it does not appear in the user-facing tab bar.
+
+    Returns the sheet COM object so the caller can pass it to Set-CategoryNamedRanges.
+
+.PARAMETER Workbook
+    The Excel workbook COM object to write the Category sheet into.
+
+.PARAMETER Categories
+    An ordered hashtable mapping category name -> [string[]] subcategory list,
+    as returned by Get-Categories.
+
+.OUTPUTS
+    The Category sheet COM object, or $null if the sheet could not be created.
+
+.EXAMPLE
+    $catSheet = Sync-CategorySheet -Workbook $workbook -Categories $categories
+#>
     [CmdletBinding(SupportsShouldProcess)]
     param(
         [object]$Workbook,
@@ -334,6 +463,32 @@ function Sync-CategorySheet {
 }
 
 function Get-ExcelColumnLetter {
+<#
+.SYNOPSIS
+    Converts a 1-based column index to an Excel column letter string.
+
+.DESCRIPTION
+    Converts a 1-based integer column index to the Excel column letter notation
+    used in cell address strings (e.g. 1 -> "A", 26 -> "Z", 27 -> "AA").
+    Returns an empty string for an index of 0 or less.
+
+    Used to build named range address strings in pure PowerShell, avoiding
+    COM calls on hidden sheets which can hang in headless Excel on existing
+    workbooks.
+
+.PARAMETER Col
+    1-based column index.
+
+.OUTPUTS
+    [string] Excel column letter(s), e.g. "A", "Z", "AA", "AAA".
+    Returns an empty string if Col is 0 or negative.
+
+.EXAMPLE
+    Get-ExcelColumnLetter -Col 1   # returns "A"
+
+.EXAMPLE
+    Get-ExcelColumnLetter -Col 27  # returns "AA"
+#>
     param([int]$Col)
     $result = ''
     while ($Col -gt 0) {
@@ -345,6 +500,34 @@ function Get-ExcelColumnLetter {
 }
 
 function Set-CategoryNamedRanges {
+<#
+.SYNOPSIS
+    Creates named ranges in the workbook for Category and Subcategory dropdowns.
+
+.DESCRIPTION
+    Creates two sets of named ranges derived from the hidden Category sheet:
+
+      1. A range named "Category" spanning the header row (all category names).
+         This is the source list for the Category column dropdown.
+
+      2. One range per category, named after the category (e.g. "Food", "Housing"),
+         spanning that column's subcategory rows. These are referenced by
+         =INDIRECT(G2) for the Subcategory column dropdown.
+
+    Address strings are built in pure PowerShell using Get-ExcelColumnLetter to
+    avoid COM calls on the hidden Category sheet, which hang in headless Excel
+    when opening an existing workbook.
+
+.PARAMETER Workbook
+    The Excel workbook COM object to add named ranges to.
+
+.PARAMETER Categories
+    An ordered hashtable mapping category name -> [string[]] subcategory list,
+    as returned by Get-Categories.
+
+.EXAMPLE
+    Set-CategoryNamedRanges -Workbook $workbook -Categories $categories
+#>
     [CmdletBinding(SupportsShouldProcess)]
     param(
         [object]$Workbook,
@@ -405,6 +588,37 @@ function Set-CategoryNamedRanges {
 
 
 function Set-SubcategoryValidationXml {
+<#
+.SYNOPSIS
+    Post-save XML patch that injects dropdown validation into synced month sheets.
+
+.DESCRIPTION
+    Excel COM does not support INDIRECT-based list validation reliably when saving.
+    This function re-opens the saved .xlsx as a zip archive, patches the XML of each
+    synced month sheet to inject two <dataValidation> elements:
+
+      - Column G (Category):    list source = named range "Category"
+      - Column H (Subcategory): list source = =INDIRECT(G2)
+
+    Also fixes zip binary headers to values Excel requires (flag_bits=0x0006 in
+    local file headers, version_made_by=45 in central directory headers), which
+    .NET ZipArchive writes incorrectly and causes Excel to prompt for recovery.
+
+    The patched content is written to a .tmp file, size-checked to guard against
+    corruption, then replaces the original only if the file exceeds 1 KB.
+
+.PARAMETER WorkbookPath
+    Full path to the saved .xlsx file to patch.
+
+.PARAMETER SyncResults
+    Array of objects with properties:
+        SheetName [string]       -- name of the month sheet (e.g. "2603")
+        Result    [PSCustomObject] -- must contain DataEndRow [int]
+    Sheets with DataEndRow < 2 are skipped (no data rows).
+
+.EXAMPLE
+    Set-SubcategoryValidationXml -WorkbookPath $wbPath -SyncResults $syncResults
+#>
     [CmdletBinding(SupportsShouldProcess)]
     param(
         [string]$WorkbookPath,
@@ -552,6 +766,51 @@ function Set-SubcategoryValidationXml {
 
 
 function Sync-Month {
+<#
+.SYNOPSIS
+    Creates or overwrites a month sheet in the workbook with parsed receipt data.
+
+.DESCRIPTION
+    Reads all files from FolderPath, parses each filename via Parse-Receipt, and
+    writes a formatted 9-column table into a sheet named SheetName. If the sheet
+    already exists it is cleared and rewritten; any Category and Subcategory values
+    previously entered by the user are preserved across the re-sync.
+
+    Columns written:
+        A  File Name     -- hyperlinked to the receipt file
+        B  Date          -- formatted d-mmm
+        C  Vendor
+        D  Amount        -- currency formatted; negative = expense
+        E  Method        -- Card, Cash, Checking, or Savings
+        F  Account       -- last 4 digits, "xxxx", or "----"
+        G  Category      -- dropdown (injected post-save by Set-SubcategoryValidationXml)
+        H  Subcategory   -- dropdown filtered by Category via INDIRECT
+        I  Flag          -- parse errors and account warnings
+
+    A SUM total row is written two rows below the last data row.
+
+.PARAMETER FolderPath
+    Full path to the month folder containing receipt files.
+
+.PARAMETER SheetName
+    Name of the sheet to create or overwrite (e.g. "2603").
+
+.PARAMETER Workbook
+    The Excel workbook COM object to write the sheet into.
+
+.PARAMETER ValidAccounts
+    Array of valid 4-digit account strings as returned by Get-ValidAccounts.
+    Used to flag accounts not present in Accounts.xlsx.
+
+.OUTPUTS
+    [PSCustomObject] with property DataEndRow [int] -- the last data row index
+    (used by Set-SubcategoryValidationXml to scope the dropdown validation range).
+    Returns $null if the folder could not be read or the sheet could not be created.
+
+.EXAMPLE
+    $result = Sync-Month -FolderPath "\\Server\Receipts\2026\2603 - March" `
+                         -SheetName "2603" -Workbook $wb -ValidAccounts $accounts
+#>
     param(
         [string]$FolderPath,
         [string]$SheetName,
@@ -797,6 +1056,23 @@ function Sync-Month {
 }
 
 function Set-MonthSheetOrder {
+<#
+.SYNOPSIS
+    Sorts all month sheet tabs in the workbook into chronological order.
+
+.DESCRIPTION
+    Identifies all sheets whose names are exactly 4 digits (YYMM format) and
+    moves them to the front of the workbook in ascending name order. Sheets with
+    fewer or more than 4 digits (e.g. Category, Account) are not moved.
+
+    Does nothing if fewer than 2 month sheets are present.
+
+.PARAMETER Workbook
+    The Excel workbook COM object whose sheets should be reordered.
+
+.EXAMPLE
+    Set-MonthSheetOrder -Workbook $workbook
+#>
     param([object]$Workbook)
     # Collect all month sheets (4-digit YYMM names).
     $monthSheets = @()
