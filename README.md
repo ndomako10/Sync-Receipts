@@ -141,8 +141,8 @@ Created or overwritten on each run. Contains a 9-column table:
 |--------|--------|-------|
 | A | File Name | Hyperlinked to the receipt file |
 | B | Date | Formatted `d-mmm` |
-| C | Vendor | |
-| D | Amount | Currency formatted; negative = expense |
+| C | Vendor | Name of the merchant or payee |
+| D | Amount | Currency formatted; positive = expense, negative = income |
 | E | Method | `Card`, `Cash`, `Checking`, or `Savings` |
 | F | Account | 4-digit number, or `xxxx` (obfuscated) / `----` (unknown), text formatted |
 | G | Category | Dropdown; list sourced from the hidden Category sheet (auto-populated) |
