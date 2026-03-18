@@ -29,3 +29,28 @@ Describe 'PSScriptAnalyzer -- Sync-Receipts.ps1' {
         $warnings | Should -BeNullOrEmpty
     }
 }
+
+Describe 'PSScriptAnalyzer -- Setup.ps1' {
+
+    BeforeAll {
+        $setupPath    = Join-Path (Split-Path $PSScriptRoot -Parent) 'Scripts\Setup.ps1'
+        $script:setupResults = Invoke-ScriptAnalyzer -Path $setupPath -Settings $script:settingsPath
+    }
+
+    It 'has no parse errors' {
+        $errors = $script:setupResults | Where-Object { $_.Severity -eq 'ParseError' }
+        $errors | Should -BeNullOrEmpty
+    }
+
+    It 'has no rule violations at Error severity' {
+        $errors = $script:setupResults | Where-Object { $_.Severity -eq 'Error' }
+        $errors | ForEach-Object { Write-Host "  ERROR: $($_.RuleName) line $($_.Line) -- $($_.Message)" -ForegroundColor Red }
+        $errors | Should -BeNullOrEmpty
+    }
+
+    It 'has no rule violations at Warning severity' {
+        $warnings = $script:setupResults | Where-Object { $_.Severity -eq 'Warning' }
+        $warnings | ForEach-Object { Write-Host "  WARN:  $($_.RuleName) line $($_.Line) -- $($_.Message)" -ForegroundColor Yellow }
+        $warnings | Should -BeNullOrEmpty
+    }
+}
