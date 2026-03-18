@@ -54,7 +54,7 @@ type(scope): short description
 | `logging` | Write-SyncLog and console output |
 | `categories` | Categories feature |
 | `accounts` | Accounts feature |
-| `sync-month` | Sync-Month function |
+| `sync-month` | Write-MonthSheet function |
 | `parse-receipt` | ConvertFrom-ReceiptFileName function |
 | `xml` | Set-SubcategoryValidationXml |
 | `tests` | Tests/ |

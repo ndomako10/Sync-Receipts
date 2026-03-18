@@ -321,7 +321,7 @@ function Read-PreservedCategoryValues {
     and returns a hashtable mapping File Name -> { Category, Subcategory }.
 
     Only rows where File Name is non-empty and at least one of Category or
-    Subcategory is non-empty are included. Used by Sync-Month to preserve
+    Subcategory is non-empty are included. Used by Write-MonthSheet to preserve
     user-entered values across re-syncs without re-reading cells via COM.
 
 .PARAMETER SheetData
@@ -365,7 +365,7 @@ function Read-PreservedCategoryValues {
     return $preserved
 }
 
-function Sync-CategorySheet {
+function Write-CategorySheet {
 <#
 .SYNOPSIS
     Writes category and subcategory data into a hidden Category sheet in the workbook.
@@ -389,7 +389,7 @@ function Sync-CategorySheet {
     The Category sheet COM object, or $null if the sheet could not be created.
 
 .EXAMPLE
-    $catSheet = Sync-CategorySheet -Workbook $workbook -Categories $categories
+    $catSheet = Write-CategorySheet -Workbook $workbook -Categories $categories
 #>
     [CmdletBinding(SupportsShouldProcess)]
     param(
@@ -743,7 +743,7 @@ function Set-SubcategoryValidationXml {
 }
 
 
-function Sync-Month {
+function Write-MonthSheet {
 <#
 .SYNOPSIS
     Creates or overwrites a month sheet in the workbook with parsed receipt data.
@@ -786,7 +786,7 @@ function Sync-Month {
     Returns $null if the folder could not be read or the sheet could not be created.
 
 .EXAMPLE
-    $result = Sync-Month -FolderPath "\\Server\Receipts\2026\2603 - March" `
+    $result = Write-MonthSheet -FolderPath "\\Server\Receipts\2026\2603 - March" `
                          -SheetName "2603" -Workbook $wb -ValidAccounts $accounts
 #>
     param(
@@ -1254,9 +1254,9 @@ foreach ($yearEntry in ($yearGroups.GetEnumerator() | Sort-Object Key)) {
     if ($categories) {
         $catSheet = $null
         try {
-            $catSheet = Sync-CategorySheet -Workbook $workbook -Categories $categories
+            $catSheet = Write-CategorySheet -Workbook $workbook -Categories $categories
         } catch {
-            Write-SyncLog "Category sheet: error in Sync-CategorySheet -- $_" -Tag WARN
+            Write-SyncLog "Category sheet: error in Write-CategorySheet -- $_" -Tag WARN
         }
         if ($catSheet) {
             try {
@@ -1274,7 +1274,7 @@ foreach ($yearEntry in ($yearGroups.GetEnumerator() | Sort-Object Key)) {
         Write-Host ""
         Write-SyncLog "Syncing: $($m.FolderPath)" -Tag STEP
         try {
-            $result = Sync-Month -FolderPath $m.FolderPath -SheetName $m.SheetName -Workbook $workbook -ValidAccounts $validAccounts
+            $result = Write-MonthSheet -FolderPath $m.FolderPath -SheetName $m.SheetName -Workbook $workbook -ValidAccounts $validAccounts
             $syncResults += [PSCustomObject]@{ SheetName = $m.SheetName; Result = $result }
         } catch {
             Write-SyncLog "Sync error: unhandled exception syncing '$($m.SheetName)' -- $_" -Tag ERROR

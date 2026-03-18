@@ -33,9 +33,9 @@ type(scope): short description
 |-------|-------------|
 | `ps1` | Sync-Receipts.ps1 (general; use a narrower scope when one applies) |
 | `logging` | Write-SyncLog function and console output |
-| `categories` | Categories feature: Get-Categories, Sync-CategorySheet, Config/Categories.json |
+| `categories` | Categories feature: Get-Categories, Write-CategorySheet, Config/Categories.json |
 | `accounts` | Accounts feature: Get-ValidAccounts, Accounts.xlsx, Config/Accounts.template.xlsx |
-| `sync-month` | Sync-Month function |
+| `sync-month` | Write-MonthSheet function |
 | `parse-receipt` | ConvertFrom-ReceiptFileName function |
 | `xml` | Set-SubcategoryValidationXml XML patching |
 | `tests` | Tests/Sync-Receipts.Tests.ps1, Tests/Lint.Tests.ps1 |
@@ -83,12 +83,12 @@ The script files live in their own directory. The data (per-year workbooks and r
 | `Read-PreservedCategoryValues` | Pure helper: extracts Category/Subcategory keyed by File Name from a 2D string array (no COM dependency; unit-testable) |
 | `Get-ValidAccounts` | Reads 4-digit account numbers from `Accounts.xlsx` in `ReceiptsRoot`; skips validation if absent |
 | `Get-Categories` | Reads category/subcategory data from `Categories.json` in `Config/` (repo root + "Config") |
-| `Sync-CategorySheet` | Writes category data from hashtable into the Category sheet (creates if absent, overwrites if present, hides the sheet) |
+| `Write-CategorySheet` | Writes category data from hashtable into the Category sheet (creates if absent, overwrites if present, hides the sheet) |
 | `Get-ExcelColumnLetter` | Converts a 1-based column index to an Excel column letter (e.g. 1 -> "A", 27 -> "AA"); used to build named range address strings without COM |
 | `Set-CategoryNamedRanges` | Creates named ranges in the workbook for Category/Subcategory dropdowns |
 | `Set-SubcategoryValidationXml` | Post-save XML patch: injects both dropdown validations and fixes zip headers |
 | `Set-MonthSheetOrder` | Sorts all month sheet tabs (4-digit YYMM names) into chronological order |
-| `Sync-Month` | Main workhorse: creates/overwrites a month sheet and writes all receipt rows |
+| `Write-MonthSheet` | Main workhorse: creates/overwrites a month sheet and writes all receipt rows |
 
 ### Excel COM patterns used
 

@@ -1,10 +1,5 @@
 @{
     ExcludeRules = @(
-        # Sync-Month and Sync-CategorySheet use a non-standard verb intentionally --
-        # they are internal helpers, not exported cmdlets, and the names are the
-        # clearest descriptions of their behaviour.
-        'PSUseApprovedVerbs',
-
         # Get-ValidAccounts, Get-Categories, Set-CategoryNamedRanges intentionally
         # use plural nouns because they operate on collections, not single items.
         'PSUseSingularNouns',
