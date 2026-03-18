@@ -262,13 +262,20 @@ function ConvertFrom-ReceiptFileName {
     if ($hasMethod -or $hasNoMethod) {
         $rawDate = $Matches[1]
         try {
-            $month = [int]$rawDate.Substring($DateFormat.IndexOf('MM'), 2)
-            $day   = [int]$rawDate.Substring($DateFormat.IndexOf('dd'), 2)
+            # Specific range checks are only possible for zero-padded tokens (MM, dd)
+            # where the position in $rawDate is fixed. Single-digit tokens (M, d)
+            # are validated by ParseExact below.
+            if ($DateFormat.Contains('MM')) {
+                $month = [int]$rawDate.Substring($DateFormat.IndexOf('MM'), 2)
+                if ($month -lt 1 -or $month -gt 12) { return (& $fail "Month out of range") }
+            }
+            if ($DateFormat.Contains('dd')) {
+                $day = [int]$rawDate.Substring($DateFormat.IndexOf('dd'), 2)
+                if ($day -lt 1 -or $day -gt 31) { return (& $fail "Day out of range") }
+            }
         } catch {
             return (& $fail "Could not parse filename")
         }
-        if ($month -lt 1 -or $month -gt 12) { return (& $fail "Month out of range") }
-        if ($day   -lt 1 -or $day   -gt 31) { return (& $fail "Day out of range") }
         $date = $null
         try {
             $date = [datetime]::ParseExact($rawDate, $DateFormat, $null)

@@ -19,6 +19,7 @@ Receipts/
 
 # Test output logs
 tests/sync-output.txt
+testResults.xml
 
 # Windows artifacts
 Thumbs.db
