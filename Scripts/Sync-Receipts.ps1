@@ -66,6 +66,9 @@
     .NET ParseExact format string for the date portion of receipt filenames.
     Default: yyMMdd (e.g. 260316 for March 16, 2026). Set DATE_FORMAT in Config.bat
     to change. Examples: yyyyMMdd (20260316), yy-MM-dd (26-03-16), MMddyy (031626).
+    Single-digit tokens M (month) and d (day) are supported when the format uses
+    separators (e.g. M-d-yy produces 3-1-26 for March 1, 2026). Without separators,
+    use MM and dd to avoid ambiguous parsing.
 
 .PARAMETER KillExcel
     Force-terminates any running EXCEL.EXE processes before starting.
@@ -235,7 +238,23 @@ function ConvertFrom-ReceiptFileName {
         Write-SyncLog "Parse: $Reason in '$Stem'" -Tag WARN
         return @{ OK=$false; ParseError=$Reason; Date=$null; Vendor=""; Amount=""; Method=""; Account="" }
     }
-    $datePattern     = $DateFormat -replace 'yyyy', '\d{4}' -replace 'yy', '\d{2}' -replace 'MM', '\d{2}' -replace 'dd', '\d{2}'
+    # Build the date regex by replacing .NET format tokens with digit patterns.
+    # Multi-character tokens (yyyy, yy, MM, dd) are substituted first via placeholders
+    # so that the subsequent single-character replacements (M, d) do not corrupt the
+    # already-expanded \d{...} patterns.
+    $datePattern = $DateFormat `
+        -replace 'yyyy', '~4~' `
+        -replace 'yy',   '~2~' `
+        -replace 'MM',   '~3~' `
+        -replace 'dd',   '~5~' `
+        -replace 'M',    '~6~' `
+        -replace 'd',    '~7~' `
+        -replace '~4~',  '\d{4}' `
+        -replace '~2~',  '\d{2}' `
+        -replace '~3~',  '\d{2}' `
+        -replace '~5~',  '\d{2}' `
+        -replace '~6~',  '\d{1,2}' `
+        -replace '~7~',  '\d{1,2}'
     $pattern         = '^(' + $datePattern + ')\s+(.+?)\s+(-?\$[\d]+\.[\d]{2})\s+(Card|Cash|Checking|Savings)(?:\s+(\d{4}|xxxx|----))?$'
     $patternNoMethod = '^(' + $datePattern + ')\s+(.+?)\s+(-?\$[\d]+\.[\d]{2})$'
     $hasMethod   = $Stem -match $pattern
