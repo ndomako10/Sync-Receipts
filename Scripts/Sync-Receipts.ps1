@@ -758,7 +758,7 @@ function Write-MonthSheet {
         A  File Name     -- hyperlinked to the receipt file
         B  Date          -- formatted d-mmm
         C  Vendor
-        D  Amount        -- currency formatted; negative = expense
+        D  Amount        -- currency formatted; positive = expense, negative = income
         E  Method        -- Card, Cash, Checking, or Savings
         F  Account       -- last 4 digits, "xxxx", or "----"
         G  Category      -- dropdown (injected post-save by Set-SubcategoryValidationXml)
