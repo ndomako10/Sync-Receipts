@@ -7,7 +7,7 @@
 
       1. Checks that PowerShell 5.0+ and Microsoft Excel are installed.
       2. Reads RECEIPTS_ROOT from Config.bat, or prompts for the path and creates Config.bat
-         from Config.template.bat.
+         from Config\Config.template.bat.
       3. Creates the RECEIPTS_ROOT folder if it does not already exist.
       4. Copies Accounts.template.xlsx to RECEIPTS_ROOT\Accounts.xlsx (skipped if present).
       5. Creates Windows shortcut (.lnk) files in RECEIPTS_ROOT that point to the batch
@@ -179,7 +179,7 @@ if (Test-Path $configPath) {
     }
 
     try {
-        $template = Get-Content (Join-Path $repoRoot "Config.template.bat") -Raw
+        $template = Get-Content (Join-Path $repoRoot "Config\Config.template.bat") -Raw
         $config   = $template `
             -replace 'set "RECEIPTS_ROOT=.*"', "set `"RECEIPTS_ROOT=$receiptsRoot`"" `
             -replace 'set "RECEIPTS_ROOT_LOCAL=.*"', "set `"RECEIPTS_ROOT_LOCAL=$receiptsRoot`""
@@ -220,7 +220,7 @@ if (Test-Path $receiptsRoot) {
 Write-Host ""
 Write-Step "Setting up Accounts.xlsx..."
 
-$templateXlsx = Join-Path $repoRoot "Accounts.template.xlsx"
+$templateXlsx = Join-Path $repoRoot "Config\Accounts.template.xlsx"
 $accountsXlsx = Join-Path $receiptsRoot "Accounts.xlsx"
 
 if (Test-Path $accountsXlsx) {

@@ -21,7 +21,7 @@
     Cash receipts carry no account number.
 
     On each run the script:
-      - Reads category/subcategory definitions from Categories.json in the repo root
+      - Reads category/subcategory definitions from Categories.json in the Config subfolder
       - Reads valid account numbers from Accounts.xlsx in ReceiptsRoot
       - Creates or overwrites the month sheet(s) in the year workbook
       - Preserves any Category and Subcategory values previously entered by the user
@@ -280,16 +280,16 @@ function Get-Categories {
     subcategory strings. Returns $null if the file is missing or cannot be parsed.
 
 .PARAMETER ReceiptsRoot
-    Directory containing Categories.json. Defaults to the parent of $PSScriptRoot (the repo root).
+    Directory containing Categories.json. Defaults to the Config subfolder in the repo root.
 
 .OUTPUTS
     [ordered hashtable] mapping category name -> [string[]] subcategory list,
     or $null if the file is missing or invalid.
 
 .EXAMPLE
-    $categories = Get-Categories -ReceiptsRoot (Split-Path $PSScriptRoot -Parent)
+    $categories = Get-Categories -ReceiptsRoot (Join-Path (Split-Path $PSScriptRoot -Parent) "Config")
 #>
-    param([string]$ReceiptsRoot = (Split-Path $PSScriptRoot -Parent))
+    param([string]$ReceiptsRoot = (Join-Path (Split-Path $PSScriptRoot -Parent) "Config"))
     $jsonPath = Join-Path $ReceiptsRoot "Categories.json"
     if (-not (Test-Path $jsonPath)) {
         Write-SyncLog "Categories: Categories.json not found in '$ReceiptsRoot' -- dropdowns skipped" -Tag WARN

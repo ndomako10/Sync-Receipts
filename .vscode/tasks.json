@@ -87,7 +87,7 @@
             "command": "cmd",
             "args": [
                 "/c",
-                "call \"${workspaceFolder}\\Config.bat\" && powershell -NoProfile -ExecutionPolicy Bypass -NonInteractive -File \"${workspaceFolder}\\Scripts\\Sync-Receipts.ps1\" -ReceiptsRoot \"%RECEIPTS_ROOT_LOCAL%\" -WorkbookPath \"${workspaceFolder}\\Tests\\Receipts (test).xlsx\""
+                "call \"${workspaceFolder}\\Config\\Config.bat\" && powershell -NoProfile -ExecutionPolicy Bypass -NonInteractive -File \"${workspaceFolder}\\Scripts\\Sync-Receipts.ps1\" -ReceiptsRoot \"%RECEIPTS_ROOT_LOCAL%\" -WorkbookPath \"${workspaceFolder}\\Tests\\Receipts (test).xlsx\""
             ],
             "group": "build",
             "presentation": {
@@ -103,7 +103,7 @@
             "command": "cmd",
             "args": [
                 "/c",
-                "call \"${workspaceFolder}\\Config.bat\" && powershell -NoProfile -ExecutionPolicy Bypass -NonInteractive -File \"${workspaceFolder}\\Scripts\\Sync-Receipts.ps1\" -ReceiptsRoot \"%RECEIPTS_ROOT%\" -KillExcel"
+                "call \"${workspaceFolder}\\Config\\Config.bat\" && powershell -NoProfile -ExecutionPolicy Bypass -NonInteractive -File \"${workspaceFolder}\\Scripts\\Sync-Receipts.ps1\" -ReceiptsRoot \"%RECEIPTS_ROOT%\" -KillExcel"
             ],
             "group": "build",
             "presentation": {

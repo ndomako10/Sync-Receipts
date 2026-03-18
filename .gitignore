@@ -1,4 +1,4 @@
-# Local config (contains machine name and username -- see Config.template.bat)
+# Local config (contains machine name and username -- see Config/Config.template.bat)
 Config.bat
 
 # Standalone utility -- not needed in the repo

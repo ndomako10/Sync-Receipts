@@ -48,10 +48,10 @@ Running a `.bat` launcher triggers the PowerShell script, which parses every rec
    - Check that PowerShell 5.0+ and Excel are installed
    - Prompt for `RECEIPTS_ROOT` and create `Config.bat` (skipped if `Config.bat` already exists)
    - Create the `RECEIPTS_ROOT` folder if it does not exist
-   - Copy `Accounts.template.xlsx` to `RECEIPTS_ROOT\Accounts.xlsx` (skipped if already present)
+   - Copy `Config\Accounts.template.xlsx` to `RECEIPTS_ROOT\Accounts.xlsx` (skipped if already present)
    - Create `Run Sync Receipts.lnk` and `Run Sync All Receipts.lnk` shortcuts in `RECEIPTS_ROOT`
 2. Open `RECEIPTS_ROOT\Accounts.xlsx` and replace the example rows with your own accounts
-3. Optionally edit `Categories.json` in the repo folder to customise your categories
+3. Optionally edit `Config\Categories.json` to customise your categories
 4. Run the script -- per-year workbooks (e.g. `2026.xlsx`) are created automatically in `RECEIPTS_ROOT`
 
 `Setup.bat` is safe to re-run -- it skips steps that are already complete.
@@ -63,10 +63,11 @@ The script files and the data are kept in separate locations. `RECEIPTS_ROOT` is
 ```
 Script files (e.g. C:\Scripts\Sync-Receipts\):
     Config.bat               <- gitignored; sets RECEIPTS_ROOT
-    Config.template.bat
-    Accounts.template.xlsx   <- copy to RECEIPTS_ROOT\Accounts.xlsx and fill in your accounts
-    Categories.json          <- category/subcategory definitions; edit to customise
     Setup.bat                <- one-time setup launcher
+    Config\
+        Config.template.bat
+        Accounts.template.xlsx <- copy to RECEIPTS_ROOT\Accounts.xlsx and fill in your accounts
+        Categories.json        <- category/subcategory definitions; edit to customise
     Scripts\
         Setup.ps1
         Sync-Receipts.ps1

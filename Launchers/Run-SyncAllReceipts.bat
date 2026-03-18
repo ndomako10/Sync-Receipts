@@ -5,7 +5,7 @@
 :: pushd maps UNC paths to a temporary drive letter so CMD does not error.
 pushd "%~dp0"
 
-call "%~dp0..\Config.bat"
+call "%~dp0..\Config\Config.bat"
 
 PowerShell -NoProfile -ExecutionPolicy Bypass -NonInteractive -File "%~dp0..\Scripts\Sync-Receipts.ps1" -ReceiptsRoot "%RECEIPTS_ROOT%" -All
 
