@@ -6,19 +6,7 @@ A PowerShell automation tool for syncing receipt file metadata into Excel workbo
 
 ## Workflow
 
-### Issues
-- **Create issues automatically** for all non-trivial changes (features, bugs, refactors, doc gaps). Skip only genuinely trivial edits (e.g. a single-word typo fix).
-- **Before starting work**, scan open issues to avoid duplicating something already tracked and to identify any issues the change might affect or close.
-
-### Documentation
-- **Update all affected documentation** as part of every change: README.md, script doc comments, CLAUDE.md, CONTRIBUTING.md, and any other relevant files.
-- **Review open issues** when updating documentation -- a doc change may close or relate to an existing issue.
-
 ### Commits
-- **One commit per `type(scope)`** -- do not batch unrelated changes into a single commit.
-- **Commit as work progresses**, not all at the end of a task.
-- **Link to issues** where one exists (e.g. `closes #29` or `refs #25`) in the commit message body.
-- **Propose the commit message** and wait for approval before committing.
 - **Do not manually edit CHANGELOG.md** -- changelog entries are generated automatically by `git-cliff` when a version tag is pushed. To preview what the next entry will look like, run `git cliff --unreleased` locally.
 
 ## Coding rules
@@ -28,25 +16,12 @@ A PowerShell automation tool for syncing receipt file metadata into Excel workbo
 - **No smart quotes or em-dashes** -- the file must be pure ASCII. Non-ASCII characters break PowerShell parsing on the network share. Verify after any edit: `[System.Text.Encoding]::ASCII.GetByteCount($content) -eq $content.Length`
 - **Use .NET ParseExact format strings for dates** -- write `yyMMdd`, not informal `YYMMDD`. In documentation, always use the actual format string and note what each token means (`yy` = 2-digit year, `MM` = month, `dd` = day)
 - **Write Pester tests for new pure-PowerShell functions** -- functions with no COM dependency must have unit tests in `Tests/Sync-Receipts.Tests.ps1`. Prefer pure helpers (like `Read-PreservedCategoryValues`) over COM-coupled logic wherever testability allows
-- **Propose changes before making them** -- do not edit code without confirmation
 
 ## Versioning and commits
 
 This project uses [Semantic Versioning](https://semver.org) and [Conventional Commits](https://www.conventionalcommits.org).
 
-**Commit message format:**
-```
-type(scope): short description
-```
-
-| Type | When |
-|------|------|
-| `feat` | New feature |
-| `fix` | Bug fix |
-| `docs` | Documentation only |
-| `test` | Test additions or changes |
-| `refactor` | Code change with no behaviour change |
-| `chore` | Tooling, gitignore, config |
+**Commit message format:** `type(scope): short description`
 
 | Scope | Files / area |
 |-------|-------------|
