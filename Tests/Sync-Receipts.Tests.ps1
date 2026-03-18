@@ -342,6 +342,19 @@ Describe 'ConvertFrom-ReceiptFileName' {
             $r.OK         | Should -Be $true
             $r.ParseError | Should -Be ''
         }
+
+        It 'parses M-d-yy format with single-digit month and day' {
+            $r = ConvertFrom-ReceiptFileName -Stem '3-1-26 CVS $12.00 Cash' -DateFormat 'M-d-yy'
+            $r.OK     | Should -Be $true
+            $r.Date   | Should -Be ([datetime]'2026-03-01')
+            $r.Vendor | Should -Be 'CVS'
+        }
+
+        It 'parses M-d-yy format with double-digit month and day' {
+            $r = ConvertFrom-ReceiptFileName -Stem '12-31-26 CVS $12.00 Cash' -DateFormat 'M-d-yy'
+            $r.OK   | Should -Be $true
+            $r.Date | Should -Be ([datetime]'2026-12-31')
+        }
     }
 }
 
