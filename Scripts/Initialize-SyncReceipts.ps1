@@ -150,21 +150,24 @@ Write-Host ""
 Write-Step "Configuring RECEIPTS_ROOT..."
 
 $configPath = Join-Path $repoRoot "Config\Config.bat"
-$receiptsRoot = $null
+$receiptsRoot  = $null
+$workbooksRoot = $null
 
 if (Test-Path $configPath) {
     foreach ($line in (Get-Content $configPath)) {
         if ($line -match '^\s*set\s+"?RECEIPTS_ROOT=(.+?)"?\s*$') {
             $receiptsRoot = $Matches[1].Trim().TrimEnd('\')
-            break
+        }
+        if ($line -match '^\s*set\s+"?WORKBOOKS_ROOT=(.+?)"?\s*$') {
+            $workbooksRoot = $Matches[1].Trim().TrimEnd('\')
         }
     }
-    if ($receiptsRoot) {
-        Write-OK "Config.bat found -- RECEIPTS_ROOT: $receiptsRoot"
-    } else {
+    if (-not $receiptsRoot) {
         Write-Fail "Config.bat exists but RECEIPTS_ROOT could not be parsed."
         exit 1
     }
+    if (-not $workbooksRoot) { $workbooksRoot = $receiptsRoot }
+    Write-OK "Config.bat found -- RECEIPTS_ROOT: $receiptsRoot"
 } else {
     Write-Host ""
     Write-Host "  Config.bat not found. Enter the path to your receipts root folder." -ForegroundColor Yellow
@@ -178,13 +181,24 @@ if (Test-Path $configPath) {
         exit 1
     }
 
+    Write-Host ""
+    Write-Host "  Enter the folder where per-year workbooks will be written." -ForegroundColor Yellow
+    Write-Host "  Press Enter to use the same location as your receipts root." -ForegroundColor Yellow
+    Write-Host ""
+    $wbInput = Read-Host "  WORKBOOKS_ROOT [$receiptsRoot]"
+    $workbooksRoot = if ($wbInput.Trim()) { $wbInput.Trim().TrimEnd('\') } else { $receiptsRoot }
+
     try {
         $template = Get-Content (Join-Path $repoRoot "Config\Config.template.bat") -Raw
         $config   = $template `
-            -replace 'set "RECEIPTS_ROOT=.*"', "set `"RECEIPTS_ROOT=$receiptsRoot`"" `
-            -replace 'set "RECEIPTS_ROOT_LOCAL=.*"', "set `"RECEIPTS_ROOT_LOCAL=$receiptsRoot`""
+            -replace 'set "RECEIPTS_ROOT=.*"',       "set `"RECEIPTS_ROOT=$receiptsRoot`"" `
+            -replace 'set "RECEIPTS_ROOT_LOCAL=.*"', "set `"RECEIPTS_ROOT_LOCAL=$receiptsRoot`"" `
+            -replace 'set "WORKBOOKS_ROOT=.*"',      "set `"WORKBOOKS_ROOT=$workbooksRoot`""
         Set-Content $configPath $config -Encoding ASCII
         Write-OK "Created Config.bat (set RECEIPTS_ROOT=$receiptsRoot)"
+        if ($workbooksRoot -ne $receiptsRoot) {
+            Write-OK "WORKBOOKS_ROOT: $workbooksRoot"
+        }
         Write-Host ""
         Write-Host "  NOTE: If your receipts root has a local drive-letter equivalent, edit" -ForegroundColor Yellow
         Write-Host "  Config.bat and update RECEIPTS_ROOT_LOCAL. This is only used by tests." -ForegroundColor Yellow
@@ -204,12 +218,43 @@ Write-Step "Checking receipts root folder..."
 if (Test-Path $receiptsRoot) {
     Write-OK "Folder exists: $receiptsRoot"
 } else {
+    $confirm = Read-Host "  Folder does not exist. Create '$receiptsRoot'? [Y/n]"
+    if ($confirm -ne '' -and $confirm -notmatch '^[Yy]') {
+        Write-Fail "Folder not created. Aborting."
+        exit 1
+    }
     try {
         New-Item -ItemType Directory -Path $receiptsRoot -Force | Out-Null
         Write-OK "Created folder: $receiptsRoot"
     } catch {
         Write-Fail "Could not create $receiptsRoot -- $_"
         exit 1
+    }
+}
+
+# ---------------------------------------------------------------------------
+# 3.5 Create WORKBOOKS_ROOT if it does not exist and differs from RECEIPTS_ROOT
+# ---------------------------------------------------------------------------
+
+if ($workbooksRoot -ne $receiptsRoot) {
+    Write-Host ""
+    Write-Step "Checking workbooks root folder..."
+
+    if (Test-Path $workbooksRoot) {
+        Write-OK "Folder exists: $workbooksRoot"
+    } else {
+        $confirm = Read-Host "  Folder does not exist. Create '$workbooksRoot'? [Y/n]"
+        if ($confirm -ne '' -and $confirm -notmatch '^[Yy]') {
+            Write-Fail "Folder not created. Aborting."
+            exit 1
+        }
+        try {
+            New-Item -ItemType Directory -Path $workbooksRoot -Force | Out-Null
+            Write-OK "Created folder: $workbooksRoot"
+        } catch {
+            Write-Fail "Could not create $workbooksRoot -- $_"
+            exit 1
+        }
     }
 }
 
