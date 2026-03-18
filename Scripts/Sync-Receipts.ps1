@@ -21,7 +21,7 @@
     Cash receipts carry no account number.
 
     On each run the script:
-      - Reads category/subcategory definitions from Categories.json in the script folder
+      - Reads category/subcategory definitions from Categories.json in the repo root
       - Reads valid account numbers from Accounts.xlsx in ReceiptsRoot
       - Creates or overwrites the month sheet(s) in the year workbook
       - Preserves any Category and Subcategory values previously entered by the user
@@ -204,6 +204,10 @@ function Parse-Receipt {
         $amount  = $Matches[3] -replace '[^0-9.\-]', ''
         $method  = $Matches[4]
         $account = if ($Matches[5]) { $Matches[5] } else { "" }
+        if ($method -in 'Card', 'Checking', 'Savings' -and $account -eq '') {
+            Write-SyncLog "Parse: '$Stem' -- $method requires an account number" -Tag WARN
+            return @{ OK=$false; Date=$null; Vendor=""; Amount=""; Method=""; Account="" }
+        }
         return @{ OK=$true; Date=$date; Vendor=$vendor; Amount=$amount; Method=$method; Account=$account }
     }
     return @{ OK=$false; Date=$null; Vendor=""; Amount=""; Method=""; Account="" }
