@@ -118,7 +118,7 @@ To force-close a crashed Excel instance holding the file locked, run the **Sync:
 | `-YearMonth` | YYMM to sync (e.g. `2603`). Defaults to current month. |
 | `-Year` | 4-digit year (e.g. `2026`). Syncs all month folders under that year. Mutually exclusive with `-YearMonth` and `-All`. |
 | `-WorkbookPath` | Full path to a specific `.xlsx` to write into. Overrides the default per-year path derived from `WorkbooksRoot`. Useful for testing. |
-| `-DateFormat` | [.NET ParseExact format string](https://learn.microsoft.com/en-us/dotnet/standard/base-types/custom-date-and-time-format-strings) for the date portion of receipt filenames. Default: `yyMMdd`. Set `DATE_FORMAT` in `Config.bat` to change. |
+| `-DateFormat` | [.NET ParseExact format string](https://learn.microsoft.com/en-us/dotnet/standard/base-types/custom-date-and-time-format-strings) for the date portion of receipt filenames. Default: `yyMMdd`. Set `DATE_FORMAT` in `Config.bat` to change. Single-digit tokens `M` and `d` are supported only in separator-delimited formats (e.g. `M-d-yy`); use `MM`/`dd` for compact formats. |
 | `-All` | Sync every month folder under every year folder. |
 | `-KillExcel` | Kill any running `EXCEL.EXE` before starting. |
 
