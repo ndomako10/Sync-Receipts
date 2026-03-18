@@ -56,6 +56,11 @@
     Each year is written to its own workbook. Mutually exclusive with -YearMonth
     and -Year.
 
+.PARAMETER DateFormat
+    .NET ParseExact format string for the date portion of receipt filenames.
+    Default: yyMMdd (e.g. 260316 for March 16, 2026). Set DATE_FORMAT in Config.bat
+    to change. Examples: yyyyMMdd (20260316), yy-MM-dd (26-03-16), MMddyy (031626).
+
 .PARAMETER KillExcel
     Force-terminates any running EXCEL.EXE processes before starting.
     Use when a previous run crashed and left Excel holding the file locked.
@@ -97,6 +102,7 @@ param (
     [string]$YearMonth    = (Get-Date -Format "yyMM"),
     [string]$Year         = "",
     [string]$WorkbookPath = "",
+    [string]$DateFormat   = 'yyMMdd',
     [switch]$All,
     [switch]$KillExcel
 )
@@ -171,50 +177,78 @@ function ConvertFrom-ReceiptFileName {
 
         yyMMdd Vendor $Amount Method [Account]
 
-    yyMMdd is a .NET ParseExact format string (yy = 2-digit year, MM = month, dd = day).
+    The date portion is controlled by -DateFormat, a .NET ParseExact format string
+    (yy = 2-digit year, MM = month, dd = day). The default is yyMMdd.
 
     Returns a hashtable with the extracted fields. If the stem does not match
-    the pattern, OK is $false and all other values are empty/null.
+    the pattern, OK is $false, ParseError contains a reason, and all other
+    values are empty/null.
 
 .PARAMETER Stem
     The filename without its extension (e.g. "260316 Sunoco $5.27 Card 9080").
 
+.PARAMETER DateFormat
+    .NET ParseExact format string for the date portion of the filename.
+    Default: yyMMdd. Examples: yyyyMMdd, yy-MM-dd, MMddyy, ddMMyy.
+
 .OUTPUTS
     Hashtable with keys:
-        OK      [bool]     -- $true if the filename matched the expected pattern
-        Date    [datetime] -- parsed transaction date; $null if OK is $false
-        Vendor  [string]   -- vendor name
-        Amount  [string]   -- numeric amount string (e.g. "5.27" or "-34.99")
-        Method  [string]   -- payment method: Card, Cash, Checking, or Savings
-        Account [string]   -- last 4 digits, "xxxx", "----", or "" for Cash
+        OK         [bool]     -- $true if the filename matched the expected pattern
+        ParseError [string]   -- reason for failure if OK is $false; "" on success
+        Date       [datetime] -- parsed transaction date; $null if OK is $false
+        Vendor     [string]   -- vendor name
+        Amount     [string]   -- numeric amount string (e.g. "5.27" or "-34.99")
+        Method     [string]   -- payment method: Card, Cash, Checking, or Savings
+        Account    [string]   -- last 4 digits, "xxxx", "----", or "" for Cash
 
 .EXAMPLE
     ConvertFrom-ReceiptFileName -Stem "260316 Sunoco $5.27 Card 9080"
 
 .EXAMPLE
     ConvertFrom-ReceiptFileName -Stem "260310 CVS -$12.00 Cash"
+
+.EXAMPLE
+    ConvertFrom-ReceiptFileName -Stem "20260316 Sunoco $5.27 Card 9080" -DateFormat "yyyyMMdd"
+
+.EXAMPLE
+    ConvertFrom-ReceiptFileName -Stem "26-03-16 CVS -$12.00 Cash" -DateFormat "yy-MM-dd"
 #>
-    param([string]$Stem)
-    $pattern = '^(\d{6})\s+(.+?)\s+(-?\$[\d]+\.[\d]{2})\s+(Card|Cash|Checking|Savings)(?:\s+(\d{4}|xxxx|----))?$'
+    param(
+        [string]$Stem,
+        [string]$DateFormat = 'yyMMdd'
+    )
+    $fail = { param([string]$Reason)
+        Write-SyncLog "Parse: $Reason in '$Stem'" -Tag WARN
+        return @{ OK=$false; ParseError=$Reason; Date=$null; Vendor=""; Amount=""; Method=""; Account="" }
+    }
+    $datePattern = $DateFormat -replace 'yyyy', '\d{4}' -replace 'yy', '\d{2}' -replace 'MM', '\d{2}' -replace 'dd', '\d{2}'
+    $pattern = '^(' + $datePattern + ')\s+(.+?)\s+(-?\$[\d]+\.[\d]{2})\s+(Card|Cash|Checking|Savings)(?:\s+(\d{4}|xxxx|----))?$'
     if ($Stem -match $pattern) {
+        $rawDate = $Matches[1]
+        try {
+            $month = [int]$rawDate.Substring($DateFormat.IndexOf('MM'), 2)
+            $day   = [int]$rawDate.Substring($DateFormat.IndexOf('dd'), 2)
+        } catch {
+            return (& $fail "Could not parse filename")
+        }
+        if ($month -lt 1 -or $month -gt 12) { return (& $fail "Month out of range") }
+        if ($day   -lt 1 -or $day   -gt 31) { return (& $fail "Day out of range") }
         $date = $null
         try {
-            $date = [datetime]::ParseExact($Matches[1], "yyMMdd", $null)
+            $date = [datetime]::ParseExact($rawDate, $DateFormat, $null)
         } catch {
-            Write-SyncLog "Parse: could not parse date '$($Matches[1])' in '$Stem' -- $_" -Tag WARN
-            return @{ OK=$false; Date=$null; Vendor=""; Amount=""; Method=""; Account="" }
+            return (& $fail "Invalid date")
         }
         $vendor  = $Matches[2].Trim()
         $amount  = $Matches[3] -replace '[^0-9.\-]', ''
         $method  = $Matches[4]
         $account = if ($Matches[5]) { $Matches[5] } else { "" }
         if ($method -in 'Card', 'Checking', 'Savings' -and $account -eq '') {
-            Write-SyncLog "Parse: '$Stem' -- $method requires an account number" -Tag WARN
-            return @{ OK=$false; Date=$null; Vendor=""; Amount=""; Method=""; Account="" }
+            return (& $fail "Could not parse filename")
         }
-        return @{ OK=$true; Date=$date; Vendor=$vendor; Amount=$amount; Method=$method; Account=$account }
+        return @{ OK=$true; ParseError=""; Date=$date; Vendor=$vendor; Amount=$amount; Method=$method; Account=$account }
     }
-    return @{ OK=$false; Date=$null; Vendor=""; Amount=""; Method=""; Account="" }
+    return @{ OK=$false; ParseError="Could not parse filename"; Date=$null; Vendor=""; Amount=""; Method=""; Account="" }
 }
 
 function Get-ValidAccounts {
@@ -784,6 +818,10 @@ function Write-MonthSheet {
     Array of valid 4-digit account strings as returned by Get-ValidAccounts.
     Used to flag accounts not present in Accounts.xlsx.
 
+.PARAMETER DateFormat
+    .NET ParseExact format string for the date portion of receipt filenames.
+    Passed through to ConvertFrom-ReceiptFileName. Default: yyMMdd.
+
 .OUTPUTS
     [PSCustomObject] with property DataEndRow [int] -- the last data row index
     (used by Set-SubcategoryValidationXml to scope the dropdown validation range).
@@ -797,22 +835,24 @@ function Write-MonthSheet {
         [string]$FolderPath,
         [string]$SheetName,
         [object]$Workbook,
-        [array]$ValidAccounts
+        [array]$ValidAccounts,
+        [string]$DateFormat = 'yyMMdd'
     )
 
     $receipts = @()
     try {
         Get-ChildItem -Path $FolderPath -File -ErrorAction Stop | Sort-Object Name | ForEach-Object {
-            $parsed = ConvertFrom-ReceiptFileName -Stem $_.BaseName
+            $parsed = ConvertFrom-ReceiptFileName -Stem $_.BaseName -DateFormat $DateFormat
             $receipts += [PSCustomObject]@{
-                FilePath = $_.FullName
-                FileName = $_.Name
-                Date     = $parsed.Date
-                Vendor   = $parsed.Vendor
-                Amount   = $parsed.Amount
-                Method   = $parsed.Method
-                Account  = $parsed.Account
-                ParseOK  = $parsed.OK
+                FilePath   = $_.FullName
+                FileName   = $_.Name
+                Date       = $parsed.Date
+                Vendor     = $parsed.Vendor
+                Amount     = $parsed.Amount
+                Method     = $parsed.Method
+                Account    = $parsed.Account
+                ParseOK    = $parsed.OK
+                ParseError = $parsed.ParseError
             }
         }
     } catch {
@@ -925,7 +965,7 @@ function Write-MonthSheet {
 
         $flag = ""
         if (-not $r.ParseOK) {
-            $flag = "Could not parse filename"
+            $flag = if ($r.ParseError) { $r.ParseError } else { "Could not parse filename" }
         } elseif ($r.Account -eq "xxxx") {
             $flag = "Account obfuscated"
         } elseif ($r.Account -eq "----") {
@@ -1278,7 +1318,7 @@ foreach ($yearEntry in ($yearGroups.GetEnumerator() | Sort-Object Key)) {
         Write-Host ""
         Write-SyncLog "Syncing: $($m.FolderPath)" -Tag STEP
         try {
-            $result = Write-MonthSheet -FolderPath $m.FolderPath -SheetName $m.SheetName -Workbook $workbook -ValidAccounts $validAccounts
+            $result = Write-MonthSheet -FolderPath $m.FolderPath -SheetName $m.SheetName -Workbook $workbook -ValidAccounts $validAccounts -DateFormat $DateFormat
             $syncResults += [PSCustomObject]@{ SheetName = $m.SheetName; Result = $result }
         } catch {
             Write-SyncLog "Sync error: unhandled exception syncing '$($m.SheetName)' -- $_" -Tag ERROR
