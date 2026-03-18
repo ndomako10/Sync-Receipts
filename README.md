@@ -54,10 +54,11 @@ Running a `.bat` launcher triggers the PowerShell script, which parses every rec
    - Prompt for `RECEIPTS_ROOT` and create `Config.bat` (skipped if `Config.bat` already exists)
    - Create the `RECEIPTS_ROOT` folder if it does not exist
    - Copy `Config\Accounts.template.xlsx` to `RECEIPTS_ROOT\Accounts.xlsx` (skipped if already present)
-   - Create `Run Sync Receipts.lnk` and `Run Sync All Receipts.lnk` shortcuts in `RECEIPTS_ROOT`
+   - Create `Run Sync Receipts.lnk`, `Run Sync Month Receipts.lnk`, `Run Sync Year Receipts.lnk`, and `Run Sync All Receipts.lnk` shortcuts in `RECEIPTS_ROOT`
 2. Open `RECEIPTS_ROOT\Accounts.xlsx` and replace the example rows with your own accounts
 3. Optionally edit `Config\Categories.json` to customise your categories
-4. Run the script -- per-year workbooks (e.g. `2026.xlsx`) are created automatically in `RECEIPTS_ROOT`
+4. For the first run, use the `Run Sync All Receipts.lnk` shortcut in `RECEIPTS_ROOT` to sync all existing receipts across all years into workbooks
+5. After the initial sync, use `Run Sync Receipts.lnk` for day-to-day syncing of the current month. Use the month and year launchers when correcting past entries.
 
 `Setup.bat` is safe to re-run -- it skips steps that are already complete.
 
@@ -97,10 +98,14 @@ RECEIPTS_ROOT (e.g. \\Server\Share\Receipts\):
 
 ## Usage
 
+`Launchers\Run-SyncReceipts.bat` is the standard day-to-day launcher. The other launchers are for initial setup and correcting past entries.
+
 | File | Action |
 |------|--------|
-| `Launchers\Run-SyncReceipts.bat` | Sync the current month (reads `RECEIPTS_ROOT` from `Config.bat`) |
-| `Launchers\Run-SyncAllReceipts.bat` | Sync all month folders across all years (reads `RECEIPTS_ROOT` from `Config.bat`) |
+| `Launchers\Run-SyncReceipts.bat` | **Day-to-day.** Sync the current month. |
+| `Launchers\Run-SyncMonthReceipts.bat` | Prompt for a YYMM month to sync; defaults to current month. |
+| `Launchers\Run-SyncYearReceipts.bat` | Prompt for a 4-digit year to sync; defaults to current year. |
+| `Launchers\Run-SyncAllReceipts.bat` | Sync all month folders across all years. |
 
 To force-close a crashed Excel instance holding the file locked, run the **Sync: Current month (KillExcel)** VS Code task, or add `-KillExcel` to the PowerShell command inside `Launchers\Run-SyncReceipts.bat`.
 
