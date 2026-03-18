@@ -12,7 +12,9 @@
 
     Receipt filenames encode all metadata:
 
-        YYMMDD Vendor $Amount Method [Account].ext
+        yyMMdd Vendor $Amount Method [Account].ext
+
+    yyMMdd is a .NET ParseExact format string (yy = 2-digit year, MM = month, dd = day).
 
     The Account field accepts a 4-digit last-4, or one of two placeholder tokens:
         xxxx  - last 4 is known but intentionally omitted for privacy
@@ -167,7 +169,9 @@ function ConvertFrom-ReceiptFileName {
 .DESCRIPTION
     Applies a regex to a filename stem (no extension) in the expected format:
 
-        YYMMDD Vendor $Amount Method [Account]
+        yyMMdd Vendor $Amount Method [Account]
+
+    yyMMdd is a .NET ParseExact format string (yy = 2-digit year, MM = month, dd = day).
 
     Returns a hashtable with the extracted fields. If the stem does not match
     the pattern, OK is $false and all other values are empty/null.
