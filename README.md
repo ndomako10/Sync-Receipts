@@ -51,8 +51,8 @@ Running a `.bat` launcher triggers the PowerShell script, which parses every rec
 
 1. Double-click `Setup.bat` -- it will:
    - Check that PowerShell 5.0+ and Excel are installed
-   - Prompt for `RECEIPTS_ROOT` and create `Config.bat` (skipped if `Config.bat` already exists)
-   - Create the `RECEIPTS_ROOT` folder if it does not exist
+   - Prompt for `RECEIPTS_ROOT` and `WORKBOOKS_ROOT` (defaults to `RECEIPTS_ROOT`), then create `Config.bat` (skipped if `Config.bat` already exists)
+   - Create the `RECEIPTS_ROOT` and `WORKBOOKS_ROOT` folders if they do not exist (prompts for confirmation)
    - Copy `Config\Accounts.template.xlsx` to `RECEIPTS_ROOT\Accounts.xlsx` (skipped if already present)
    - Create `Run Sync Receipts.lnk`, `Run Sync Month Receipts.lnk`, `Run Sync Year Receipts.lnk`, and `Run Sync All Receipts.lnk` shortcuts in `RECEIPTS_ROOT`
 2. Open `RECEIPTS_ROOT\Accounts.xlsx` and replace the example rows with your own accounts
