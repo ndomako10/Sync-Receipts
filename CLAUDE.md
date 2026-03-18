@@ -59,11 +59,12 @@ config.bat                <- local machine settings (gitignored); sets RECEIPTS_
 config.template.bat       <- generic template committed to git
 Accounts.template.xlsx    <- copy to RECEIPTS_ROOT\Accounts.xlsx and fill in accounts
 Categories.json           <- category/subcategory definitions; committed, edit directly
+Setup.ps1                 <- one-time setup: checks prerequisites, creates config.bat,
+Setup.bat                 <-   copies Accounts.xlsx, creates shortcuts in RECEIPTS_ROOT
 Sync-Receipts.ps1         <- core automation (Excel COM)
 Run-SyncReceipts.bat      <- launcher: calls config.bat, syncs current month
 Run-SyncAllReceipts.bat   <- launcher: calls config.bat, syncs all months (-All)
 Kill-Excel.bat            <- standalone utility: force-closes hung EXCEL.EXE processes
-Deploy-SyncReceipts.bat   <- machine-specific deployment helper (gitignored)
 ```
 
 The script files live in their own directory. The data (per-year workbooks and receipt folders) lives at `RECEIPTS_ROOT`, which is set in `config.bat`. Each year gets its own workbook (`2026.xlsx`, `2025.xlsx`, etc.) created automatically on first sync. `Categories.json` lives in the script directory and is read from `$PSScriptRoot`. The two locations are completely independent -- `-ReceiptsRoot` must always be provided explicitly; the script's own folder has no special meaning at runtime.

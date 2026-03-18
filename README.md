@@ -44,12 +44,17 @@ Running a `.bat` launcher triggers the PowerShell script, which parses every rec
 
 ## Setup
 
-1. Copy `config.template.bat` to `config.bat`
-2. Edit `config.bat` and set:
-   - `RECEIPTS_ROOT` -- path to the folder containing your year/month receipt subfolders
-3. Copy `Accounts.template.xlsx` to `RECEIPTS_ROOT\Accounts.xlsx`, replace the example rows with your own accounts
-4. Optionally edit `Categories.json` in the script folder to customise your categories
-5. Run the script -- per-year workbooks (e.g. `2026.xlsx`) are created automatically in `RECEIPTS_ROOT`
+1. Double-click `Setup.bat` -- it will:
+   - Check that PowerShell 5.0+ and Excel are installed
+   - Prompt for `RECEIPTS_ROOT` and create `config.bat` (skipped if `config.bat` already exists)
+   - Create the `RECEIPTS_ROOT` folder if it does not exist
+   - Copy `Accounts.template.xlsx` to `RECEIPTS_ROOT\Accounts.xlsx` (skipped if already present)
+   - Create `Run Sync Receipts.lnk` and `Run Sync All Receipts.lnk` shortcuts in `RECEIPTS_ROOT`
+2. Open `RECEIPTS_ROOT\Accounts.xlsx` and replace the example rows with your own accounts
+3. Optionally edit `Categories.json` in the script folder to customise your categories
+4. Run the script -- per-year workbooks (e.g. `2026.xlsx`) are created automatically in `RECEIPTS_ROOT`
+
+`Setup.bat` is safe to re-run -- it skips steps that are already complete.
 
 ## Folder Structure
 
