@@ -55,7 +55,7 @@ type(scope): short description
 | `categories` | Categories feature |
 | `accounts` | Accounts feature |
 | `sync-month` | Sync-Month function |
-| `parse-receipt` | Parse-Receipt function |
+| `parse-receipt` | ConvertFrom-ReceiptFileName function |
 | `xml` | Set-SubcategoryValidationXml |
 | `tests` | Tests/ |
 | `readme` | README.md |

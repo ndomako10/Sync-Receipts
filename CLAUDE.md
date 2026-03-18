@@ -36,7 +36,7 @@ type(scope): short description
 | `categories` | Categories feature: Get-Categories, Sync-CategorySheet, Config/Categories.json |
 | `accounts` | Accounts feature: Get-ValidAccounts, Accounts.xlsx, Config/Accounts.template.xlsx |
 | `sync-month` | Sync-Month function |
-| `parse-receipt` | Parse-Receipt function |
+| `parse-receipt` | ConvertFrom-ReceiptFileName function |
 | `xml` | Set-SubcategoryValidationXml XML patching |
 | `tests` | Tests/Sync-Receipts.Tests.ps1, Tests/Lint.Tests.ps1 |
 | `readme` | README.md |
@@ -79,7 +79,7 @@ The script files live in their own directory. The data (per-year workbooks and r
 | Function | Purpose |
 |----------|---------|
 | `Write-SyncLog` | Writes timestamped, tagged log lines to the console; routes VERB-tagged messages to `Write-Verbose` |
-| `Parse-Receipt` | Regex-parses a receipt filename stem into date, vendor, amount, method, account |
+| `ConvertFrom-ReceiptFileName` | Regex-parses a receipt filename stem into date, vendor, amount, method, account |
 | `Read-PreservedCategoryValues` | Pure helper: extracts Category/Subcategory keyed by File Name from a 2D string array (no COM dependency; unit-testable) |
 | `Get-ValidAccounts` | Reads 4-digit account numbers from `Accounts.xlsx` in `ReceiptsRoot`; skips validation if absent |
 | `Get-Categories` | Reads category/subcategory data from `Categories.json` in `Config/` (repo root + "Config") |

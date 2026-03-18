@@ -136,12 +136,12 @@ BeforeAll {
 }
 
 # ---------------------------------------------------------------------------
-Describe 'Parse-Receipt' {
+Describe 'ConvertFrom-ReceiptFileName' {
 
     Context 'valid filenames' {
 
         It 'parses all fields: date, vendor, amount, method, account' {
-            $r = Parse-Receipt -Stem '260301 Amazon -$10.00 Card 1234'
+            $r = ConvertFrom-ReceiptFileName -Stem '260301 Amazon -$10.00 Card 1234'
             $r.OK      | Should -Be $true
             $r.Date    | Should -Be ([datetime]'2026-03-01')
             $r.Vendor  | Should -Be 'Amazon'
@@ -151,65 +151,65 @@ Describe 'Parse-Receipt' {
         }
 
         It 'parses a vendor with multiple spaces' {
-            $r = Parse-Receipt -Stem '260301 Amazon Prime Video -$15.99 Card 1234'
+            $r = ConvertFrom-ReceiptFileName -Stem '260301 Amazon Prime Video -$15.99 Card 1234'
             $r.OK     | Should -Be $true
             $r.Vendor | Should -Be 'Amazon Prime Video'
         }
 
         It 'parses amount with no minus sign' {
-            $r = Parse-Receipt -Stem '260301 Walmart $5.50 Cash'
+            $r = ConvertFrom-ReceiptFileName -Stem '260301 Walmart $5.50 Cash'
             $r.OK     | Should -Be $true
             $r.Amount | Should -Be '5.50'
         }
 
         It 'accepts Cash method with no account' {
-            $r = Parse-Receipt -Stem '260301 Walmart -$5.50 Cash'
+            $r = ConvertFrom-ReceiptFileName -Stem '260301 Walmart -$5.50 Cash'
             $r.OK      | Should -Be $true
             $r.Method  | Should -Be 'Cash'
             $r.Account | Should -Be ''
         }
 
         It 'accepts Checking method with account' {
-            $r = Parse-Receipt -Stem '260301 Bank -$100.00 Checking 5678'
+            $r = ConvertFrom-ReceiptFileName -Stem '260301 Bank -$100.00 Checking 5678'
             $r.OK     | Should -Be $true
             $r.Method | Should -Be 'Checking'
             $r.Account| Should -Be '5678'
         }
 
         It 'accepts Savings method with xxxx account' {
-            $r = Parse-Receipt -Stem '260301 ATM -$200.00 Savings xxxx'
+            $r = ConvertFrom-ReceiptFileName -Stem '260301 ATM -$200.00 Savings xxxx'
             $r.OK      | Should -Be $true
             $r.Method  | Should -Be 'Savings'
             $r.Account | Should -Be 'xxxx'
         }
 
         It 'accepts Card with xxxx redacted account' {
-            $r = Parse-Receipt -Stem '260301 Amazon -$34.99 Card xxxx'
+            $r = ConvertFrom-ReceiptFileName -Stem '260301 Amazon -$34.99 Card xxxx'
             $r.OK      | Should -Be $true
             $r.Method  | Should -Be 'Card'
             $r.Account | Should -Be 'xxxx'
         }
 
         It 'accepts Card with ---- unknown account' {
-            $r = Parse-Receipt -Stem '260301 Costco -$67.50 Card ----'
+            $r = ConvertFrom-ReceiptFileName -Stem '260301 Costco -$67.50 Card ----'
             $r.OK      | Should -Be $true
             $r.Method  | Should -Be 'Card'
             $r.Account | Should -Be '----'
         }
 
         It 'accepts 0000 as a regular account number' {
-            $r = Parse-Receipt -Stem '260301 Shop -$5.00 Card 0000'
+            $r = ConvertFrom-ReceiptFileName -Stem '260301 Shop -$5.00 Card 0000'
             $r.OK      | Should -Be $true
             $r.Account | Should -Be '0000'
         }
 
         It 'strips the dollar sign from amount' {
-            $r = Parse-Receipt -Stem '260301 Shop -$1234.56 Card 9999'
+            $r = ConvertFrom-ReceiptFileName -Stem '260301 Shop -$1234.56 Card 9999'
             $r.Amount | Should -Be '-1234.56'
         }
 
         It 'preserves the negative sign and strips the dollar sign' {
-            $r = Parse-Receipt -Stem '260301 Costco -$52.37 Card 1234'
+            $r = ConvertFrom-ReceiptFileName -Stem '260301 Costco -$52.37 Card 1234'
             $r.OK     | Should -Be $true
             $r.Amount | Should -Be '-52.37'
             $r.Amount | Should -Match '^-'
@@ -220,42 +220,42 @@ Describe 'Parse-Receipt' {
     Context 'invalid filenames' {
 
         It 'rejects Card method with no account' {
-            $r = Parse-Receipt -Stem '260301 Amazon -$10.00 Card'
+            $r = ConvertFrom-ReceiptFileName -Stem '260301 Amazon -$10.00 Card'
             $r.OK | Should -Be $false
         }
 
         It 'rejects Checking method with no account' {
-            $r = Parse-Receipt -Stem '260301 Bank -$100.00 Checking'
+            $r = ConvertFrom-ReceiptFileName -Stem '260301 Bank -$100.00 Checking'
             $r.OK | Should -Be $false
         }
 
         It 'rejects Savings method with no account' {
-            $r = Parse-Receipt -Stem '260301 ATM -$200.00 Savings'
+            $r = ConvertFrom-ReceiptFileName -Stem '260301 ATM -$200.00 Savings'
             $r.OK | Should -Be $false
         }
 
         It 'returns ParseOK=false for a non-receipt filename' {
-            $r = Parse-Receipt -Stem 'not a receipt'
+            $r = ConvertFrom-ReceiptFileName -Stem 'not a receipt'
             $r.OK | Should -Be $false
         }
 
         It 'returns ParseOK=false for an invalid date' {
-            $r = Parse-Receipt -Stem '999999 Amazon -$10.00 Card 1234'
+            $r = ConvertFrom-ReceiptFileName -Stem '999999 Amazon -$10.00 Card 1234'
             $r.OK | Should -Be $false
         }
 
         It 'returns ParseOK=false when method is missing' {
-            $r = Parse-Receipt -Stem '260301 Amazon -$10.00'
+            $r = ConvertFrom-ReceiptFileName -Stem '260301 Amazon -$10.00'
             $r.OK | Should -Be $false
         }
 
         It 'returns ParseOK=false when amount has no decimal' {
-            $r = Parse-Receipt -Stem '260301 Amazon -$10 Card 1234'
+            $r = ConvertFrom-ReceiptFileName -Stem '260301 Amazon -$10 Card 1234'
             $r.OK | Should -Be $false
         }
 
         It 'returns empty strings for all fields when invalid' {
-            $r = Parse-Receipt -Stem 'garbage'
+            $r = ConvertFrom-ReceiptFileName -Stem 'garbage'
             $r.Vendor  | Should -Be ''
             $r.Amount  | Should -Be ''
             $r.Method  | Should -Be ''

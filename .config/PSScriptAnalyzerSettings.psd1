@@ -1,7 +1,8 @@
 @{
     ExcludeRules = @(
-        # Parse-Receipt uses a non-standard verb intentionally -- it is an internal
-        # helper, not an exported cmdlet, and the name is the clearest description.
+        # Sync-Month and Sync-CategorySheet use a non-standard verb intentionally --
+        # they are internal helpers, not exported cmdlets, and the names are the
+        # clearest descriptions of their behaviour.
         'PSUseApprovedVerbs',
 
         # Get-ValidAccounts, Get-Categories, Set-CategoryNamedRanges intentionally

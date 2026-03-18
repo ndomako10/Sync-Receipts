@@ -159,7 +159,7 @@ function Write-SyncLog {
     }
 }
 
-function Parse-Receipt {
+function ConvertFrom-ReceiptFileName {
 <#
 .SYNOPSIS
     Parses a receipt filename stem into its metadata components.
@@ -185,10 +185,10 @@ function Parse-Receipt {
         Account [string]   -- last 4 digits, "xxxx", "----", or "" for Cash
 
 .EXAMPLE
-    Parse-Receipt -Stem "260316 Sunoco $5.27 Card 9080"
+    ConvertFrom-ReceiptFileName -Stem "260316 Sunoco $5.27 Card 9080"
 
 .EXAMPLE
-    Parse-Receipt -Stem "260310 CVS -$12.00 Cash"
+    ConvertFrom-ReceiptFileName -Stem "260310 CVS -$12.00 Cash"
 #>
     param([string]$Stem)
     $pattern = '^(\d{6})\s+(.+?)\s+(-?\$[\d]+\.[\d]{2})\s+(Card|Cash|Checking|Savings)(?:\s+(\d{4}|xxxx|----))?$'
@@ -749,7 +749,7 @@ function Sync-Month {
     Creates or overwrites a month sheet in the workbook with parsed receipt data.
 
 .DESCRIPTION
-    Reads all files from FolderPath, parses each filename via Parse-Receipt, and
+    Reads all files from FolderPath, parses each filename via ConvertFrom-ReceiptFileName, and
     writes a formatted 9-column table into a sheet named SheetName. If the sheet
     already exists it is cleared and rewritten; any Category and Subcategory values
     previously entered by the user are preserved across the re-sync.
@@ -799,7 +799,7 @@ function Sync-Month {
     $receipts = @()
     try {
         Get-ChildItem -Path $FolderPath -File -ErrorAction Stop | Sort-Object Name | ForEach-Object {
-            $parsed = Parse-Receipt -Stem $_.BaseName
+            $parsed = ConvertFrom-ReceiptFileName -Stem $_.BaseName
             $receipts += [PSCustomObject]@{
                 FilePath = $_.FullName
                 FileName = $_.Name
