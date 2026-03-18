@@ -12,7 +12,7 @@
 
     Receipt filenames encode all metadata:
 
-        yyMMdd Vendor $Amount Method [Account].ext
+        yyMMdd Vendor $Amount [Method [Account]].ext
 
     yyMMdd is a .NET ParseExact format string (yy = 2-digit year, MM = month, dd = day).
 
@@ -175,7 +175,10 @@ function ConvertFrom-ReceiptFileName {
 .DESCRIPTION
     Applies a regex to a filename stem (no extension) in the expected format:
 
-        yyMMdd Vendor $Amount Method [Account]
+        yyMMdd Vendor $Amount [Method [Account]]
+
+    Method and Account are optional. If omitted, both are returned as "" and
+    OK is $true; Write-MonthSheet will flag the row as "Method missing".
 
     The date portion is controlled by -DateFormat, a .NET ParseExact format string
     (yy = 2-digit year, MM = month, dd = day). The default is yyMMdd.
@@ -198,14 +201,18 @@ function ConvertFrom-ReceiptFileName {
         Date       [datetime] -- parsed transaction date; $null if OK is $false
         Vendor     [string]   -- vendor name
         Amount     [string]   -- numeric amount string (e.g. "5.27" or "-34.99")
-        Method     [string]   -- payment method: Card, Cash, Checking, or Savings
-        Account    [string]   -- last 4 digits, "xxxx", "----", or "" for Cash
+        Method     [string]   -- payment method: Card, Cash, Checking, Savings, or "" if omitted
+        Account    [string]   -- last 4 digits, "xxxx", "----", "" for Cash, or "" if Method omitted
 
 .EXAMPLE
     ConvertFrom-ReceiptFileName -Stem "260316 Sunoco $5.27 Card 9080"
 
 .EXAMPLE
-    ConvertFrom-ReceiptFileName -Stem "260310 CVS -$12.00 Cash"
+    ConvertFrom-ReceiptFileName -Stem "260310 CVS $12.00 Cash"
+
+.EXAMPLE
+    ConvertFrom-ReceiptFileName -Stem "260316 Sunoco $5.27"
+    # Returns OK=$true, Method="", Account=""
 
 .EXAMPLE
     ConvertFrom-ReceiptFileName -Stem "20260316 Sunoco $5.27 Card 9080" -DateFormat "yyyyMMdd"
@@ -221,9 +228,12 @@ function ConvertFrom-ReceiptFileName {
         Write-SyncLog "Parse: $Reason in '$Stem'" -Tag WARN
         return @{ OK=$false; ParseError=$Reason; Date=$null; Vendor=""; Amount=""; Method=""; Account="" }
     }
-    $datePattern = $DateFormat -replace 'yyyy', '\d{4}' -replace 'yy', '\d{2}' -replace 'MM', '\d{2}' -replace 'dd', '\d{2}'
-    $pattern = '^(' + $datePattern + ')\s+(.+?)\s+(-?\$[\d]+\.[\d]{2})\s+(Card|Cash|Checking|Savings)(?:\s+(\d{4}|xxxx|----))?$'
-    if ($Stem -match $pattern) {
+    $datePattern     = $DateFormat -replace 'yyyy', '\d{4}' -replace 'yy', '\d{2}' -replace 'MM', '\d{2}' -replace 'dd', '\d{2}'
+    $pattern         = '^(' + $datePattern + ')\s+(.+?)\s+(-?\$[\d]+\.[\d]{2})\s+(Card|Cash|Checking|Savings)(?:\s+(\d{4}|xxxx|----))?$'
+    $patternNoMethod = '^(' + $datePattern + ')\s+(.+?)\s+(-?\$[\d]+\.[\d]{2})$'
+    $hasMethod   = $Stem -match $pattern
+    $hasNoMethod = -not $hasMethod -and ($Stem -match $patternNoMethod)
+    if ($hasMethod -or $hasNoMethod) {
         $rawDate = $Matches[1]
         try {
             $month = [int]$rawDate.Substring($DateFormat.IndexOf('MM'), 2)
@@ -241,10 +251,14 @@ function ConvertFrom-ReceiptFileName {
         }
         $vendor  = $Matches[2].Trim()
         $amount  = $Matches[3] -replace '[^0-9.\-]', ''
-        $method  = $Matches[4]
-        $account = if ($Matches[5]) { $Matches[5] } else { "" }
-        if ($method -in 'Card', 'Checking', 'Savings' -and $account -eq '') {
-            return (& $fail "Could not parse filename")
+        $method  = ""
+        $account = ""
+        if ($hasMethod) {
+            $method  = $Matches[4]
+            $account = if ($Matches[5]) { $Matches[5] } else { "" }
+            if ($method -in 'Card', 'Checking', 'Savings' -and $account -eq '') {
+                return (& $fail "Could not parse filename")
+            }
         }
         return @{ OK=$true; ParseError=""; Date=$date; Vendor=$vendor; Amount=$amount; Method=$method; Account=$account }
     }
@@ -966,6 +980,8 @@ function Write-MonthSheet {
         $flag = ""
         if (-not $r.ParseOK) {
             $flag = if ($r.ParseError) { $r.ParseError } else { "Could not parse filename" }
+        } elseif ($r.Method -eq "") {
+            $flag = "Method missing"
         } elseif ($r.Account -eq "xxxx") {
             $flag = "Account obfuscated"
         } elseif ($r.Account -eq "----") {
@@ -1025,6 +1041,7 @@ function Write-MonthSheet {
     $sumRow    = $dataEnd + 2
     $flagCount = ($receipts | Where-Object {
         -not $_.ParseOK -or
+        $_.Method -eq "" -or
         $_.Account -eq "xxxx" -or
         $_.Account -eq "----" -or
         ($_.Account -ne "" -and $ValidAccounts.Count -gt 0 -and $ValidAccounts -notcontains $_.Account)
