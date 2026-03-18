@@ -17,7 +17,7 @@ Install-Module PSScriptAnalyzer -Scope CurrentUser
 ## Running Tests
 
 ```powershell
-Invoke-Pester tests/ -Output Detailed
+Invoke-Pester Tests/ -Output Detailed
 ```
 
 All tests run without Excel. Excel COM integration tests are local-only and not part of the automated suite.
@@ -57,16 +57,16 @@ type(scope): short description
 | `sync-month` | Sync-Month function |
 | `parse-receipt` | Parse-Receipt function |
 | `xml` | Set-SubcategoryValidationXml |
-| `tests` | tests/ |
+| `tests` | Tests/ |
 | `readme` | README.md |
 | `ci` | GitHub Actions |
-| `config` | config.bat, .vscode/, batch files |
+| `config` | Config.bat, .vscode/, batch files |
 | `changelog` | CHANGELOG.md |
 
 ## Submitting a Pull Request
 
 1. Fork the repo and create a branch from `master`
-2. Make your changes and ensure `Invoke-Pester tests/ -Output Detailed` passes
+2. Make your changes and ensure `Invoke-Pester Tests/ -Output Detailed` passes
 3. Follow the commit message format above
 4. Open a pull request against `master`
 

@@ -24,4 +24,4 @@ jobs:
 
       - name: Run tests
         shell: pwsh
-        run: Invoke-Pester tests/ -Output Detailed -CI
+        run: Invoke-Pester Tests/ -Output Detailed -CI

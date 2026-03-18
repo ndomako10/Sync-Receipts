@@ -38,11 +38,11 @@ type(scope): short description
 | `sync-month` | Sync-Month function |
 | `parse-receipt` | Parse-Receipt function |
 | `xml` | Set-SubcategoryValidationXml XML patching |
-| `tests` | tests/Sync-Receipts.Tests.ps1 |
+| `tests` | Tests/Sync-Receipts.Tests.ps1 |
 | `readme` | README.md |
 | `claude.md` | CLAUDE.md |
 | `ci` | GitHub Actions workflows (.github/) |
-| `config` | config.bat, .vscode/, batch launcher files |
+| `config` | Config.bat, .vscode/, batch launcher files |
 | `changelog` | CHANGELOG.md |
 
 **Versioning:**
@@ -55,19 +55,22 @@ type(scope): short description
 ## Architecture
 
 ```
-config.bat                <- local machine settings (gitignored); sets RECEIPTS_ROOT
-config.template.bat       <- generic template committed to git
+Config.bat                <- local machine settings (gitignored); sets RECEIPTS_ROOT
+Config.template.bat       <- generic template committed to git
 Accounts.template.xlsx    <- copy to RECEIPTS_ROOT\Accounts.xlsx and fill in accounts
 Categories.json           <- category/subcategory definitions; committed, edit directly
-Setup.ps1                 <- one-time setup: checks prerequisites, creates config.bat,
-Setup.bat                 <-   copies Accounts.xlsx, creates shortcuts in RECEIPTS_ROOT
-Sync-Receipts.ps1         <- core automation (Excel COM)
-Run-SyncReceipts.bat      <- launcher: calls config.bat, syncs current month
-Run-SyncAllReceipts.bat   <- launcher: calls config.bat, syncs all months (-All)
-Kill-Excel.bat            <- standalone utility: force-closes hung EXCEL.EXE processes
+Setup.bat                 <- one-time setup launcher (runs scripts\Setup.ps1)
+Scripts/
+    Setup.ps1             <- one-time setup: checks prerequisites, creates Config.bat,
+                             copies Accounts.xlsx, creates shortcuts in RECEIPTS_ROOT
+    Sync-Receipts.ps1     <- core automation (Excel COM)
+Launchers/
+    Run-SyncReceipts.bat  <- calls Config.bat, syncs current month
+    Run-SyncAllReceipts.bat <- calls Config.bat, syncs all months (-All)
+Kill-Excel.bat            <- standalone utility: force-closes hung EXCEL.EXE (gitignored)
 ```
 
-The script files live in their own directory. The data (per-year workbooks and receipt folders) lives at `RECEIPTS_ROOT`, which is set in `config.bat`. Each year gets its own workbook (`2026.xlsx`, `2025.xlsx`, etc.) created automatically on first sync. `Categories.json` lives in the script directory and is read from `$PSScriptRoot`. The two locations are completely independent -- `-ReceiptsRoot` must always be provided explicitly; the script's own folder has no special meaning at runtime.
+The script files live in their own directory. The data (per-year workbooks and receipt folders) lives at `RECEIPTS_ROOT`, which is set in `Config.bat`. Each year gets its own workbook (`2026.xlsx`, `2025.xlsx`, etc.) created automatically on first sync. `Categories.json` lives in the script directory and is read from `$PSScriptRoot`. The two locations are completely independent -- `-ReceiptsRoot` must always be provided explicitly; the script's own folder has no special meaning at runtime.
 
 ### Key functions in Sync-Receipts.ps1
 

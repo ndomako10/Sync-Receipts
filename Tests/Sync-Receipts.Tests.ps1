@@ -1,11 +1,11 @@
 #Requires -Modules @{ ModuleName='Pester'; ModuleVersion='5.0' }
 #
 # Pester unit tests for Sync-Receipts.ps1
-# Run with: Invoke-Pester ./tests
+# Run with: Invoke-Pester ./Tests
 
 BeforeAll {
     # Load only the function definitions -- skip the main execution block
-    $scriptPath = Resolve-Path (Join-Path $PSScriptRoot '..\Sync-Receipts.ps1')
+    $scriptPath = Resolve-Path (Join-Path $PSScriptRoot '..\Scripts\Sync-Receipts.ps1')
     $ast = [System.Management.Automation.Language.Parser]::ParseFile(
         $scriptPath, [ref]$null, [ref]$null
     )

@@ -131,4 +131,4 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `Sync-Month`: creates/overwrites a month sheet with a 9-column formatted table
 - File hyperlinks, currency formatting, date formatting
 - `Run-SyncReceipts.bat` and `Run-SyncAllReceipts.bat` launchers
-- `config.template.bat` for machine-specific setup
+- `Config.template.bat` for machine-specific setup

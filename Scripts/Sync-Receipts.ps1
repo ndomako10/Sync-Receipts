@@ -29,12 +29,12 @@
       - Injects dropdown validation for Category and Subcategory columns via XML patch
 
     Normally invoked via Run-SyncReceipts.bat or Run-SyncAllReceipts.bat, which read
-    RECEIPTS_ROOT from config.bat and pass it as -ReceiptsRoot.
+    RECEIPTS_ROOT from Config.bat and pass it as -ReceiptsRoot.
 
 .PARAMETER ReceiptsRoot
     Path to the folder containing year subfolders and per-year workbooks.
     Must be provided explicitly; the script's own folder is not the data root.
-    Typically set via RECEIPTS_ROOT in config.bat.
+    Typically set via RECEIPTS_ROOT in Config.bat.
 
 .PARAMETER YearMonth
     YYMM string identifying the month to sync (e.g. "2603" for March 2026).
@@ -91,7 +91,7 @@
 
 
 param (
-    [string]$ReceiptsRoot = $PSScriptRoot,
+    [string]$ReceiptsRoot = (Split-Path $PSScriptRoot -Parent),
     [string]$YearMonth    = (Get-Date -Format "yyMM"),
     [string]$Year         = "",
     [string]$WorkbookPath = "",
@@ -276,16 +276,16 @@ function Get-Categories {
     subcategory strings. Returns $null if the file is missing or cannot be parsed.
 
 .PARAMETER ReceiptsRoot
-    Directory containing Categories.json. Defaults to $PSScriptRoot (the script folder).
+    Directory containing Categories.json. Defaults to the parent of $PSScriptRoot (the repo root).
 
 .OUTPUTS
     [ordered hashtable] mapping category name -> [string[]] subcategory list,
     or $null if the file is missing or invalid.
 
 .EXAMPLE
-    $categories = Get-Categories -ReceiptsRoot $PSScriptRoot
+    $categories = Get-Categories -ReceiptsRoot (Split-Path $PSScriptRoot -Parent)
 #>
-    param([string]$ReceiptsRoot = $PSScriptRoot)
+    param([string]$ReceiptsRoot = (Split-Path $PSScriptRoot -Parent))
     $jsonPath = Join-Path $ReceiptsRoot "Categories.json"
     if (-not (Test-Path $jsonPath)) {
         Write-SyncLog "Categories: Categories.json not found in '$ReceiptsRoot' -- dropdowns skipped" -Tag WARN

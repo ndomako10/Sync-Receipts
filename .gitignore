@@ -1,5 +1,8 @@
-# Local config (contains machine name and username — see config.template.bat)
-config.bat
+# Local config (contains machine name and username -- see Config.template.bat)
+Config.bat
+
+# Standalone utility -- not needed in the repo
+Kill-Excel.bat
 
 # Excel workbooks (contain personal financial data)
 *.xlsx

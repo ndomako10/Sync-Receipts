@@ -46,7 +46,7 @@ Running a `.bat` launcher triggers the PowerShell script, which parses every rec
 
 1. Double-click `Setup.bat` -- it will:
    - Check that PowerShell 5.0+ and Excel are installed
-   - Prompt for `RECEIPTS_ROOT` and create `config.bat` (skipped if `config.bat` already exists)
+   - Prompt for `RECEIPTS_ROOT` and create `Config.bat` (skipped if `Config.bat` already exists)
    - Create the `RECEIPTS_ROOT` folder if it does not exist
    - Copy `Accounts.template.xlsx` to `RECEIPTS_ROOT\Accounts.xlsx` (skipped if already present)
    - Create `Run Sync Receipts.lnk` and `Run Sync All Receipts.lnk` shortcuts in `RECEIPTS_ROOT`
@@ -58,18 +58,22 @@ Running a `.bat` launcher triggers the PowerShell script, which parses every rec
 
 ## Folder Structure
 
-The script files and the data are kept in separate locations. `RECEIPTS_ROOT` is set in `config.bat`.
+The script files and the data are kept in separate locations. `RECEIPTS_ROOT` is set in `Config.bat`.
 
 ```
 Script files (e.g. C:\Scripts\Sync-Receipts\):
-    config.bat               <- gitignored; sets RECEIPTS_ROOT
-    config.template.bat
+    Config.bat               <- gitignored; sets RECEIPTS_ROOT
+    Config.template.bat
     Accounts.template.xlsx   <- copy to RECEIPTS_ROOT\Accounts.xlsx and fill in your accounts
     Categories.json          <- category/subcategory definitions; edit to customise
-    Sync-Receipts.ps1
-    Run-SyncReceipts.bat
-    Run-SyncAllReceipts.bat
-    Kill-Excel.bat           <- force-closes hung EXCEL.EXE processes
+    Setup.bat                <- one-time setup launcher
+    Scripts\
+        Setup.ps1
+        Sync-Receipts.ps1
+    Launchers\
+        Run-SyncReceipts.bat
+        Run-SyncAllReceipts.bat
+    Kill-Excel.bat           <- force-closes hung EXCEL.EXE processes (not in repo)
 
 RECEIPTS_ROOT (e.g. \\Server\Share\Receipts\):
     2026.xlsx                <- created automatically on first sync for that year
@@ -89,16 +93,16 @@ RECEIPTS_ROOT (e.g. \\Server\Share\Receipts\):
 
 | File | Action |
 |------|--------|
-| `Run-SyncReceipts.bat` | Sync the current month (reads `RECEIPTS_ROOT` from `config.bat`) |
-| `Run-SyncAllReceipts.bat` | Sync all month folders across all years (reads `RECEIPTS_ROOT` from `config.bat`) |
+| `Launchers\Run-SyncReceipts.bat` | Sync the current month (reads `RECEIPTS_ROOT` from `Config.bat`) |
+| `Launchers\Run-SyncAllReceipts.bat` | Sync all month folders across all years (reads `RECEIPTS_ROOT` from `Config.bat`) |
 
-To force-close a crashed Excel instance holding the file locked, double-click `Kill-Excel.bat`, run the **Sync: Current month (KillExcel)** VS Code task, or add `-KillExcel` to the PowerShell command inside `Run-SyncReceipts.bat`.
+To force-close a crashed Excel instance holding the file locked, run the **Sync: Current month (KillExcel)** VS Code task, or add `-KillExcel` to the PowerShell command inside `Launchers\Run-SyncReceipts.bat`.
 
 ## Script Parameters
 
 | Parameter | Description |
 |-----------|-------------|
-| `-ReceiptsRoot` | **Required.** Path to the folder containing year subfolders and per-year workbooks. Set via `config.bat`. |
+| `-ReceiptsRoot` | **Required.** Path to the folder containing year subfolders and per-year workbooks. Set via `Config.bat`. |
 | `-YearMonth` | YYMM to sync (e.g. `2603`). Defaults to current month. |
 | `-Year` | 4-digit year (e.g. `2026`). Syncs all month folders under that year. Mutually exclusive with `-YearMonth` and `-All`. |
 | `-WorkbookPath` | Full path to a specific `.xlsx` to write into. Overrides the default per-year path (e.g. `2026.xlsx`). Useful for testing. |

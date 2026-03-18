@@ -1,10 +1,10 @@
 #Requires -Modules @{ ModuleName='Pester'; ModuleVersion='5.0' }, PSScriptAnalyzer
 #
 # PSScriptAnalyzer lint tests for Sync-Receipts.ps1
-# Run with: Invoke-Pester ./tests
+# Run with: Invoke-Pester ./Tests
 
 BeforeAll {
-    $script:scriptPath    = Join-Path (Split-Path $PSScriptRoot -Parent) 'Sync-Receipts.ps1'
+    $script:scriptPath    = Join-Path (Split-Path $PSScriptRoot -Parent) 'Scripts\Sync-Receipts.ps1'
     $script:settingsPath  = Join-Path (Join-Path (Split-Path $PSScriptRoot -Parent) '.config') 'PSScriptAnalyzerSettings.psd1'
 
     $script:results = Invoke-ScriptAnalyzer -Path $script:scriptPath -Settings $script:settingsPath

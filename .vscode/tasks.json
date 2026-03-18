@@ -28,7 +28,7 @@
             "args": [
                 "-NoProfile",
                 "-Command",
-                "Import-Module Pester -MinimumVersion 5.0 -Force; Invoke-Pester ./tests/Sync-Receipts.Tests.ps1 -Output Detailed"
+                "Import-Module Pester -MinimumVersion 5.0 -Force; Invoke-Pester ./Tests/Sync-Receipts.Tests.ps1 -Output Detailed"
             ],
             "group": "test",
             "presentation": {
@@ -45,7 +45,7 @@
             "args": [
                 "-NoProfile",
                 "-Command",
-                "Import-Module Pester -MinimumVersion 5.0 -Force; Invoke-Pester ./tests/Lint.Tests.ps1 -Output Detailed"
+                "Import-Module Pester -MinimumVersion 5.0 -Force; Invoke-Pester ./Tests/Lint.Tests.ps1 -Output Detailed"
             ],
             "group": "test",
             "presentation": {
@@ -59,7 +59,7 @@
             "label": "Sync: Current month",
             "type": "shell",
             "command": "cmd",
-            "args": ["/c", "${workspaceFolder}\\Run-SyncReceipts.bat"],
+            "args": ["/c", "${workspaceFolder}\\Launchers\\Run-SyncReceipts.bat"],
             "group": "build",
             "presentation": {
                 "reveal": "always",
@@ -72,7 +72,7 @@
             "label": "Sync: All months",
             "type": "shell",
             "command": "cmd",
-            "args": ["/c", "${workspaceFolder}\\Run-SyncAllReceipts.bat"],
+            "args": ["/c", "${workspaceFolder}\\Launchers\\Run-SyncAllReceipts.bat"],
             "group": "build",
             "presentation": {
                 "reveal": "always",
@@ -87,7 +87,7 @@
             "command": "cmd",
             "args": [
                 "/c",
-                "call \"${workspaceFolder}\\config.bat\" && powershell -NoProfile -ExecutionPolicy Bypass -NonInteractive -File \"${workspaceFolder}\\Sync-Receipts.ps1\" -ReceiptsRoot \"%RECEIPTS_ROOT_LOCAL%\" -WorkbookPath \"${workspaceFolder}\\tests\\Receipts (test).xlsx\""
+                "call \"${workspaceFolder}\\Config.bat\" && powershell -NoProfile -ExecutionPolicy Bypass -NonInteractive -File \"${workspaceFolder}\\Scripts\\Sync-Receipts.ps1\" -ReceiptsRoot \"%RECEIPTS_ROOT_LOCAL%\" -WorkbookPath \"${workspaceFolder}\\Tests\\Receipts (test).xlsx\""
             ],
             "group": "build",
             "presentation": {
@@ -103,7 +103,7 @@
             "command": "cmd",
             "args": [
                 "/c",
-                "call \"${workspaceFolder}\\config.bat\" && powershell -NoProfile -ExecutionPolicy Bypass -NonInteractive -File \"${workspaceFolder}\\Sync-Receipts.ps1\" -ReceiptsRoot \"%RECEIPTS_ROOT%\" -KillExcel"
+                "call \"${workspaceFolder}\\Config.bat\" && powershell -NoProfile -ExecutionPolicy Bypass -NonInteractive -File \"${workspaceFolder}\\Scripts\\Sync-Receipts.ps1\" -ReceiptsRoot \"%RECEIPTS_ROOT%\" -KillExcel"
             ],
             "group": "build",
             "presentation": {

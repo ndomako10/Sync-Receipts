@@ -6,8 +6,8 @@
     Performs all first-time configuration steps needed before running Sync-Receipts:
 
       1. Checks that PowerShell 5.0+ and Microsoft Excel are installed.
-      2. Reads RECEIPTS_ROOT from config.bat, or prompts for the path and creates config.bat
-         from config.template.bat.
+      2. Reads RECEIPTS_ROOT from Config.bat, or prompts for the path and creates Config.bat
+         from Config.template.bat.
       3. Creates the RECEIPTS_ROOT folder if it does not already exist.
       4. Copies Accounts.template.xlsx to RECEIPTS_ROOT\Accounts.xlsx (skipped if present).
       5. Creates Windows shortcut (.lnk) files in RECEIPTS_ROOT that point to the batch
@@ -24,7 +24,9 @@
     Tested on: Windows 10/11
 #>
 
-$scriptDir = $PSScriptRoot
+$scriptDir    = $PSScriptRoot
+$repoRoot     = Split-Path $scriptDir -Parent
+$launchersDir = Join-Path $repoRoot "Launchers"
 
 function Write-Step {
     <#
@@ -141,13 +143,13 @@ if (-not $excelInstalled) {
 Write-OK "Microsoft Excel"
 
 # ---------------------------------------------------------------------------
-# 2. Resolve RECEIPTS_ROOT -- read config.bat or prompt
+# 2. Resolve RECEIPTS_ROOT -- read Config.bat or prompt
 # ---------------------------------------------------------------------------
 
 Write-Host ""
 Write-Step "Configuring RECEIPTS_ROOT..."
 
-$configPath = Join-Path $scriptDir "config.bat"
+$configPath = Join-Path $repoRoot "Config.bat"
 $receiptsRoot = $null
 
 if (Test-Path $configPath) {
@@ -158,14 +160,14 @@ if (Test-Path $configPath) {
         }
     }
     if ($receiptsRoot) {
-        Write-OK "config.bat found -- RECEIPTS_ROOT: $receiptsRoot"
+        Write-OK "Config.bat found -- RECEIPTS_ROOT: $receiptsRoot"
     } else {
-        Write-Fail "config.bat exists but RECEIPTS_ROOT could not be parsed."
+        Write-Fail "Config.bat exists but RECEIPTS_ROOT could not be parsed."
         exit 1
     }
 } else {
     Write-Host ""
-    Write-Host "  config.bat not found. Enter the path to your receipts root folder." -ForegroundColor Yellow
+    Write-Host "  Config.bat not found. Enter the path to your receipts root folder." -ForegroundColor Yellow
     Write-Host "  Example: \\Server\Share\Receipts  or  C:\Users\You\Documents\Receipts" -ForegroundColor Yellow
     Write-Host ""
     $userInput = Read-Host "  RECEIPTS_ROOT"
@@ -177,17 +179,17 @@ if (Test-Path $configPath) {
     }
 
     try {
-        $template = Get-Content (Join-Path $scriptDir "config.template.bat") -Raw
+        $template = Get-Content (Join-Path $repoRoot "Config.template.bat") -Raw
         $config   = $template `
             -replace 'set "RECEIPTS_ROOT=.*"', "set `"RECEIPTS_ROOT=$receiptsRoot`"" `
             -replace 'set "RECEIPTS_ROOT_LOCAL=.*"', "set `"RECEIPTS_ROOT_LOCAL=$receiptsRoot`""
         Set-Content $configPath $config -Encoding ASCII
-        Write-OK "Created config.bat (set RECEIPTS_ROOT=$receiptsRoot)"
+        Write-OK "Created Config.bat (set RECEIPTS_ROOT=$receiptsRoot)"
         Write-Host ""
         Write-Host "  NOTE: If your receipts root has a local drive-letter equivalent, edit" -ForegroundColor Yellow
-        Write-Host "  config.bat and update RECEIPTS_ROOT_LOCAL. This is only used by tests." -ForegroundColor Yellow
+        Write-Host "  Config.bat and update RECEIPTS_ROOT_LOCAL. This is only used by tests." -ForegroundColor Yellow
     } catch {
-        Write-Fail "Could not create config.bat -- $_"
+        Write-Fail "Could not create Config.bat -- $_"
         exit 1
     }
 }
@@ -218,7 +220,7 @@ if (Test-Path $receiptsRoot) {
 Write-Host ""
 Write-Step "Setting up Accounts.xlsx..."
 
-$templateXlsx = Join-Path $scriptDir "Accounts.template.xlsx"
+$templateXlsx = Join-Path $repoRoot "Accounts.template.xlsx"
 $accountsXlsx = Join-Path $receiptsRoot "Accounts.xlsx"
 
 if (Test-Path $accountsXlsx) {
@@ -246,12 +248,12 @@ Write-Step "Creating shortcuts in $receiptsRoot..."
 $shortcuts = @(
     @{
         Name        = "Run Sync Receipts.lnk"
-        Target      = Join-Path $scriptDir "Run-SyncReceipts.bat"
+        Target      = Join-Path $launchersDir "Run-SyncReceipts.bat"
         Description = "Sync the current month into the receipts workbook"
     },
     @{
         Name        = "Run Sync All Receipts.lnk"
-        Target      = Join-Path $scriptDir "Run-SyncAllReceipts.bat"
+        Target      = Join-Path $launchersDir "Run-SyncAllReceipts.bat"
         Description = "Sync all month folders across all years"
     }
 )
@@ -263,7 +265,7 @@ foreach ($s in $shortcuts) {
         $verb             = if (Test-Path $lnkPath) { "Updated" } else { "Created" }
         $shortcut         = $wsh.CreateShortcut($lnkPath)
         $shortcut.TargetPath       = $s.Target
-        $shortcut.WorkingDirectory = $scriptDir
+        $shortcut.WorkingDirectory = $launchersDir
         $shortcut.Description      = $s.Description
         $shortcut.Save()
         Write-OK "${verb} shortcut: $($s.Name)"
