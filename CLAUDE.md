@@ -38,18 +38,19 @@ type(scope): short description
 | `sync-month` | Sync-Month function |
 | `parse-receipt` | Parse-Receipt function |
 | `xml` | Set-SubcategoryValidationXml XML patching |
-| `tests` | Tests/Sync-Receipts.Tests.ps1 |
+| `tests` | Tests/Sync-Receipts.Tests.ps1, Tests/Lint.Tests.ps1 |
 | `readme` | README.md |
 | `claude.md` | CLAUDE.md |
 | `ci` | GitHub Actions workflows (.github/) |
 | `config` | Config.bat, .vscode/, batch launcher files |
 | `changelog` | CHANGELOG.md |
+| `security` | SECURITY.md |
 
 **Versioning:**
 - `MAJOR` -- breaking changes (file format changes, removed parameters, renamed files)
 - `MINOR` -- new features
 - `PATCH` -- bug fixes, docs, tests
-- Version is tracked in the `Sync-Receipts.ps1` header and git tags (`v0.5.0`)
+- Version is tracked in the `Sync-Receipts.ps1` header and git tags (e.g. `v0.5.0`)
 - `CHANGELOG.md` is updated manually when tagging a release
 
 ## Architecture
@@ -59,7 +60,7 @@ Config.bat                <- local machine settings (gitignored); sets RECEIPTS_
 Config.template.bat       <- generic template committed to git
 Accounts.template.xlsx    <- copy to RECEIPTS_ROOT\Accounts.xlsx and fill in accounts
 Categories.json           <- category/subcategory definitions; committed, edit directly
-Setup.bat                 <- one-time setup launcher (runs scripts\Setup.ps1)
+Setup.bat                 <- one-time setup launcher (runs Scripts\Setup.ps1)
 Scripts/
     Setup.ps1             <- one-time setup: checks prerequisites, creates Config.bat,
                              copies Accounts.xlsx, creates shortcuts in RECEIPTS_ROOT
@@ -70,7 +71,7 @@ Launchers/
 Kill-Excel.bat            <- standalone utility: force-closes hung EXCEL.EXE (gitignored)
 ```
 
-The script files live in their own directory. The data (per-year workbooks and receipt folders) lives at `RECEIPTS_ROOT`, which is set in `Config.bat`. Each year gets its own workbook (`2026.xlsx`, `2025.xlsx`, etc.) created automatically on first sync. `Categories.json` lives in the script directory and is read from `$PSScriptRoot`. The two locations are completely independent -- `-ReceiptsRoot` must always be provided explicitly; the script's own folder has no special meaning at runtime.
+The script files live in their own directory. The data (per-year workbooks and receipt folders) lives at `RECEIPTS_ROOT`, which is set in `Config.bat`. Each year gets its own workbook (`2026.xlsx`, `2025.xlsx`, etc.) created automatically on first sync. `Categories.json` lives in the repo root and is read via the parent of `$PSScriptRoot`. The two locations are completely independent -- `-ReceiptsRoot` must always be provided explicitly; the script's own folder has no special meaning at runtime.
 
 ### Key functions in Sync-Receipts.ps1
 
@@ -80,7 +81,7 @@ The script files live in their own directory. The data (per-year workbooks and r
 | `Parse-Receipt` | Regex-parses a receipt filename stem into date, vendor, amount, method, account |
 | `Read-PreservedCategoryValues` | Pure helper: extracts Category/Subcategory keyed by File Name from a 2D string array (no COM dependency; unit-testable) |
 | `Get-ValidAccounts` | Reads 4-digit account numbers from `Accounts.xlsx` in `ReceiptsRoot`; skips validation if absent |
-| `Get-Categories` | Reads category/subcategory data from `Categories.json` in `$PSScriptRoot` |
+| `Get-Categories` | Reads category/subcategory data from `Categories.json` in the repo root (parent of `$PSScriptRoot`) |
 | `Sync-CategorySheet` | Writes category data from hashtable into the Category sheet (creates if absent, overwrites if present, hides the sheet) |
 | `Get-ExcelColumnLetter` | Converts a 1-based column index to an Excel column letter (e.g. 1 -> "A", 27 -> "AA"); used to build named range address strings without COM |
 | `Set-CategoryNamedRanges` | Creates named ranges in the workbook for Category/Subcategory dropdowns |
