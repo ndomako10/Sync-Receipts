@@ -257,14 +257,10 @@ Describe 'ConvertFrom-ReceiptFileName' {
             $r.ParseError | Should -Be 'Invalid date'
         }
 
-        It 'returns ParseOK=false for a non-receipt filename' {
-            $r = ConvertFrom-ReceiptFileName -Stem 'not a receipt'
-            $r.OK | Should -Be $false
-        }
-
-        It 'returns ParseOK=false when method is missing' {
-            $r = ConvertFrom-ReceiptFileName -Stem '260301 Amazon -$10.00'
-            $r.OK | Should -Be $false
+        It 'returns ParseOK=false and ParseError for a non-receipt filename' {
+            $r = ConvertFrom-ReceiptFileName -Stem 'garbage'
+            $r.OK         | Should -Be $false
+            $r.ParseError | Should -Be 'Could not parse filename'
         }
 
         It 'returns ParseOK=false when amount has no decimal' {
@@ -278,6 +274,38 @@ Describe 'ConvertFrom-ReceiptFileName' {
             $r.Amount  | Should -Be ''
             $r.Method  | Should -Be ''
             $r.Account | Should -Be ''
+        }
+    }
+
+    Context 'no Method or Account' {
+
+        It 'returns OK=true when Method and Account are omitted' {
+            $r = ConvertFrom-ReceiptFileName -Stem '260301 Amazon -$10.00'
+            $r.OK | Should -Be $true
+        }
+
+        It 'returns empty Method and Account when both are omitted' {
+            $r = ConvertFrom-ReceiptFileName -Stem '260301 Amazon -$10.00'
+            $r.Method  | Should -Be ''
+            $r.Account | Should -Be ''
+        }
+
+        It 'returns ParseError="" when Method is omitted' {
+            $r = ConvertFrom-ReceiptFileName -Stem '260301 Amazon -$10.00'
+            $r.ParseError | Should -Be ''
+        }
+
+        It 'still parses date, vendor, and amount correctly when Method is omitted' {
+            $r = ConvertFrom-ReceiptFileName -Stem '260301 Amazon Prime -$34.99'
+            $r.Date   | Should -Be ([datetime]'2026-03-01')
+            $r.Vendor | Should -Be 'Amazon Prime'
+            $r.Amount | Should -Be '-34.99'
+        }
+
+        It 'still rejects an out-of-range month when Method is omitted' {
+            $r = ConvertFrom-ReceiptFileName -Stem '261316 Amazon -$10.00'
+            $r.OK         | Should -Be $false
+            $r.ParseError | Should -Be 'Month out of range'
         }
     }
 
