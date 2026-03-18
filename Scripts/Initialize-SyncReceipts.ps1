@@ -6,8 +6,8 @@
     Performs all first-time configuration steps needed before running Sync-Receipts:
 
       1. Checks that PowerShell 5.0+ and Microsoft Excel are installed.
-      2. Reads RECEIPTS_ROOT from Config.bat, or prompts for the path and creates Config.bat
-         from Config\Config.template.bat.
+      2. Reads RECEIPTS_ROOT from Config\Config.bat, or prompts for the path and creates
+         Config\Config.bat from Config\Config.template.bat.
       3. Creates the RECEIPTS_ROOT folder if it does not already exist.
       4. Copies Accounts.template.xlsx to RECEIPTS_ROOT\Accounts.xlsx (skipped if present).
       5. Creates Windows shortcut (.lnk) files in RECEIPTS_ROOT that point to the batch
@@ -149,7 +149,7 @@ Write-OK "Microsoft Excel"
 Write-Host ""
 Write-Step "Configuring RECEIPTS_ROOT..."
 
-$configPath = Join-Path $repoRoot "Config.bat"
+$configPath = Join-Path $repoRoot "Config\Config.bat"
 $receiptsRoot = $null
 
 if (Test-Path $configPath) {
