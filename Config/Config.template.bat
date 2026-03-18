@@ -6,7 +6,7 @@ set "RECEIPTS_ROOT=C:\Users\YOUR-USERNAME\Documents\Receipts"
 
 :: Local drive equivalent of RECEIPTS_ROOT, used by VS Code tasks
 :: to avoid UNC path latency. Set to the same folder via a local drive letter.
-set "RECEIPTS_ROOT_LOCAL=C:\Users\YOUR-USERNAME\Documents\Receipts"
+set "RECEIPTS_ROOT_LOCAL=%RECEIPTS_ROOT%"
 
 :: Directory where per-year workbooks (e.g. 2026.xlsx) are written.
 :: Defaults to RECEIPTS_ROOT if left as-is. Set to a different path to store
