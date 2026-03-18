@@ -34,7 +34,7 @@
     RECEIPTS_ROOT from Config.bat and pass it as -ReceiptsRoot.
 
 .PARAMETER ReceiptsRoot
-    Path to the folder containing year subfolders and per-year workbooks.
+    Path to the folder containing year subfolders and receipt files.
     Must be provided explicitly; the script's own folder is not the data root.
     Typically set via RECEIPTS_ROOT in Config.bat.
 
@@ -47,9 +47,15 @@
     ReceiptsRoot\{Year}\ into a single year workbook. Mutually exclusive with
     -YearMonth and -All.
 
+.PARAMETER WorkbooksRoot
+    Directory where per-year workbooks (e.g. 2026.xlsx) are written.
+    Defaults to ReceiptsRoot if not provided. Set WORKBOOKS_ROOT in Config.bat
+    to store workbooks in a different location from your receipts (e.g. a local
+    drive while receipts live on a network share).
+
 .PARAMETER WorkbookPath
     Full path to a specific .xlsx file to write into. Overrides the default
-    per-year workbook path ({year}.xlsx in ReceiptsRoot). Intended for testing.
+    per-year workbook path ({year}.xlsx in WorkbooksRoot). Intended for testing.
 
 .PARAMETER All
     Syncs every month folder found under every year folder in ReceiptsRoot.
@@ -98,11 +104,12 @@
 
 
 param (
-    [string]$ReceiptsRoot = (Split-Path $PSScriptRoot -Parent),
-    [string]$YearMonth    = (Get-Date -Format "yyMM"),
-    [string]$Year         = "",
-    [string]$WorkbookPath = "",
-    [string]$DateFormat   = 'yyMMdd',
+    [string]$ReceiptsRoot  = (Split-Path $PSScriptRoot -Parent),
+    [string]$WorkbooksRoot = "",
+    [string]$YearMonth     = (Get-Date -Format "yyMM"),
+    [string]$Year          = "",
+    [string]$WorkbookPath  = "",
+    [string]$DateFormat    = 'yyMMdd',
     [switch]$All,
     [switch]$KillExcel
 )
@@ -1230,11 +1237,13 @@ foreach ($yearEntry in ($yearGroups.GetEnumerator() | Sort-Object Key)) {
     $months = $yearEntry.Value
 
     # Resolve workbook path for this year.
-    # -WorkbookPath overrides the derived path (used for testing).
+    # -WorkbookPath overrides everything (used for testing).
+    # -WorkbooksRoot sets the output directory; defaults to ReceiptsRoot.
     if ($WorkbookPath -ne "") {
         $wbPath = $WorkbookPath
     } else {
-        $wbPath = Join-Path $ReceiptsRoot "$year.xlsx"
+        $effectiveWbRoot = if ($WorkbooksRoot -ne "") { $WorkbooksRoot } else { $ReceiptsRoot }
+        $wbPath = Join-Path $effectiveWbRoot "$year.xlsx"
     }
     $xlsxName = [System.IO.Path]::GetFileName($wbPath)
     Write-Host ""

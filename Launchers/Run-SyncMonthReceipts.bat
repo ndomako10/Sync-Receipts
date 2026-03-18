@@ -6,12 +6,13 @@ pushd "%~dp0"
 
 set "DATE_FORMAT=yyMMdd"
 call "%~dp0..\Config\Config.bat"
+if "%WORKBOOKS_ROOT%"=="" set "WORKBOOKS_ROOT=%RECEIPTS_ROOT%"
 
 for /f %%M in ('PowerShell -NoProfile -Command "(Get-Date).ToString('yyMM')"') do set "DEFAULT_MONTH=%%M"
 set /p SYNC_MONTH=Enter YYMM to sync [%DEFAULT_MONTH%]:
 if "%SYNC_MONTH%"=="" set "SYNC_MONTH=%DEFAULT_MONTH%"
 
-PowerShell -NoProfile -ExecutionPolicy Bypass -NonInteractive -File "%~dp0..\Scripts\Sync-Receipts.ps1" -ReceiptsRoot "%RECEIPTS_ROOT%" -DateFormat "%DATE_FORMAT%" -YearMonth %SYNC_MONTH%
+PowerShell -NoProfile -ExecutionPolicy Bypass -NonInteractive -File "%~dp0..\Scripts\Sync-Receipts.ps1" -ReceiptsRoot "%RECEIPTS_ROOT%" -WorkbooksRoot "%WORKBOOKS_ROOT%" -DateFormat "%DATE_FORMAT%" -YearMonth %SYNC_MONTH%
 
 pause
 popd
