@@ -30,10 +30,10 @@ Describe 'PSScriptAnalyzer -- Sync-Receipts.ps1' {
     }
 }
 
-Describe 'PSScriptAnalyzer -- Setup.ps1' {
+Describe 'PSScriptAnalyzer -- Initialize-SyncReceipts.ps1' {
 
     BeforeAll {
-        $setupPath    = Join-Path (Split-Path $PSScriptRoot -Parent) 'Scripts\Setup.ps1'
+        $setupPath    = Join-Path (Split-Path $PSScriptRoot -Parent) 'Scripts\Initialize-SyncReceipts.ps1'
         $script:setupResults = Invoke-ScriptAnalyzer -Path $setupPath -Settings $script:settingsPath
     }
 

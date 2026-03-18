@@ -15,7 +15,7 @@
          open without the "UNC paths are not supported" CMD error.
 
     Run via Setup.bat (recommended), or directly:
-        PowerShell -NoProfile -ExecutionPolicy Bypass -File Setup.ps1
+        PowerShell -NoProfile -ExecutionPolicy Bypass -File Initialize-SyncReceipts.ps1
 
     The script is safe to re-run -- steps that are already complete are skipped.
 
@@ -34,7 +34,7 @@ function Write-Step {
         Writes a step-header message to the console in cyan.
 
     .DESCRIPTION
-        Used internally by Setup.ps1 to announce the start of each setup phase.
+        Used internally by Initialize-SyncReceipts.ps1 to announce the start of each setup phase.
         Output is indented by two spaces and coloured cyan to stand out from
         sub-step OK/SKIP/FAIL lines.
 
@@ -55,7 +55,7 @@ function Write-OK {
         Writes a success line to the console in green.
 
     .DESCRIPTION
-        Used internally by Setup.ps1 to confirm that a setup action completed
+        Used internally by Initialize-SyncReceipts.ps1 to confirm that a setup action completed
         successfully. Output is prefixed with "[OK]" and coloured green.
 
     .PARAMETER msg
@@ -75,7 +75,7 @@ function Write-Skip {
         Writes a skipped-step line to the console in yellow.
 
     .DESCRIPTION
-        Used internally by Setup.ps1 when a setup action is intentionally
+        Used internally by Initialize-SyncReceipts.ps1 when a setup action is intentionally
         bypassed because the target already exists or the step is not needed.
         Output is prefixed with "[SKIP]" and coloured yellow.
 
@@ -96,7 +96,7 @@ function Write-Fail {
         Writes a failure line to the console in red.
 
     .DESCRIPTION
-        Used internally by Setup.ps1 when a setup action fails and the script
+        Used internally by Initialize-SyncReceipts.ps1 when a setup action fails and the script
         cannot continue. Output is prefixed with "[FAIL]" and coloured red.
         The caller is responsible for calling exit after Write-Fail when the
         error is fatal.

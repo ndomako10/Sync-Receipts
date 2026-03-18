@@ -69,7 +69,7 @@ Script files (e.g. C:\Scripts\Sync-Receipts\):
         Accounts.template.xlsx <- copy to RECEIPTS_ROOT\Accounts.xlsx and fill in your accounts
         Categories.json        <- category/subcategory definitions; edit to customise
     Scripts\
-        Setup.ps1
+        Initialize-SyncReceipts.ps1
         Sync-Receipts.ps1
     Launchers\
         Run-SyncReceipts.bat

@@ -57,13 +57,13 @@ type(scope): short description
 
 ```
 Config.bat                <- local machine settings (gitignored); sets RECEIPTS_ROOT
-Setup.bat                 <- one-time setup launcher (runs Scripts\Setup.ps1)
+Setup.bat                 <- one-time setup launcher (runs Scripts\Initialize-SyncReceipts.ps1)
 Config/
     Config.template.bat   <- generic template committed to git
     Accounts.template.xlsx <- copy to RECEIPTS_ROOT\Accounts.xlsx and fill in accounts
     Categories.json       <- category/subcategory definitions; committed, edit directly
 Scripts/
-    Setup.ps1             <- one-time setup: checks prerequisites, creates Config.bat,
+    Initialize-SyncReceipts.ps1 <- one-time setup: checks prerequisites, creates Config.bat,
                              copies Accounts.xlsx, creates shortcuts in RECEIPTS_ROOT
     Sync-Receipts.ps1     <- core automation (Excel COM)
 Launchers/

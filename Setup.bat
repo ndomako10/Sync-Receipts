@@ -6,7 +6,7 @@
 :: pushd maps UNC paths to a temporary drive letter so CMD does not error.
 pushd "%~dp0"
 
-PowerShell -NoProfile -ExecutionPolicy Bypass -File "%~dp0Scripts\Setup.ps1"
+PowerShell -NoProfile -ExecutionPolicy Bypass -File "%~dp0Scripts\Initialize-SyncReceipts.ps1"
 
 pause
 popd
