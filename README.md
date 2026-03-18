@@ -12,8 +12,10 @@ A PowerShell automation tool that syncs receipt files into a formatted Excel wor
 Receipt files are named with embedded metadata:
 
 ```
-YYMMDD Vendor $Amount Method [Account].ext
+yyMMdd Vendor $Amount Method [Account].ext
 ```
+
+`yyMMdd` is a [.NET ParseExact format string](https://learn.microsoft.com/en-us/dotnet/standard/base-types/custom-date-and-time-format-strings): `yy` = 2-digit year, `MM` = month, `dd` = day.
 
 The `Account` field is the last 4 digits of the card or account number. Two special tokens are also accepted:
 
