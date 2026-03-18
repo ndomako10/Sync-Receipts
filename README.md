@@ -113,10 +113,11 @@ To force-close a crashed Excel instance holding the file locked, run the **Sync:
 
 | Parameter | Description |
 |-----------|-------------|
-| `-ReceiptsRoot` | **Required.** Path to the folder containing year subfolders and per-year workbooks. Set via `Config.bat`. |
+| `-ReceiptsRoot` | **Required.** Path to the folder containing year subfolders and receipt files. Set via `Config.bat`. |
+| `-WorkbooksRoot` | Directory where per-year workbooks (e.g. `2026.xlsx`) are written. Defaults to `ReceiptsRoot`. Set `WORKBOOKS_ROOT` in `Config.bat` to store workbooks separately from receipts. |
 | `-YearMonth` | YYMM to sync (e.g. `2603`). Defaults to current month. |
 | `-Year` | 4-digit year (e.g. `2026`). Syncs all month folders under that year. Mutually exclusive with `-YearMonth` and `-All`. |
-| `-WorkbookPath` | Full path to a specific `.xlsx` to write into. Overrides the default per-year path (e.g. `2026.xlsx`). Useful for testing. |
+| `-WorkbookPath` | Full path to a specific `.xlsx` to write into. Overrides the default per-year path derived from `WorkbooksRoot`. Useful for testing. |
 | `-DateFormat` | [.NET ParseExact format string](https://learn.microsoft.com/en-us/dotnet/standard/base-types/custom-date-and-time-format-strings) for the date portion of receipt filenames. Default: `yyMMdd`. Set `DATE_FORMAT` in `Config.bat` to change. |
 | `-All` | Sync every month folder under every year folder. |
 | `-KillExcel` | Kill any running `EXCEL.EXE` before starting. |
