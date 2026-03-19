@@ -6,6 +6,8 @@ A PowerShell automation tool for syncing receipt file metadata into Excel workbo
 
 ## Workflow
 
+> Issue tracking, commit discipline, documentation updates, and the propose-before-edit rule are governed by the [global CLAUDE.md](~/.claude/CLAUDE.md). This section documents project-specific overrides only.
+
 ### Commits
 - **Do not manually edit CHANGELOG.md** -- changelog entries are generated automatically by `git-cliff` when a version tag is pushed. To preview what the next entry will look like, run `git cliff --unreleased` locally.
 
@@ -23,12 +25,14 @@ This project uses [Semantic Versioning](https://semver.org) and [Conventional Co
 
 **Commit message format:** `type(scope): short description`
 
+**Commit types:** `feat`, `fix`, `docs`, `test`, `refactor`, `chore`, `ci`, `perf`, `style`, `build` -- see global CLAUDE.md for definitions.
+
 | Scope | Files / area |
 |-------|-------------|
 | `ps1` | Sync-Receipts.ps1 (general; use a narrower scope when one applies) |
 | `logging` | Write-SyncLog function and console output |
-| `categories` | Categories feature: Get-Categories, Write-CategorySheet, Config/Categories.json |
-| `accounts` | Accounts feature: Get-ValidAccounts, Accounts.xlsx, Config/Accounts.template.xlsx |
+| `categories` | Categories feature: Get-Categories, Write-CategorySheet, Config/Categories.json, Config/Categories.template.json |
+| `accounts` | Accounts feature: Get-ValidAccounts, Config/Accounts.xlsx, Config/Accounts.template.xlsx |
 | `write-month` | Write-MonthSheet function |
 | `convert-receipt` | ConvertFrom-ReceiptFileName function |
 | `xml` | Set-SubcategoryValidationXml XML patching |
@@ -54,12 +58,14 @@ This project uses [Semantic Versioning](https://semver.org) and [Conventional Co
 Config.bat                <- local machine settings (gitignored); sets RECEIPTS_ROOT
 Setup.bat                 <- one-time setup launcher (runs Scripts\Initialize-SyncReceipts.ps1)
 Config/
-    Config.template.bat   <- generic template committed to git
-    Accounts.template.xlsx <- copy to RECEIPTS_ROOT\Accounts.xlsx and fill in accounts
-    Categories.json       <- category/subcategory definitions; committed, edit directly
+    Config.template.bat      <- generic template committed to git
+    Accounts.template.xlsx   <- default accounts template; committed to git
+    Accounts.xlsx            <- gitignored; personal accounts
+    Categories.template.json <- default categories template; committed to git
+    Categories.json          <- gitignored; personal categories
 Scripts/
     Initialize-SyncReceipts.ps1 <- one-time setup: checks prerequisites, creates Config.bat,
-                             copies Accounts.xlsx, creates shortcuts in RECEIPTS_ROOT
+                             copies Accounts.template.xlsx to Config\Accounts.xlsx, creates shortcuts in RECEIPTS_ROOT
     Sync-Receipts.ps1     <- core automation (Excel COM)
 Launchers/
     Run-SyncReceipts.bat  <- calls Config\Config.bat, syncs current month
@@ -77,7 +83,7 @@ CONTRIBUTING.md           <- dev guide: prerequisites, test instructions, commit
 CHANGELOG.md              <- version history; updated manually when tagging a release
 ```
 
-The script files live in their own directory. The data (per-year workbooks and receipt folders) lives at `RECEIPTS_ROOT`, which is set in `Config.bat`. Each year gets its own workbook (`2026.xlsx`, `2025.xlsx`, etc.) created automatically on first sync. `Categories.json` lives in `Config/` and is read via `Join-Path (Split-Path $PSScriptRoot -Parent) "Config"`. The two locations are completely independent -- `-ReceiptsRoot` must always be provided explicitly; the script's own folder has no special meaning at runtime.
+The script files live in their own directory. The data (per-year workbooks and receipt folders) lives at `RECEIPTS_ROOT`, which is set in `Config.bat`. Each year gets its own workbook (`2026.xlsx`, `2025.xlsx`, etc.) created automatically on first sync. `Categories.json` and `Accounts.xlsx` both live in `Config/` (gitignored) and are read via `Join-Path (Split-Path $PSScriptRoot -Parent) "Config"`. The two locations are completely independent -- `-ReceiptsRoot` must always be provided explicitly; the script's own folder has no special meaning at runtime.
 
 ### Key functions in Sync-Receipts.ps1
 
@@ -86,7 +92,7 @@ The script files live in their own directory. The data (per-year workbooks and r
 | `Write-SyncLog` | Writes timestamped, tagged log lines to the console; routes VERB-tagged messages to `Write-Verbose` |
 | `ConvertFrom-ReceiptFileName` | Regex-parses a receipt filename stem into date, vendor, amount, method, account |
 | `Read-PreservedCategoryValues` | Pure helper: extracts Category/Subcategory keyed by File Name from a 2D string array (no COM dependency; unit-testable) |
-| `Get-ValidAccounts` | Reads 4-digit account numbers from `Accounts.xlsx` in `ReceiptsRoot`; skips validation if absent |
+| `Get-ValidAccounts` | Reads 4-digit account numbers from `Accounts.xlsx` in `Config\`; skips validation if absent |
 | `Get-Categories` | Reads category/subcategory data from `Categories.json` in `Config/` (repo root + "Config") |
 | `Write-CategorySheet` | Writes category data from hashtable into the Category sheet (creates if absent, overwrites if present, hides the sheet) |
 | `Get-ExcelColumnLetter` | Converts a 1-based column index to an Excel column letter (e.g. 1 -> "A", 27 -> "AA"); used to build named range address strings without COM |
