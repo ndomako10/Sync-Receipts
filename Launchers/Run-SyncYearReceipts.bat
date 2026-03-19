@@ -5,7 +5,7 @@
 pushd "%~dp0"
 
 set "DATE_FORMAT=yyMMdd"
-call "%~dp0..\Config\Config.bat"
+for /f "usebackq tokens=1,* delims==" %%A in (`findstr /v "^#" "%~dp0..\Config\Config.env"`) do if not "%%A"=="" set "%%A=%%B"
 if "%WORKBOOKS_ROOT%"=="" set "WORKBOOKS_ROOT=%RECEIPTS_ROOT%"
 
 for /f %%Y in ('PowerShell -NoProfile -Command "(Get-Date).Year"') do set "DEFAULT_YEAR=%%Y"

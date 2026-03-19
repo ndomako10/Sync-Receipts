@@ -6,8 +6,8 @@
     Performs all first-time configuration steps needed before running Sync-Receipts:
 
       1. Checks that PowerShell 5.0+ and Microsoft Excel are installed.
-      2. Reads RECEIPTS_ROOT from Config\Config.bat, or prompts for the path and creates
-         Config\Config.bat from Config\Config.template.bat.
+      2. Reads RECEIPTS_ROOT from Config\Config.env, or prompts for the path and creates
+         Config\Config.env from Config\Config.template.env.
       3. Creates the RECEIPTS_ROOT folder if it does not already exist.
       4. Copies Accounts.template.xlsx to RECEIPTS_ROOT\Accounts.xlsx (skipped if present).
       5. Creates Windows shortcut (.lnk) files in RECEIPTS_ROOT that point to the batch
@@ -143,34 +143,34 @@ if (-not $excelInstalled) {
 Write-OK "Microsoft Excel"
 
 # ---------------------------------------------------------------------------
-# 2. Resolve RECEIPTS_ROOT -- read Config.bat or prompt
+# 2. Resolve RECEIPTS_ROOT -- read Config.env or prompt
 # ---------------------------------------------------------------------------
 
 Write-Host ""
 Write-Step "Configuring RECEIPTS_ROOT..."
 
-$configPath = Join-Path $repoRoot "Config\Config.bat"
+$configPath = Join-Path $repoRoot "Config\Config.env"
 $receiptsRoot  = $null
 $workbooksRoot = $null
 
 if (Test-Path $configPath) {
     foreach ($line in (Get-Content $configPath)) {
-        if ($line -match '^\s*set\s+"?RECEIPTS_ROOT=(.+?)"?\s*$') {
+        if ($line -match '^RECEIPTS_ROOT=(.+)$') {
             $receiptsRoot = $Matches[1].Trim().TrimEnd('\')
         }
-        if ($line -match '^\s*set\s+"?WORKBOOKS_ROOT=(.+?)"?\s*$') {
+        if ($line -match '^WORKBOOKS_ROOT=(.+)$') {
             $workbooksRoot = $Matches[1].Trim().TrimEnd('\')
         }
     }
     if (-not $receiptsRoot) {
-        Write-Fail "Config.bat exists but RECEIPTS_ROOT could not be parsed."
+        Write-Fail "Config.env exists but RECEIPTS_ROOT could not be parsed."
         exit 1
     }
     if (-not $workbooksRoot) { $workbooksRoot = $receiptsRoot }
-    Write-OK "Config.bat found -- RECEIPTS_ROOT: $receiptsRoot"
+    Write-OK "Config.env found -- RECEIPTS_ROOT: $receiptsRoot"
 } else {
     Write-Host ""
-    Write-Host "  Config.bat not found. Enter the path to your receipts root folder." -ForegroundColor Yellow
+    Write-Host "  Config.env not found. Enter the path to your receipts root folder." -ForegroundColor Yellow
     Write-Host "  Example: \\Server\Share\Receipts  or  C:\Users\You\Documents\Receipts" -ForegroundColor Yellow
     Write-Host ""
     $userInput = Read-Host "  RECEIPTS_ROOT"
@@ -189,21 +189,21 @@ if (Test-Path $configPath) {
     $workbooksRoot = if ($wbInput.Trim()) { $wbInput.Trim().TrimEnd('\') } else { $receiptsRoot }
 
     try {
-        $template = Get-Content (Join-Path $repoRoot "Config\Config.template.bat") -Raw
+        $template = Get-Content (Join-Path $repoRoot "Config\Config.template.env") -Raw
         $config   = $template `
-            -replace 'set "RECEIPTS_ROOT=.*"',       "set `"RECEIPTS_ROOT=$receiptsRoot`"" `
-            -replace 'set "RECEIPTS_ROOT_LOCAL=.*"', "set `"RECEIPTS_ROOT_LOCAL=$receiptsRoot`"" `
-            -replace 'set "WORKBOOKS_ROOT=.*"',      "set `"WORKBOOKS_ROOT=$workbooksRoot`""
+            -replace 'RECEIPTS_ROOT=.*',       "RECEIPTS_ROOT=$receiptsRoot" `
+            -replace 'RECEIPTS_ROOT_LOCAL=.*', "RECEIPTS_ROOT_LOCAL=$receiptsRoot" `
+            -replace 'WORKBOOKS_ROOT=.*',      "WORKBOOKS_ROOT=$workbooksRoot"
         Set-Content $configPath $config -Encoding ASCII
-        Write-OK "Created Config.bat (set RECEIPTS_ROOT=$receiptsRoot)"
+        Write-OK "Created Config.env (set RECEIPTS_ROOT=$receiptsRoot)"
         if ($workbooksRoot -ne $receiptsRoot) {
             Write-OK "WORKBOOKS_ROOT: $workbooksRoot"
         }
         Write-Host ""
         Write-Host "  NOTE: If your receipts root has a local drive-letter equivalent, edit" -ForegroundColor Yellow
-        Write-Host "  Config.bat and update RECEIPTS_ROOT_LOCAL. This is only used by tests." -ForegroundColor Yellow
+        Write-Host "  Config.env and update RECEIPTS_ROOT_LOCAL. This is only used by tests." -ForegroundColor Yellow
     } catch {
-        Write-Fail "Could not create Config.bat -- $_"
+        Write-Fail "Could not create Config.env -- $_"
         exit 1
     }
 }

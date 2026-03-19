@@ -1,5 +1,7 @@
-# Local config (contains machine name and username -- see Config/Config.template.bat)
-Config.bat
+# Local config (contains machine name and username -- see Config/Config.template.env)
+Config/Config.env
+# Legacy config name -- kept ignored so upgrading users cannot accidentally commit it
+Config/Config.bat
 
 # Standalone utility -- not needed in the repo
 Kill-Excel.bat
