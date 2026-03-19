@@ -521,6 +521,39 @@ function Write-CategorySheet {
     return $catSheet
 }
 
+function ConvertTo-ExcelRangeName {
+<#
+.SYNOPSIS
+    Converts a category display name to a valid Excel named range identifier.
+
+.DESCRIPTION
+    Excel named ranges may only contain letters, digits, underscores, backslashes,
+    and periods, and must not start with a digit. This function replaces any
+    character outside that set with an underscore, and prefixes a leading digit
+    with an underscore.
+
+    Used by Set-CategoryNamedRanges to register per-category named ranges, and
+    the corresponding SUBSTITUTE formula in Set-SubcategoryValidationXml must
+    produce the same output from the display name at validation time.
+
+.PARAMETER Name
+    The category display name (e.g. "Food & Dining").
+
+.OUTPUTS
+    [string] A valid Excel named range identifier (e.g. "Food___Dining").
+
+.EXAMPLE
+    ConvertTo-ExcelRangeName -Name 'Food & Dining'   # returns 'Food___Dining'
+
+.EXAMPLE
+    ConvertTo-ExcelRangeName -Name 'Personal Care'   # returns 'Personal_Care'
+#>
+    param([string]$Name)
+    $key = $Name -replace '[^A-Za-z0-9_]', '_'
+    if ($key -match '^\d') { $key = '_' + $key }
+    return $key
+}
+
 function Get-ExcelColumnLetter {
 <#
 .SYNOPSIS
@@ -616,13 +649,15 @@ function Set-CategoryNamedRanges {
         }
     }
 
-    # One named range per category, named exactly after the category (e.g. "Food", "Housing").
-    # These are referenced by =INDIRECT(G2) for the Subcategory dropdown.
+    # One named range per category. The name is sanitized via ConvertTo-ExcelRangeName
+    # (e.g. "Food & Dining" -> "Food___Dining") because Excel named ranges do not allow
+    # spaces or special characters. The INDIRECT formula in Set-SubcategoryValidationXml
+    # uses matching SUBSTITUTE calls to reconstruct the sanitized name at validation time.
     $col = 1
     foreach ($catName in $Categories.Keys) {
         $subcats   = $Categories[$catName]
         $rowCount  = $subcats.Count
-        $rangeName = $catName
+        $rangeName = ConvertTo-ExcelRangeName -Name $catName
         if ($rowCount -gt 0) {
             $colLetter = Get-ExcelColumnLetter -Col $col
             $rangeRef  = "Category!" + '$' + $colLetter + '$2:$' + $colLetter + '$' + ($rowCount + 1)
@@ -657,7 +692,7 @@ function Set-SubcategoryValidationXml {
     synced month sheet to inject two <dataValidation> elements:
 
       - Column G (Category):    list source = named range "Category"
-      - Column H (Subcategory): list source = =INDIRECT(G2)
+      - Column H (Subcategory): list source = =INDIRECT(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(G2," ","_"),"&","_"),"/","_"))
 
     Also fixes zip binary headers to values Excel requires (flag_bits=0x0006 in
     local file headers, version_made_by=45 in central directory headers), which
@@ -755,7 +790,7 @@ function Set-SubcategoryValidationXml {
                 '<formula1>Category</formula1></dataValidation>' +
                 '<dataValidation type="list" allowBlank="1" showInputMessage="1" showErrorMessage="1"' +
                 " sqref=`"H2:H$lastRow`" xr:uid=`"{$guid2}`">" +
-                '<formula1>INDIRECT(G2)</formula1></dataValidation>' +
+                '<formula1>INDIRECT(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(G2," ","_"),"&","_"),"/","_"))</formula1></dataValidation>' +
                 '</dataValidations>'
             if ($sheetXml -match '<hyperlinks') {
                 $sheetXml = $sheetXml -replace '<hyperlinks', "$dvXml<hyperlinks"
