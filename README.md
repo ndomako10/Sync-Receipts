@@ -53,10 +53,10 @@ Running a `.bat` launcher triggers the PowerShell script, which parses every rec
    - Check that PowerShell 5.0+ and Excel are installed
    - Prompt for `RECEIPTS_ROOT` and `WORKBOOKS_ROOT` (defaults to `RECEIPTS_ROOT`), then create `Config.bat` (skipped if `Config.bat` already exists)
    - Create the `RECEIPTS_ROOT` and `WORKBOOKS_ROOT` folders if they do not exist (prompts for confirmation)
-   - Copy `Config\Accounts.template.xlsx` to `RECEIPTS_ROOT\Accounts.xlsx` (skipped if already present)
+   - Copy `Config\Accounts.template.xlsx` to `Config\Accounts.xlsx` (skipped if already present)
    - Create `Run Sync Receipts.lnk`, `Run Sync Month Receipts.lnk`, `Run Sync Year Receipts.lnk`, and `Run Sync All Receipts.lnk` shortcuts in `RECEIPTS_ROOT`
-2. Open `RECEIPTS_ROOT\Accounts.xlsx` and replace the example rows with your own accounts
-3. Optionally edit `Config\Categories.json` to customise your categories
+2. Open `Config\Accounts.xlsx` and replace the example rows with your own accounts
+3. Copy `Config\Categories.template.json` to `Config\Categories.json` and edit to customise your categories (skipped if already present)
 4. For the first run, use the `Run Sync All Receipts.lnk` shortcut in `RECEIPTS_ROOT` to sync all existing receipts across all years into workbooks
 5. After the initial sync, use `Run Sync Receipts.lnk` for day-to-day syncing of the current month. Use the month and year launchers when correcting past entries.
 
@@ -72,8 +72,10 @@ Script files (e.g. C:\Scripts\Sync-Receipts\):
     Setup.bat                <- one-time setup launcher
     Config\
         Config.template.bat
-        Accounts.template.xlsx <- copy to RECEIPTS_ROOT\Accounts.xlsx and fill in your accounts
-        Categories.json        <- category/subcategory definitions; edit to customise
+        Accounts.template.xlsx  <- default accounts template; committed to git
+        Accounts.xlsx           <- gitignored; your personal accounts
+        Categories.template.json <- default categories template; committed to git
+        Categories.json          <- gitignored; your personal categories
     Scripts\
         Initialize-SyncReceipts.ps1
         Sync-Receipts.ps1
@@ -85,7 +87,6 @@ Script files (e.g. C:\Scripts\Sync-Receipts\):
 RECEIPTS_ROOT (e.g. \\Server\Share\Receipts\):
     2026.xlsx                <- created automatically on first sync for that year
     2025.xlsx
-    Accounts.xlsx            <- account lookup table (Last 4, Holder, Institution, Network, Type)
     2026\
         2603 - March\
             260301 Vendor $10.00 Card 1234.pdf
@@ -125,7 +126,7 @@ To force-close a crashed Excel instance holding the file locked, run the **Sync:
 ## Workbook Structure
 
 ### Accounts.xlsx
-A dedicated Excel workbook at `RECEIPTS_ROOT\Accounts.xlsx`. Copy from `Config\Accounts.template.xlsx` and fill in your accounts. The script reads **Last 4** (column A) for validation; all other columns are for human reference only.
+A dedicated Excel workbook at `Config\Accounts.xlsx` (gitignored). Copy from `Config\Accounts.template.xlsx` and fill in your accounts. The script reads **Last 4** (column A) for validation; all other columns are for human reference only.
 
 | Column | Header | Notes |
 |--------|--------|-------|
@@ -144,7 +145,7 @@ A dedicated Excel workbook at `RECEIPTS_ROOT\Accounts.xlsx`. Copy from `Config\A
 If `Accounts.xlsx` is absent, account validation is skipped.
 
 ### Category Sheet
-Written and maintained automatically by the script on every run; hidden in the tab bar. Category and subcategory data is sourced from `Categories.json` -- no manual maintenance needed.
+Written and maintained automatically by the script on every run; hidden in the tab bar. Category and subcategory data is sourced from `Config\Categories.json` (gitignored). Copy from `Config\Categories.template.json` to get started.
 
 ### Month Sheets (e.g. `2603`)
 Created or overwritten on each run. Contains a 9-column table:
