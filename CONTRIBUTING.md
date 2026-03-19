@@ -52,8 +52,8 @@ type(scope): short description
 |-------|------|
 | `ps1` | Sync-Receipts.ps1 (general) |
 | `logging` | Write-SyncLog and console output |
-| `categories` | Categories feature |
-| `accounts` | Accounts feature |
+| `categories` | Categories feature: Get-Categories, Write-CategorySheet, Config/Categories.json, Config/Categories.template.json |
+| `accounts` | Accounts feature: Get-ValidAccounts, Config/Accounts.xlsx, Config/Accounts.template.xlsx |
 | `write-month` | Write-MonthSheet function |
 | `convert-receipt` | ConvertFrom-ReceiptFileName function |
 | `xml` | Set-SubcategoryValidationXml |
