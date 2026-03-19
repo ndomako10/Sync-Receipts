@@ -1,6 +1,6 @@
 # Claude Code Context -- Sync-Receipts
 
-## What this project is
+## What This Project Is
 
 A PowerShell automation tool for syncing receipt file metadata into Excel workbooks, with tests, setup scripts, and batch launchers. Uses Excel COM automation to parse receipt filenames and write formatted per-year workbooks. See README.md for full usage details.
 
@@ -11,7 +11,7 @@ A PowerShell automation tool for syncing receipt file metadata into Excel workbo
 ### Commits
 - **Do not manually edit CHANGELOG.md** -- changelog entries are generated automatically by `git-cliff` when a version tag is pushed. To preview what the next entry will look like, run `git cliff --unreleased` locally.
 
-## Coding rules
+## Coding Rules
 
 - **Always add error handling and debug output** -- every new block needs `try/catch` and `Write-SyncLog` calls (use `-Tag WARN` for warnings, `-Tag ERROR` for errors, `-Tag VERB` for diagnostic detail)
 - **Never use `$variable:` in double-quoted strings** -- PowerShell interprets the colon as a drive separator; use `${variable}:` instead
@@ -19,7 +19,7 @@ A PowerShell automation tool for syncing receipt file metadata into Excel workbo
 - **Use .NET ParseExact format strings for dates** -- write `yyMMdd`, not informal `YYMMDD`. In documentation, always use the actual format string and note what each token means (`yy` = 2-digit year, `MM` = month, `dd` = day)
 - **Write Pester tests for new pure-PowerShell functions** -- functions with no COM dependency must have unit tests in `Tests/Sync-Receipts.Tests.ps1`. Prefer pure helpers (like `Read-PreservedCategoryValues`) over COM-coupled logic wherever testability allows
 
-## Versioning and commits
+## Versioning and Commits
 
 This project uses [Semantic Versioning](https://semver.org) and [Conventional Commits](https://www.conventionalcommits.org).
 
@@ -40,7 +40,7 @@ This project uses [Semantic Versioning](https://semver.org) and [Conventional Co
 | `readme` | README.md |
 | `claude.md` | CLAUDE.md |
 | `ci` | GitHub Actions workflows (.github/) |
-| `config` | Config.bat, Config/ subfolder, .vscode/, batch launcher files |
+| `config` | Config.env, Config/ subfolder, .vscode/, batch launcher files |
 | `changelog` | CHANGELOG.md |
 | `contributing` | CONTRIBUTING.md |
 | `security` | SECURITY.md |
@@ -55,21 +55,26 @@ This project uses [Semantic Versioning](https://semver.org) and [Conventional Co
 ## Architecture
 
 ```
-Config.bat                <- local machine settings (gitignored); sets RECEIPTS_ROOT
 Setup.bat                 <- one-time setup launcher (runs Scripts\Initialize-SyncReceipts.ps1)
 Config/
+    Config.env               <- local machine settings (gitignored); sets RECEIPTS_ROOT
     Config.template.bat      <- generic template committed to git
     Accounts.template.xlsx   <- default accounts template; committed to git
     Accounts.xlsx            <- gitignored; personal accounts
     Categories.template.json <- default categories template; committed to git
     Categories.json          <- gitignored; personal categories
 Scripts/
-    Initialize-SyncReceipts.ps1 <- one-time setup: checks prerequisites, creates Config.bat,
+    Initialize-SyncReceipts.ps1 <- one-time setup: checks prerequisites, creates Config\Config.env,
                              copies Accounts.template.xlsx to Config\Accounts.xlsx, creates shortcuts in RECEIPTS_ROOT
     Sync-Receipts.ps1     <- core automation (Excel COM)
 Launchers/
-    Run-SyncReceipts.bat  <- calls Config\Config.bat, syncs current month
-    Run-SyncAllReceipts.bat <- calls Config\Config.bat, syncs all months (-All)
+    Run-SyncReceipts.bat     <- calls Config\Config.env, syncs current month
+    Run-SyncMonthReceipts.bat <- calls Config\Config.env, syncs a specific month
+    Run-SyncYearReceipts.bat  <- calls Config\Config.env, syncs all months in a specific year
+    Run-SyncAllReceipts.bat  <- calls Config\Config.env, syncs all months (-All)
+Docs/
+    ADRs/                    <- Architecture Decision Records
+        README.md            <- index of all ADRs
 Tests/
     Sync-Receipts.Tests.ps1 <- Pester unit tests (pure-PowerShell functions only)
     Lint.Tests.ps1          <- PSScriptAnalyzer validation
@@ -83,9 +88,9 @@ CONTRIBUTING.md           <- dev guide: prerequisites, test instructions, commit
 CHANGELOG.md              <- version history; updated manually when tagging a release
 ```
 
-The script files live in their own directory. The data (per-year workbooks and receipt folders) lives at `RECEIPTS_ROOT`, which is set in `Config.bat`. Each year gets its own workbook (`2026.xlsx`, `2025.xlsx`, etc.) created automatically on first sync. `Categories.json` and `Accounts.xlsx` both live in `Config/` (gitignored) and are read via `Join-Path (Split-Path $PSScriptRoot -Parent) "Config"`. The two locations are completely independent -- `-ReceiptsRoot` must always be provided explicitly; the script's own folder has no special meaning at runtime.
+The script files live in their own directory. The data (per-year workbooks and receipt folders) lives at `RECEIPTS_ROOT`, which is set in `Config/Config.env`. Each year gets its own workbook (`2026.xlsx`, `2025.xlsx`, etc.) created automatically on first sync. `Categories.json` and `Accounts.xlsx` both live in `Config/` (gitignored) and are read via `Join-Path (Split-Path $PSScriptRoot -Parent) "Config"`. The two locations are completely independent -- `-ReceiptsRoot` must always be provided explicitly; the script's own folder has no special meaning at runtime.
 
-### Key functions in Sync-Receipts.ps1
+### Key Functions in Sync-Receipts.ps1
 
 | Function | Purpose |
 |----------|---------|
@@ -101,7 +106,7 @@ The script files live in their own directory. The data (per-year workbooks and r
 | `Set-MonthSheetOrder` | Sorts all month sheet tabs (4-digit YYMM names) into chronological order |
 | `Write-MonthSheet` | Main workhorse: creates/overwrites a month sheet and writes all receipt rows |
 
-### Excel COM patterns used
+### Excel COM Patterns Used
 
 - `New-Object -ComObject Excel.Application` -- headless Excel instance
 - `$sheet.ListObjects.Add(...)` -- creates a structured table

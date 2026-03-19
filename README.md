@@ -51,7 +51,7 @@ Running a `.bat` launcher triggers the PowerShell script, which parses every rec
 
 1. Double-click `Setup.bat` -- it will:
    - Check that PowerShell 5.0+ and Excel are installed
-   - Prompt for `RECEIPTS_ROOT` and `WORKBOOKS_ROOT` (defaults to `RECEIPTS_ROOT`), then create `Config.bat` (skipped if `Config.bat` already exists)
+   - Prompt for `RECEIPTS_ROOT` and `WORKBOOKS_ROOT` (defaults to `RECEIPTS_ROOT`), then create `Config.env` (skipped if `Config.env` already exists)
    - Create the `RECEIPTS_ROOT` and `WORKBOOKS_ROOT` folders if they do not exist (prompts for confirmation)
    - Copy `Config\Accounts.template.xlsx` to `Config\Accounts.xlsx` (skipped if already present)
    - Create `Run Sync Receipts.lnk`, `Run Sync Month Receipts.lnk`, `Run Sync Year Receipts.lnk`, and `Run Sync All Receipts.lnk` shortcuts in `RECEIPTS_ROOT`
@@ -64,14 +64,14 @@ Running a `.bat` launcher triggers the PowerShell script, which parses every rec
 
 ## Folder Structure
 
-The script files and the data are kept in separate locations. `RECEIPTS_ROOT` is set in `Config.bat`.
+The script files and the data are kept in separate locations. `RECEIPTS_ROOT` is set in `Config\Config.env`.
 
 ```
 Script files (e.g. C:\Scripts\Sync-Receipts\):
-    Config.bat               <- gitignored; sets RECEIPTS_ROOT
     Setup.bat                <- one-time setup launcher
     Config\
-        Config.template.bat
+        Config.env               <- gitignored; sets RECEIPTS_ROOT
+        Config.template.env
         Accounts.template.xlsx  <- default accounts template; committed to git
         Accounts.xlsx           <- gitignored; your personal accounts
         Categories.template.json <- default categories template; committed to git
@@ -114,12 +114,12 @@ To force-close a crashed Excel instance holding the file locked, run the **Sync:
 
 | Parameter | Description |
 |-----------|-------------|
-| `-ReceiptsRoot` | **Required.** Path to the folder containing year subfolders and receipt files. Set via `Config.bat`. |
-| `-WorkbooksRoot` | Directory where per-year workbooks (e.g. `2026.xlsx`) are written. Defaults to `ReceiptsRoot`. Set `WORKBOOKS_ROOT` in `Config.bat` to store workbooks separately from receipts. |
+| `-ReceiptsRoot` | **Required.** Path to the folder containing year subfolders and receipt files. Set via `Config\Config.env`. |
+| `-WorkbooksRoot` | Directory where per-year workbooks (e.g. `2026.xlsx`) are written. Defaults to `ReceiptsRoot`. Set `WORKBOOKS_ROOT` in `Config\Config.env` to store workbooks separately from receipts. |
 | `-YearMonth` | YYMM to sync (e.g. `2603`). Defaults to current month. |
 | `-Year` | 4-digit year (e.g. `2026`). Syncs all month folders under that year. Mutually exclusive with `-YearMonth` and `-All`. |
 | `-WorkbookPath` | Full path to a specific `.xlsx` to write into. Overrides the default per-year path derived from `WorkbooksRoot`. Useful for testing. |
-| `-DateFormat` | [.NET ParseExact format string](https://learn.microsoft.com/en-us/dotnet/standard/base-types/custom-date-and-time-format-strings) for the date portion of receipt filenames. Default: `yyMMdd`. Set `DATE_FORMAT` in `Config.bat` to change. Single-digit tokens `M` and `d` are supported only in separator-delimited formats (e.g. `M-d-yy`); use `MM`/`dd` for compact formats. |
+| `-DateFormat` | [.NET ParseExact format string](https://learn.microsoft.com/en-us/dotnet/standard/base-types/custom-date-and-time-format-strings) for the date portion of receipt filenames. Default: `yyMMdd`. Set `DATE_FORMAT` in `Config\Config.env` to change. Single-digit tokens `M` and `d` are supported only in separator-delimited formats (e.g. `M-d-yy`); use `MM`/`dd` for compact formats. |
 | `-All` | Sync every month folder under every year folder. |
 | `-KillExcel` | Kill any running `EXCEL.EXE` before starting. |
 
