@@ -518,7 +518,14 @@ Describe 'Set-SubcategoryValidationXml' {
 
         It 'includes INDIRECT formula on the correct sqref' {
             $script:sheetXml | Should -Match 'sqref="H2:H10"'
-            $script:sheetXml | Should -Match '<formula1>INDIRECT\(SUBSTITUTE\(SUBSTITUTE\(SUBSTITUTE\(G2," ","_"\),"&","_"\),"/","_"\)\)</formula1>'
+            $script:sheetXml | Should -Match '<formula1>INDIRECT\(SUBSTITUTE\(SUBSTITUTE\(SUBSTITUTE\(G2," ","_"\),"&amp;","_"\),"/","_"\)\)</formula1>'
+        }
+
+        It 'XML-escapes the ampersand in the INDIRECT formula as &amp;' {
+            # A bare & in XML is invalid and causes Excel to report a parse error on open.
+            # Verify the injected formula uses &amp; not & so the workbook opens cleanly.
+            $script:sheetXml | Should -Not -Match '<formula1>INDIRECT[^<]*"&"[^<]*</formula1>'
+            $script:sheetXml | Should -Match '"&amp;"'
         }
 
         It 'adds xr:uid to both dataValidation elements' {
@@ -853,6 +860,59 @@ Describe 'ConvertTo-ExcelRangeName' {
     Context 'given a name starting with a digit' {
         It 'prefixes with an underscore so the name is a valid Excel identifier' {
             ConvertTo-ExcelRangeName -Name '401k' | Should -Be '_401k'
+        }
+    }
+}
+
+Describe 'Test-SubcategoryValid' {
+    BeforeAll {
+        $script:cats = [ordered]@{
+            'Food & Dining' = @('Groceries', 'Restaurants')
+            'Housing'       = @('Rent', 'Utilities')
+            'Shopping'      = @()
+        }
+    }
+
+    Context 'given a valid category and matching subcategory' {
+        It 'returns true' {
+            Test-SubcategoryValid -Category 'Food & Dining' -Subcategory 'Groceries' -Categories $script:cats |
+                Should -BeTrue
+        }
+        It 'returns true for another valid pair' {
+            Test-SubcategoryValid -Category 'Housing' -Subcategory 'Utilities' -Categories $script:cats |
+                Should -BeTrue
+        }
+    }
+
+    Context 'given a subcategory that does not belong to the category' {
+        It 'returns false' {
+            Test-SubcategoryValid -Category 'Food & Dining' -Subcategory 'Rent' -Categories $script:cats |
+                Should -BeFalse
+        }
+    }
+
+    Context 'given a category not present in the list' {
+        It 'returns false' {
+            Test-SubcategoryValid -Category 'Unknown' -Subcategory 'Groceries' -Categories $script:cats |
+                Should -BeFalse
+        }
+    }
+
+    Context 'given a category with no subcategories' {
+        It 'returns false for any subcategory' {
+            Test-SubcategoryValid -Category 'Shopping' -Subcategory 'Anything' -Categories $script:cats |
+                Should -BeFalse
+        }
+    }
+
+    Context 'given a null or empty Categories hashtable' {
+        It 'returns true when Categories is null so existing values are preserved' {
+            Test-SubcategoryValid -Category 'Food & Dining' -Subcategory 'Groceries' -Categories $null |
+                Should -BeTrue
+        }
+        It 'returns true when Categories is empty so existing values are preserved' {
+            Test-SubcategoryValid -Category 'Food & Dining' -Subcategory 'Groceries' -Categories @{} |
+                Should -BeTrue
         }
     }
 }
