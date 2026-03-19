@@ -259,23 +259,23 @@ if ($workbooksRoot -ne $receiptsRoot) {
 }
 
 # ---------------------------------------------------------------------------
-# 4. Copy Accounts.template.xlsx -> RECEIPTS_ROOT\Accounts.xlsx
+# 4. Copy Accounts.template.xlsx -> Config\Accounts.xlsx
 # ---------------------------------------------------------------------------
 
 Write-Host ""
 Write-Step "Setting up Accounts.xlsx..."
 
 $templateXlsx = Join-Path $repoRoot "Config\Accounts.template.xlsx"
-$accountsXlsx = Join-Path $receiptsRoot "Accounts.xlsx"
+$accountsXlsx = Join-Path $repoRoot "Config\Accounts.xlsx"
 
 if (Test-Path $accountsXlsx) {
     Write-Skip "Accounts.xlsx already exists -- edit it directly to update your accounts"
 } else {
     try {
         Copy-Item $templateXlsx $accountsXlsx
-        Write-OK "Copied Accounts.template.xlsx -> Accounts.xlsx"
+        Write-OK "Copied Accounts.template.xlsx -> Config\Accounts.xlsx"
         Write-Host ""
-        Write-Host "  Open Accounts.xlsx in $receiptsRoot and replace the" -ForegroundColor Yellow
+        Write-Host "  Open Config\Accounts.xlsx and replace the" -ForegroundColor Yellow
         Write-Host "  example rows with your own accounts before running the script." -ForegroundColor Yellow
     } catch {
         Write-Fail "Could not copy Accounts.template.xlsx -- $_"
