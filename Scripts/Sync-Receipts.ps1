@@ -24,7 +24,7 @@
 
     On each run the script:
       - Reads category/subcategory definitions from Categories.json in the Config subfolder
-      - Reads valid account numbers from Accounts.xlsx in ReceiptsRoot
+      - Reads valid account numbers from Accounts.xlsx in the Config subfolder
       - Creates or overwrites the month sheet(s) in the year workbook
       - Preserves any Category and Subcategory values previously entered by the user
       - Sorts month sheet tabs into chronological order
@@ -304,12 +304,9 @@ function Get-ValidAccounts {
     Returns a list of valid 4-digit account numbers from Accounts.xlsx.
 
 .DESCRIPTION
-    Reads column A (Last 4) of the first sheet in RECEIPTS_ROOT\Accounts.xlsx
+    Reads column A (Last 4) of the first sheet in Config\Accounts.xlsx
     using the provided Excel COM instance. If Accounts.xlsx is not found,
     returns an empty array and account validation is skipped.
-
-.PARAMETER ReceiptsRoot
-    Path to the folder containing Accounts.xlsx.
 
 .PARAMETER Excel
     An open Excel.Application COM object used to open Accounts.xlsx.
@@ -319,14 +316,13 @@ function Get-ValidAccounts {
     Returns an empty array if Accounts.xlsx is not found.
 
 .EXAMPLE
-    $accounts = Get-ValidAccounts -ReceiptsRoot $ReceiptsRoot -Excel $excel
+    $accounts = Get-ValidAccounts -Excel $excel
 #>
     param(
-        [string]$ReceiptsRoot,
         [object]$Excel = $null
     )
     $accounts = @()
-    $xlsxPath = Join-Path $ReceiptsRoot "Accounts.xlsx"
+    $xlsxPath = Join-Path (Split-Path $PSScriptRoot -Parent) "Config\Accounts.xlsx"
     if (Test-Path $xlsxPath) {
         Write-SyncLog "Accounts: reading from Accounts.xlsx" -Tag VERB
         $accWorkbook = $null
@@ -349,7 +345,7 @@ function Get-ValidAccounts {
         }
         Write-SyncLog "Accounts: $($accounts.Count) account(s) loaded from Accounts.xlsx" -Tag VERB
     } else {
-        Write-SyncLog "Accounts: Accounts.xlsx not found in '${ReceiptsRoot}' -- account validation skipped" -Tag WARN
+        Write-SyncLog "Accounts: Accounts.xlsx not found in Config\ -- account validation skipped" -Tag WARN
     }
     return $accounts
 }
