@@ -17,6 +17,7 @@ A PowerShell automation tool for syncing receipt file metadata into Excel workbo
 - **Never use `$variable:` in double-quoted strings** -- PowerShell interprets the colon as a drive separator; use `${variable}:` instead
 - **No smart quotes or em-dashes** -- the file must be pure ASCII. Non-ASCII characters break PowerShell parsing on the network share. Verify after any edit: `[System.Text.Encoding]::ASCII.GetByteCount($content) -eq $content.Length`
 - **Use .NET ParseExact format strings for dates** -- write `yyMMdd`, not informal `YYMMDD`. In documentation, always use the actual format string and note what each token means (`yy` = 2-digit year, `MM` = month, `dd` = day)
+- **XML-escape string literals injected into XML** -- when building XML strings in PowerShell for the post-save patch (`Set-SubcategoryValidationXml`), escape `&` as `&amp;`, `<` as `&lt;`, and `>` as `&gt;`. A bare `&` in injected XML causes Excel to report a parse error on open. Add a Pester assertion on the escaped form whenever a new string literal is injected.
 - **Write Pester tests for new pure-PowerShell functions** -- functions with no COM dependency must have unit tests in `Tests/Sync-Receipts.Tests.ps1`. Prefer pure helpers (like `Read-PreservedCategoryValues`) over COM-coupled logic wherever testability allows
 
 ## Versioning and Commits
