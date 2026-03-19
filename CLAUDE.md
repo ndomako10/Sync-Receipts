@@ -40,7 +40,7 @@ This project uses [Semantic Versioning](https://semver.org) and [Conventional Co
 | `readme` | README.md |
 | `claude.md` | CLAUDE.md |
 | `ci` | GitHub Actions workflows (.github/) |
-| `config` | Config.bat, Config/ subfolder, .vscode/, batch launcher files |
+| `config` | Config.env, Config/ subfolder, .vscode/, batch launcher files |
 | `changelog` | CHANGELOG.md |
 | `contributing` | CONTRIBUTING.md |
 | `security` | SECURITY.md |
@@ -57,21 +57,21 @@ This project uses [Semantic Versioning](https://semver.org) and [Conventional Co
 ```
 Setup.bat                 <- one-time setup launcher (runs Scripts\Initialize-SyncReceipts.ps1)
 Config/
-    Config.bat               <- local machine settings (gitignored); sets RECEIPTS_ROOT
+    Config.env               <- local machine settings (gitignored); sets RECEIPTS_ROOT
     Config.template.bat      <- generic template committed to git
     Accounts.template.xlsx   <- default accounts template; committed to git
     Accounts.xlsx            <- gitignored; personal accounts
     Categories.template.json <- default categories template; committed to git
     Categories.json          <- gitignored; personal categories
 Scripts/
-    Initialize-SyncReceipts.ps1 <- one-time setup: checks prerequisites, creates Config\Config.bat,
+    Initialize-SyncReceipts.ps1 <- one-time setup: checks prerequisites, creates Config\Config.env,
                              copies Accounts.template.xlsx to Config\Accounts.xlsx, creates shortcuts in RECEIPTS_ROOT
     Sync-Receipts.ps1     <- core automation (Excel COM)
 Launchers/
-    Run-SyncReceipts.bat     <- calls Config\Config.bat, syncs current month
-    Run-SyncMonthReceipts.bat <- calls Config\Config.bat, syncs a specific month
-    Run-SyncYearReceipts.bat  <- calls Config\Config.bat, syncs all months in a specific year
-    Run-SyncAllReceipts.bat  <- calls Config\Config.bat, syncs all months (-All)
+    Run-SyncReceipts.bat     <- calls Config\Config.env, syncs current month
+    Run-SyncMonthReceipts.bat <- calls Config\Config.env, syncs a specific month
+    Run-SyncYearReceipts.bat  <- calls Config\Config.env, syncs all months in a specific year
+    Run-SyncAllReceipts.bat  <- calls Config\Config.env, syncs all months (-All)
 Docs/
     ADRs/                    <- Architecture Decision Records
         README.md            <- index of all ADRs
@@ -88,7 +88,7 @@ CONTRIBUTING.md           <- dev guide: prerequisites, test instructions, commit
 CHANGELOG.md              <- version history; updated manually when tagging a release
 ```
 
-The script files live in their own directory. The data (per-year workbooks and receipt folders) lives at `RECEIPTS_ROOT`, which is set in `Config/Config.bat`. Each year gets its own workbook (`2026.xlsx`, `2025.xlsx`, etc.) created automatically on first sync. `Categories.json` and `Accounts.xlsx` both live in `Config/` (gitignored) and are read via `Join-Path (Split-Path $PSScriptRoot -Parent) "Config"`. The two locations are completely independent -- `-ReceiptsRoot` must always be provided explicitly; the script's own folder has no special meaning at runtime.
+The script files live in their own directory. The data (per-year workbooks and receipt folders) lives at `RECEIPTS_ROOT`, which is set in `Config/Config.env`. Each year gets its own workbook (`2026.xlsx`, `2025.xlsx`, etc.) created automatically on first sync. `Categories.json` and `Accounts.xlsx` both live in `Config/` (gitignored) and are read via `Join-Path (Split-Path $PSScriptRoot -Parent) "Config"`. The two locations are completely independent -- `-ReceiptsRoot` must always be provided explicitly; the script's own folder has no special meaning at runtime.
 
 ### Key Functions in Sync-Receipts.ps1
 

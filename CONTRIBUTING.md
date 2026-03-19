@@ -60,7 +60,7 @@ type(scope): short description
 | `tests` | Tests/ |
 | `readme` | README.md |
 | `ci` | GitHub Actions |
-| `config` | Config.bat, Config/ subfolder, .vscode/, batch launcher files |
+| `config` | Config.env, Config/ subfolder, .vscode/, batch launcher files |
 | `changelog` | CHANGELOG.md |
 | `contributing` | CONTRIBUTING.md |
 | `security` | SECURITY.md |
