@@ -518,7 +518,7 @@ Describe 'Set-SubcategoryValidationXml' {
 
         It 'includes INDIRECT formula on the correct sqref' {
             $script:sheetXml | Should -Match 'sqref="H2:H10"'
-            $script:sheetXml | Should -Match '<formula1>INDIRECT\(G2\)</formula1>'
+            $script:sheetXml | Should -Match '<formula1>INDIRECT\(SUBSTITUTE\(SUBSTITUTE\(SUBSTITUTE\(G2," ","_"\),"&","_"\),"/","_"\)\)</formula1>'
         }
 
         It 'adds xr:uid to both dataValidation elements' {
@@ -814,6 +814,45 @@ Describe 'Write-SyncLog' {
 
         It 'throws for an unrecognised tag' {
             { Write-SyncLog 'msg' -Tag 'UNKNOWN' } | Should -Throw
+        }
+    }
+}
+
+Describe 'ConvertTo-ExcelRangeName' {
+    Context 'given a name with no special characters' {
+        It 'returns the name unchanged' {
+            ConvertTo-ExcelRangeName -Name 'Housing' | Should -Be 'Housing'
+        }
+        It 'preserves underscores' {
+            ConvertTo-ExcelRangeName -Name 'My_Category' | Should -Be 'My_Category'
+        }
+    }
+    Context 'given a name with spaces' {
+        It 'replaces each space with an underscore' {
+            ConvertTo-ExcelRangeName -Name 'Personal Care' | Should -Be 'Personal_Care'
+        }
+    }
+    Context 'given a name with ampersands' {
+        It 'replaces ampersand and surrounding spaces with underscores' {
+            ConvertTo-ExcelRangeName -Name 'Food & Dining' | Should -Be 'Food___Dining'
+        }
+        It 'handles multiple ampersand categories' {
+            ConvertTo-ExcelRangeName -Name 'Bills & Utilities' | Should -Be 'Bills___Utilities'
+        }
+    }
+    Context 'given a name with forward slashes' {
+        It 'replaces each slash with an underscore' {
+            ConvertTo-ExcelRangeName -Name 'Food/Drink' | Should -Be 'Food_Drink'
+        }
+    }
+    Context 'given a name with mixed special characters' {
+        It 'replaces all non-identifier characters with underscores' {
+            ConvertTo-ExcelRangeName -Name 'A & B/C' | Should -Be 'A___B_C'
+        }
+    }
+    Context 'given a name starting with a digit' {
+        It 'prefixes with an underscore so the name is a valid Excel identifier' {
+            ConvertTo-ExcelRangeName -Name '401k' | Should -Be '_401k'
         }
     }
 }
