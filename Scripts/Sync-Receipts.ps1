@@ -521,6 +521,51 @@ function Write-CategorySheet {
     return $catSheet
 }
 
+function Test-SubcategoryValid {
+<#
+.SYNOPSIS
+    Returns true if a subcategory belongs to the given category.
+
+.DESCRIPTION
+    Looks up the category in the Categories hashtable and checks whether the
+    subcategory appears in its list. Returns true unconditionally when Categories
+    is null or empty, so that preserved values are not discarded when no category
+    data is loaded.
+
+    Used by Write-MonthSheet to decide whether to restore a preserved Subcategory
+    value. If the subcategory is no longer valid for the current category (e.g.
+    the user changed the category since the last sync), the subcategory is cleared
+    rather than written back.
+
+.PARAMETER Category
+    The primary category name (e.g. "Food & Dining").
+
+.PARAMETER Subcategory
+    The subcategory name to validate (e.g. "Groceries").
+
+.PARAMETER Categories
+    Ordered hashtable mapping category name -> [string[]] subcategory list,
+    as returned by Get-Categories. Pass $null or an empty hashtable to skip
+    validation and preserve all existing values.
+
+.OUTPUTS
+    [bool] True if the subcategory is valid for the category, or if Categories
+    is null/empty. False if the category is not found or the subcategory is not
+    in its list.
+
+.EXAMPLE
+    Test-SubcategoryValid -Category 'Food & Dining' -Subcategory 'Groceries' -Categories $categories
+#>
+    param(
+        [string]$Category,
+        [string]$Subcategory,
+        [object]$Categories
+    )
+    if (-not $Categories -or $Categories.Count -eq 0) { return $true }
+    if (-not $Categories.Contains($Category)) { return $false }
+    return $Categories[$Category] -contains $Subcategory
+}
+
 function ConvertTo-ExcelRangeName {
 <#
 .SYNOPSIS
@@ -790,7 +835,7 @@ function Set-SubcategoryValidationXml {
                 '<formula1>Category</formula1></dataValidation>' +
                 '<dataValidation type="list" allowBlank="1" showInputMessage="1" showErrorMessage="1"' +
                 " sqref=`"H2:H$lastRow`" xr:uid=`"{$guid2}`">" +
-                '<formula1>INDIRECT(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(G2," ","_"),"&","_"),"/","_"))</formula1></dataValidation>' +
+                '<formula1>INDIRECT(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(G2," ","_"),"&amp;","_"),"/","_"))</formula1></dataValidation>' +
                 '</dataValidations>'
             if ($sheetXml -match '<hyperlinks') {
                 $sheetXml = $sheetXml -replace '<hyperlinks', "$dvXml<hyperlinks"
@@ -914,7 +959,8 @@ function Write-MonthSheet {
         [string]$SheetName,
         [object]$Workbook,
         [array]$ValidAccounts,
-        [string]$DateFormat = 'yyMMdd'
+        [string]$DateFormat = 'yyMMdd',
+        [object]$Categories = $null
     )
 
     $receipts = @()
@@ -1064,8 +1110,16 @@ function Write-MonthSheet {
         if ($preserved.ContainsKey($r.FileName)) {
             $saved = $preserved[$r.FileName]
             try {
-                if ($saved.Category    -ne "") { $sheet.Cells.Item($row, $COL_CATEGORY).Value2    = $saved.Category }
-                if ($saved.Subcategory -ne "") { $sheet.Cells.Item($row, $COL_SUBCATEGORY).Value2 = $saved.Subcategory }
+                if ($saved.Category -ne "") {
+                    $sheet.Cells.Item($row, $COL_CATEGORY).Value2 = $saved.Category
+                }
+                if ($saved.Subcategory -ne "") {
+                    if (Test-SubcategoryValid -Category $saved.Category -Subcategory $saved.Subcategory -Categories $Categories) {
+                        $sheet.Cells.Item($row, $COL_SUBCATEGORY).Value2 = $saved.Subcategory
+                    } else {
+                        Write-SyncLog "Row ${row}: cleared stale subcategory '$($saved.Subcategory)' (not valid for '$($saved.Category)')" -Tag INFO
+                    }
+                }
             } catch {
                 Write-SyncLog "Row ${row}: could not restore Category/Subcategory for '$($r.FileName)' -- $_" -Tag WARN
             }
@@ -1401,7 +1455,7 @@ foreach ($yearEntry in ($yearGroups.GetEnumerator() | Sort-Object Key)) {
         Write-Host ""
         Write-SyncLog "Syncing: $($m.FolderPath)" -Tag STEP
         try {
-            $result = Write-MonthSheet -FolderPath $m.FolderPath -SheetName $m.SheetName -Workbook $workbook -ValidAccounts $validAccounts -DateFormat $DateFormat
+            $result = Write-MonthSheet -FolderPath $m.FolderPath -SheetName $m.SheetName -Workbook $workbook -ValidAccounts $validAccounts -DateFormat $DateFormat -Categories $categories
             $syncResults += [PSCustomObject]@{ SheetName = $m.SheetName; Result = $result }
         } catch {
             Write-SyncLog "Sync error: unhandled exception syncing '$($m.SheetName)' -- $_" -Tag ERROR
