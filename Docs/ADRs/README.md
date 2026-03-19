@@ -8,7 +8,12 @@ ADRs capture *why* a significant decision was made -- the context, alternatives 
 
 | ADR | Title | Status |
 |-----|-------|--------|
-| -- | -- | -- |
+| [ADR-001](ADR-001-excel-com-automation.md) | Use Excel COM Automation for Workbook Generation | Accepted |
+| [ADR-002](ADR-002-filename-as-metadata.md) | Encode Receipt Metadata in the Filename | Accepted |
+| [ADR-003](ADR-003-post-save-xml-patch.md) | Inject Dropdown Validation via Post-Save XML Patch | Accepted |
+| [ADR-004](ADR-004-per-year-workbooks.md) | One Workbook per Year Instead of a Single Workbook | Accepted |
+| [ADR-005](ADR-005-config-folder-for-personal-data.md) | Store Personal Data Files in Config/ and Gitignore Them | Accepted |
+| [ADR-006](ADR-006-separate-workbooks-root.md) | Add WorkbooksRoot Parameter to Separate Workbook Output from Receipts | Accepted |
 
 ## Template
 
