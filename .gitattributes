@@ -4,4 +4,10 @@
 *.bat  text eol=crlf
 *.md   text eol=crlf
 *.json text eol=crlf
+*.yml  text eol=lf
+*.env  text eol=lf
 *.xlsx binary
+
+# Shell hook entry points must stay LF so Git for Windows executes them correctly
+Scripts/hooks/pre-commit text eol=lf
+Scripts/hooks/pre-push   text eol=lf
