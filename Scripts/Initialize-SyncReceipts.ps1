@@ -10,7 +10,8 @@
          Config\Config.env from Config\Config.template.env.
       3. Creates the RECEIPTS_ROOT folder if it does not already exist.
       4. Copies Accounts.template.xlsx to RECEIPTS_ROOT\Accounts.xlsx (skipped if present).
-      5. Creates Windows shortcut (.lnk) files in RECEIPTS_ROOT that point to the batch
+      5. Copies Categories.template.json to Config\Categories.json (skipped if present).
+      6. Creates Windows shortcut (.lnk) files in RECEIPTS_ROOT that point to the batch
          launchers in the script directory, with WorkingDirectory set so UNC-path shortcuts
          open without the "UNC paths are not supported" CMD error.
 
@@ -29,9 +30,10 @@
       3. Creates RECEIPTS_ROOT folder if absent
       4. Creates WORKBOOKS_ROOT folder if absent and different from RECEIPTS_ROOT
       5. Copies Accounts.template.xlsx to Config\Accounts.xlsx (skipped if present)
-      6. Creates .lnk shortcuts in RECEIPTS_ROOT pointing to Launchers\
-      7. Installs Pester and PSScriptAnalyzer (required by the pre-commit and pre-push hooks)
-      8. Installs local git hooks from Scripts\hooks\ into .git\hooks\
+      6. Copies Categories.template.json to Config\Categories.json (skipped if present)
+      7. Creates .lnk shortcuts in RECEIPTS_ROOT pointing to Launchers\
+      8. Installs Pester and PSScriptAnalyzer (required by the pre-commit and pre-push hooks)
+      9. Installs local git hooks from Scripts\hooks\ into .git\hooks\
 #>
 
 $scriptDir    = $PSScriptRoot
@@ -289,6 +291,31 @@ if (Test-Path $accountsXlsx) {
         Write-Host "  example rows with your own accounts before running the script." -ForegroundColor Yellow
     } catch {
         Write-Fail "Could not copy Accounts.template.xlsx -- $_"
+        exit 1
+    }
+}
+
+# ---------------------------------------------------------------------------
+# 4.5 Copy Categories.template.json -> Config\Categories.json
+# ---------------------------------------------------------------------------
+
+Write-Host ""
+Write-Step "Setting up Categories.json..."
+
+$templateJson  = Join-Path $repoRoot "Config\Categories.template.json"
+$categoriesJson = Join-Path $repoRoot "Config\Categories.json"
+
+if (Test-Path $categoriesJson) {
+    Write-Skip "Categories.json already exists -- edit it directly to update your categories"
+} else {
+    try {
+        Copy-Item $templateJson $categoriesJson
+        Write-OK "Copied Categories.template.json -> Config\Categories.json"
+        Write-Host ""
+        Write-Host "  Edit Config\Categories.json to add or remove categories" -ForegroundColor Yellow
+        Write-Host "  before running the script." -ForegroundColor Yellow
+    } catch {
+        Write-Fail "Could not copy Categories.template.json -- $_"
         exit 1
     }
 }
