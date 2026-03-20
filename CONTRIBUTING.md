@@ -27,6 +27,7 @@ This is done automatically when you run `Setup.bat` on a new machine.
 
 | Hook | What it checks |
 |------|----------------|
+| `commit-msg` | Commit message follows Conventional Commits format (`type(scope): description`) |
 | `pre-commit` | PSScriptAnalyzer (`-Severity Error,Warning`) and ASCII-only check on every staged `.ps1` file |
 | `pre-push` | Full Pester test suite (`Invoke-Pester Tests/`) |
 
