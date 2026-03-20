@@ -9,12 +9,15 @@
       2. Reads RECEIPTS_ROOT from Config\Config.env, or prompts for the path and creates
          Config\Config.env from Config\Config.template.env.
       3. Creates the RECEIPTS_ROOT folder if it does not already exist.
-      4. Copies Accounts.template.xlsx to Config\Accounts.xlsx (skipped if present).
-      5. Copies Categories.template.json to Config\Categories.json (skipped if present).
-      6. Copies Methods.template.json to Config\Methods.json (skipped if present).
-      7. Creates Windows shortcut (.lnk) files in RECEIPTS_ROOT that point to the batch
+      4. Creates the WORKBOOKS_ROOT folder if absent and different from RECEIPTS_ROOT.
+      5. Copies Accounts.template.xlsx to Config\Accounts.xlsx (skipped if present).
+      6. Copies Categories.template.json to Config\Categories.json (skipped if present).
+      7. Copies Methods.template.json to Config\Methods.json (skipped if present).
+      8. Creates Windows shortcut (.lnk) files in RECEIPTS_ROOT that point to the batch
          launchers in the script directory, with WorkingDirectory set so UNC-path shortcuts
          open without the "UNC paths are not supported" CMD error.
+      9. Installs Pester and PSScriptAnalyzer (required by the pre-commit and pre-push hooks).
+     10. Installs local git hooks from Scripts\hooks\ into .git\hooks\.
 
     Run via Setup.bat (recommended), or directly:
         PowerShell -NoProfile -ExecutionPolicy Bypass -File Initialize-SyncReceipts.ps1
@@ -24,18 +27,6 @@
 .NOTES
     Requires: PowerShell 5.0+, Microsoft Excel (COM automation)
     Tested on: Windows 10/11
-
-    Steps performed:
-      1. Checks prerequisites (PowerShell 5.0+, Excel)
-      2. Creates Config\Config.env from template (prompts for RECEIPTS_ROOT, WORKBOOKS_ROOT)
-      3. Creates RECEIPTS_ROOT folder if absent
-      4. Creates WORKBOOKS_ROOT folder if absent and different from RECEIPTS_ROOT
-      5. Copies Accounts.template.xlsx to Config\Accounts.xlsx (skipped if present)
-      6. Copies Categories.template.json to Config\Categories.json (skipped if present)
-      7. Copies Methods.template.json to Config\Methods.json (skipped if present)
-      8. Creates .lnk shortcuts in RECEIPTS_ROOT pointing to Launchers\
-      9. Installs Pester and PSScriptAnalyzer (required by the pre-commit and pre-push hooks)
-     10. Installs local git hooks from Scripts\hooks\ into .git\hooks\
 #>
 
 $scriptDir    = $PSScriptRoot
