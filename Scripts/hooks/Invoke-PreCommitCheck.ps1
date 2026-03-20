@@ -16,7 +16,9 @@ $staged = & git diff --cached --name-only --diff-filter=ACM 2>$null |
 
 if (-not $staged) { exit 0 }
 
-$failed = $false
+$repoRoot     = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
+$settingsPath = Join-Path $repoRoot ".config\PSScriptAnalyzerSettings.psd1"
+$failed       = $false
 
 foreach ($file in $staged) {
     $lines   = & git show ":$file" 2>$null
@@ -30,11 +32,13 @@ foreach ($file in $staged) {
         Write-Host "  OK   [ASCII] $file" -ForegroundColor Green
     }
 
-    # PSScriptAnalyzer check
+    # PSScriptAnalyzer check -- uses .config/PSScriptAnalyzerSettings.psd1 to match CI
     $analyzerAvailable = Get-Module -ListAvailable PSScriptAnalyzer -ErrorAction SilentlyContinue
     if ($analyzerAvailable) {
         try {
-            $results = Invoke-ScriptAnalyzer -ScriptDefinition $content -Severity Error,Warning
+            $analyzerArgs = @{ ScriptDefinition = $content; Severity = 'Error','Warning' }
+            if (Test-Path $settingsPath) { $analyzerArgs['Settings'] = $settingsPath }
+            $results = Invoke-ScriptAnalyzer @analyzerArgs
             if ($results) {
                 foreach ($r in $results) {
                     Write-Host ("  FAIL [LINT]  ${file} line $($r.Line): " +

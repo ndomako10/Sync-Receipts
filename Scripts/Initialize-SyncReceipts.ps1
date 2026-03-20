@@ -30,7 +30,8 @@
       4. Creates WORKBOOKS_ROOT folder if absent and different from RECEIPTS_ROOT
       5. Copies Accounts.template.xlsx to Config\Accounts.xlsx (skipped if present)
       6. Creates .lnk shortcuts in RECEIPTS_ROOT pointing to Launchers\
-      7. Installs local git hooks from Scripts\hooks\ into .git\hooks\
+      7. Installs Pester and PSScriptAnalyzer (required by the pre-commit and pre-push hooks)
+      8. Installs local git hooks from Scripts\hooks\ into .git\hooks\
 #>
 
 $scriptDir    = $PSScriptRoot
@@ -339,7 +340,34 @@ foreach ($s in $shortcuts) {
 }
 
 # ---------------------------------------------------------------------------
-# 6. Install local git hooks
+# 7. Install Pester and PSScriptAnalyzer
+# ---------------------------------------------------------------------------
+
+Write-Host ""
+Write-Step "Checking test dependencies (Pester, PSScriptAnalyzer)..."
+
+foreach ($module in @(
+    @{ Name = 'Pester';            MinVersion = '5.0'; InstallArgs = @('-MinimumVersion', '5.0') },
+    @{ Name = 'PSScriptAnalyzer'; MinVersion = '1.0'; InstallArgs = @() }
+)) {
+    $found = Get-Module -ListAvailable $module.Name -ErrorAction SilentlyContinue |
+        Where-Object { $_.Version -ge [version]$module.MinVersion } |
+        Select-Object -First 1
+    if ($found) {
+        Write-Skip "$($module.Name) $($found.Version) already installed"
+    } else {
+        try {
+            Write-Host "  Installing $($module.Name)..." -ForegroundColor Cyan
+            Install-Module $module.Name @($module.InstallArgs) -Scope CurrentUser -Force -ErrorAction Stop
+            Write-OK "Installed $($module.Name)"
+        } catch {
+            Write-Fail "Could not install $($module.Name) -- $_"
+        }
+    }
+}
+
+# ---------------------------------------------------------------------------
+# 8. Install local git hooks
 # ---------------------------------------------------------------------------
 
 Write-Host ""
