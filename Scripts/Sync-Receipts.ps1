@@ -31,12 +31,12 @@
       - Injects dropdown validation for Category and Subcategory columns via XML patch
 
     Normally invoked via Run-SyncReceipts.bat or Run-SyncAllReceipts.bat, which read
-    RECEIPTS_ROOT from Config.bat and pass it as -ReceiptsRoot.
+    RECEIPTS_ROOT from Config/Config.env and pass it as -ReceiptsRoot.
 
 .PARAMETER ReceiptsRoot
     Path to the folder containing year subfolders and receipt files.
     Must be provided explicitly; the script's own folder is not the data root.
-    Typically set via RECEIPTS_ROOT in Config.bat.
+    Typically set via RECEIPTS_ROOT in Config/Config.env.
 
 .PARAMETER YearMonth
     YYMM string identifying the month to sync (e.g. "2603" for March 2026).
@@ -49,7 +49,7 @@
 
 .PARAMETER WorkbooksRoot
     Directory where per-year workbooks (e.g. 2026.xlsx) are written.
-    Defaults to ReceiptsRoot if not provided. Set WORKBOOKS_ROOT in Config.bat
+    Defaults to ReceiptsRoot if not provided. Set WORKBOOKS_ROOT in Config/Config.env
     to store workbooks in a different location from your receipts (e.g. a local
     drive while receipts live on a network share).
 
@@ -64,7 +64,7 @@
 
 .PARAMETER DateFormat
     .NET ParseExact format string for the date portion of receipt filenames.
-    Default: yyMMdd (e.g. 260316 for March 16, 2026). Set DATE_FORMAT in Config.bat
+    Default: yyMMdd (e.g. 260316 for March 16, 2026). Set DATE_FORMAT in Config/Config.env
     to change. Examples: yyyyMMdd (20260316), yy-MM-dd (26-03-16), MMddyy (031626).
     Single-digit tokens M (month) and d (day) are supported when the format uses
     separators (e.g. M-d-yy produces 3-1-26 for March 1, 2026). Without separators,
