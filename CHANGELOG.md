@@ -1,76 +1,34 @@
 ## [2.0.0] - 2026-03-20
 
-### Added
-- Add configurable date format with per-field parse error flags, closes #25
-- Add DATE_FORMAT to Config.template.bat and launchers, refs #25
-- Allow Method and Account to be omitted; flag Method missing rows, closes #28
-- Add WorkbooksRoot parameter to separate workbook output from receipts root, closes #31
-- Prompt for WORKBOOKS_ROOT during setup, defaulting to RECEIPTS_ROOT
-- Replace Config.bat with Config.env for safe editing, closes #37
+### Changed (breaking)
+- Config file renamed from `Config.bat` to `Config.env`. The new format is plain
+  `KEY=value` text with `#` comments -- no batch syntax. To upgrade: copy your
+  values from `Config\Config.bat` into a new `Config\Config.env`. Fresh installs
+  via `Setup.bat` create it automatically.
 
-### Documentation
-- Add Releasing section and contributing scope, refs #30
-- Update changelog and versioning workflow for git-cliff, refs #30
-- Add vendor description, fix amount sign convention
-- Fix amount sign convention in Write-MonthSheet doc
-- Standardize date format string to yyMMdd, closes #29
-- Standardize date format string to yyMMdd, refs #29
-- Document -DateFormat parameter and parse error flag values, refs #25
-- Document optional Method/Account, Method missing flag, and fix examples, refs #28
-- Document new launchers, first-run sync all, and day-to-day vs correction use
-- Document WorkbooksRoot parameter and WORKBOOKS_ROOT config variable, refs #31
-- Document M and d token separator requirement in DateFormat, refs #32
-- Document WORKBOOKS_ROOT prompt and folder creation confirmation in setup steps
-- Add CODE_OF_CONDUCT.md
-- Remove workflow rules now covered by global ~/.claude/CLAUDE.md
-- Update Accounts.xlsx and Categories.json paths for Config\ move
-- Update architecture and function table for Config\ file moves
-- Update accounts and categories scope descriptions
-- Fix Config.bat path, add missing launchers, add Docs/ADRs
-- Add six retroactive ADRs for core architectural decisions
-- Fix heading capitalisation to match project title-case style
-- Update all Config.bat references to Config.env
-- Add ADR-007 keep workbooks as xlsx not xlsm
-- Add coding rule for XML-escaping injected strings
-- Fix Config.bat references in help block
-- Fix stale refs and add missing functions to table
-- Add missing launchers to folder structure diagram
-- Add missing scopes to scope table
-- Add ADR-008 for .env config file format decision
-- Bump version to v2.0.0
-- Update for v2.0.0
-- Restore correct structure after corrupted prepend
-- Update for v2.0.0
-- Remove file-level header so --strip all --prepend works correctly
+### Added
+- `-WorkbooksRoot` parameter: store per-year workbooks separately from receipts
+  (e.g. a local drive while receipts live on a network share). Set `WORKBOOKS_ROOT`
+  in `Config\Config.env`. `Setup.bat` now prompts for this during setup, defaulting
+  to `RECEIPTS_ROOT`.
+- `-DateFormat` parameter: configurable `.NET ParseExact` format string for the
+  date portion of receipt filenames (default: `yyMMdd`). Set `DATE_FORMAT` in
+  `Config\Config.env`. Separator-delimited single-digit tokens (`M`, `d`) are
+  supported (e.g. `M-d-yy` produces `3-1-26` for March 1, 2026).
+- `Method` and `Account` fields in receipt filenames are now optional. Rows with a
+  missing Method are written with both fields blank and flagged `Method missing` in
+  the Flag column.
+- Stale subcategories are cleared on re-sync: if a row's saved Subcategory is no
+  longer valid for its current Category, it is cleared automatically rather than
+  silently preserved.
 
 ### Fixed
-- Support single-digit M and d tokens in separator-delimited DateFormat, closes #32
-- Fix month/day range validation for single-digit M and d tokens, refs #32
-- Read Accounts.xlsx from Config\ instead of ReceiptsRoot
-- Sanitize category names for Excel named ranges, closes #34
-- XML-escape ampersand in INDIRECT SUBSTITUTE formula
-
-### Maintenance
-- Add git-cliff changelog automation, closes #30
-- Add Run-SyncMonthReceipts and Run-SyncYearReceipts launchers
-- Default RECEIPTS_ROOT_LOCAL to RECEIPTS_ROOT in Config.template.bat
-- Add .gitattributes to enforce CRLF line endings on Windows
-- Copy Accounts.xlsx to Config\ and gitignore personal data files
-- Add Categories.template.json as default template
-- Bump actions/checkout from 4 to 6
-- Upgrade git-cliff-action from v3 to v4 to fix Debian Buster EOL build failure
-- Fix git-cliff binary name in Update CHANGELOG step
-- Use --prepend in git-cliff-action to avoid separate shell invocation
-- Fix cliff.toml commit_parsers to use type matching, remove broken preprocessors
-- Fix cliff.toml parsers to use message prefix matching instead of type field
-- Fix template var commit.description -> commit.message
-
-### Tests
-- Add -DateFormat and ParseError test cases, refs #25
-- Add no-method parse tests and update method-missing assertion, refs #28
-- Add single-digit M-d-yy DateFormat parse tests, refs #32
-- Add ConvertTo-ExcelRangeName tests, refs #34
-- Assert &amp; escaping in INDIRECT formula to prevent XML parse regression
+- Category names containing special characters (`&`, `/`, spaces) now work
+  correctly as Excel named ranges and in the dependent subcategory dropdown.
+- The subcategory INDIRECT formula now correctly XML-escapes `&` as `&amp;`,
+  preventing an Excel parse error on open.
+- `Accounts.xlsx` was being looked up in `ReceiptsRoot` instead of `Config\`
+  after the v1.0.0 reorganisation.
 
 ---
 ## [1.0.0] - 2026-03-17
