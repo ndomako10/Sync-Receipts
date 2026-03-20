@@ -4,8 +4,9 @@
     Installs local git hooks from Scripts/hooks/ into .git/hooks/.
 
 .DESCRIPTION
-    Copies the pre-commit and pre-push hook entry points from the committed
-    Scripts/hooks/ directory into .git/hooks/ so git executes them automatically.
+    Copies the pre-commit, pre-push, and commit-msg hook entry points from the
+    committed Scripts/hooks/ directory into .git/hooks/ so git executes them
+    automatically.
 
     Safe to re-run -- existing hooks are overwritten with the latest source.
     Called automatically by Initialize-SyncReceipts.ps1 during first-time setup.
@@ -23,7 +24,7 @@ if (-not (Test-Path $gitHooksDir)) {
     return
 }
 
-foreach ($name in @('pre-commit', 'pre-push')) {
+foreach ($name in @('pre-commit', 'pre-push', 'commit-msg')) {
     $src = Join-Path $hooksSource $name
     $dst = Join-Path $gitHooksDir $name
     try {

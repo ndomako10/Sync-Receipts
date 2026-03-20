@@ -1,0 +1,9 @@
+#!/bin/sh
+# commit-msg hook -- validates Conventional Commits format.
+# Installed by Scripts/Install-GitHooks.ps1; source lives in Scripts/hooks/.
+REPO_ROOT=$(git rev-parse --show-toplevel)
+PS=$(command -v powershell 2>/dev/null || command -v pwsh)
+"$PS" -NoProfile -NonInteractive -ExecutionPolicy Bypass \
+    -File "$REPO_ROOT/Scripts/hooks/Invoke-CommitMsgCheck.ps1" \
+    -MessageFile "$1"
+exit $?

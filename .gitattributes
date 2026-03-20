@@ -9,5 +9,6 @@
 *.xlsx binary
 
 # Shell hook entry points must stay LF so Git for Windows executes them correctly
-Scripts/hooks/pre-commit text eol=lf
-Scripts/hooks/pre-push   text eol=lf
+Scripts/hooks/pre-commit  text eol=lf
+Scripts/hooks/pre-push    text eol=lf
+Scripts/hooks/commit-msg  text eol=lf
