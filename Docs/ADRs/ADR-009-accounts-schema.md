@@ -19,15 +19,15 @@ and statement reconciliation (#60), several gaps became apparent:
 
 3. **Network and Type add noise** -- neither column is read by the script. Descriptive Account
    names make Type redundant, and Type was also being used inconsistently (Debit/Credit for
-   cards, but Checking/Savings for the `6310` rows to serve as a method disambiguator).
+   cards, but Checking/Savings for shared Last 4 rows to serve as a method disambiguator).
 
-4. **Shared Last 4 values** -- the same 4-digit number (`6310`) can appear under multiple
-   payment methods (`Checking`, `Savings`), each drawing from a different balance-holding
+4. **Shared Last 4 values** -- the same 4-digit number can appear under multiple payment
+   methods (e.g. `Checking` and `Savings`), each drawing from a different balance-holding
    account. Account number alone is insufficient to identify the bank account.
 
 5. **Apple Pay tokenization** -- Apple Pay generates a unique Device Account Number (DAN) per
    device per card. A physical debit card added to a phone and a watch produces three distinct
-   4-digit numbers in receipt filenames (`0927`, `6148`, `9080`), all drawing from the same
+   4-digit numbers in receipt filenames (`1111`, `2222`, `3333`), all drawing from the same
    bank account, but all appearing as the original card number on bank statements. Receipt-side
    account numbers and statement-side account numbers therefore differ for the same transaction.
 
@@ -38,10 +38,10 @@ and statement reconciliation (#60), several gaps became apparent:
 | Column | Description | Notes |
 |--------|-------------|-------|
 | Last 4 | Account number as it appears in receipt filenames | Lookup key |
-| Method | Payment method token | Only populated when the same Last 4 appears under multiple methods; blank when Last 4 is unambiguous. Uses the same token values as the filename. |
+| Method | Payment method token | Always populated. Uses the same token values as the filename. Entries that share a Last 4 value must each have a distinct Method to disambiguate (e.g. `Checking` and `Savings`). |
 | Holder | Person the account belongs to | |
-| Institution | Bank, card issuer, or wallet provider | e.g. MFCU, Apple Pay Phone, OnePay |
-| Account | Name of the balance-holding account this instrument draws from | e.g. `MFCU Checking`. Every row maps to exactly one balance-holding account. Blank for standalone credit cards. |
+| Institution | Bank, card issuer, or wallet provider | e.g. First National Bank, Apple Pay Phone, OnePay |
+| Account | Name of the balance-holding account this instrument draws from | e.g. `MyBank Checking`. Every row maps to exactly one balance-holding account. |
 | Status | `Active` or `Inactive` | User-managed dropdown validation |
 
 Drop the Network and Type columns entirely.
@@ -65,7 +65,7 @@ until #60 is built and the alias config is populated.
 ### Filename Method tokens
 
 The Method token in the filename is the payment method. The Method column in Accounts.xlsx
-uses the same token values for disambiguation when needed.
+uses the same token values.
 
 | Token | Description | Last 4 required |
 |-------|-------------|-----------------|
@@ -86,17 +86,17 @@ uses the same token values for disambiguation when needed.
   - `----` -- account genuinely unknown at time of filing
 - Method without Last 4 (non-Cash) -- invalid; flagged as missing account.
 - Last 4 without Method -- invalid; flagged as missing method.
-- Neither Method nor Last 4 -- valid; flagged as no account recorded.
+- Neither Method nor Last 4 -- valid; not flagged; receipt is recorded with no account.
 
 ### Lookup behaviour
 
 | Filename | Last 4 value | Lookup |
 |----------|-------------|--------|
-| `Card 1234` | Digits | Exact match on Method + Last 4 (or Last 4 alone if Method column is blank for that row) |
+| `Card 1234` | Digits | Exact match on Method + Last 4 |
 | `Card xxxx` | Redacted | No exact match; flagged as redacted account |
 | `Card ----` | Unknown | No lookup; flagged as unknown account |
 | `Cash` | Absent | No lookup |
-| *(neither)* | Absent | No lookup; flagged as no account recorded |
+| *(neither)* | Absent | No lookup; no flag |
 
 ## Alternatives considered
 
@@ -127,17 +127,22 @@ uses the same token values for disambiguation when needed.
   same Account name across both rows, which is simpler and achieves the same reconciliation
   routing.
 
+- **Method optional in Accounts.xlsx** -- considered making Method blank for unambiguous Last
+  4 values and only populating it for shared Last 4 rows. Rejected because always populating
+  Method makes the table self-describing and avoids a silent partial-match lookup that could
+  incorrectly resolve an account when two rows share a Last 4 but only one has a Method.
+
 ## Consequences
 
 - `Get-ValidAccounts` must return structured objects (Last 4, Method, Status, Account) rather
   than a flat list of strings, so `Write-MonthSheet` can flag inactive accounts distinctly
   from unrecognised ones.
-- The Method column lookup must match on Last 4 + Method when Method is present, Last 4 alone
-  when blank.
+- The Method column lookup matches on Method + Last 4.
 - `ConvertFrom-ReceiptFileName` must enforce that non-Cash methods require a Last 4 value.
+  Omitting both Method and Last 4 is valid and produces no flag.
 - `Accounts.template.xlsx` must be updated to the new schema with Status dropdown validation.
 - Existing `Accounts.xlsx` files must be migrated manually: rename/remove columns and
-  populate Account and Status values.
+  populate Account, Method, and Status values.
 - When #60 is implemented, Apple Pay alias mapping should be handled via a separate opt-in
   config rather than by extending this schema.
 - Truly unrecognised accounts (not present in the sheet at all) continue to be flagged as
