@@ -27,7 +27,7 @@ Receipts/
 .claude/
 
 # Test output logs
-tests/sync-output.txt
+Tests/sync-output.txt
 testResults.xml
 
 # Windows artifacts

@@ -1,7 +1,7 @@
 #Requires -Version 5.0
 <#
 .SYNOPSIS
-    Pre-commit checks: PSScriptAnalyzer lint and ASCII validation on staged .ps1 files.
+    Pre-commit checks: ASCII validation on staged .ps1, .json, and .md files; PSScriptAnalyzer lint on .ps1 only.
 
 .DESCRIPTION
     Called by .git/hooks/pre-commit via Scripts/Install-GitHooks.ps1.
@@ -11,10 +11,10 @@
     Exits 0 if all checks pass; exits 1 if any check fails.
 #>
 
-$staged = & git diff --cached --name-only --diff-filter=ACM 2>$null |
-    Where-Object { $_ -like '*.ps1' }
+$stagedAll = & git diff --cached --name-only --diff-filter=ACM 2>$null |
+    Where-Object { $_ -like '*.ps1' -or $_ -like '*.json' -or $_ -like '*.md' }
 
-if (-not $staged) { exit 0 }
+if (-not $stagedAll) { exit 0 }
 
 $repoRoot          = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 $settingsPath      = Join-Path $repoRoot ".config\PSScriptAnalyzerSettings.psd1"
@@ -22,7 +22,7 @@ $hasSettings       = Test-Path $settingsPath
 $analyzerAvailable = Get-Module -ListAvailable PSScriptAnalyzer -ErrorAction SilentlyContinue
 $failed            = $false
 
-foreach ($file in $staged) {
+foreach ($file in $stagedAll) {
     $lines   = & git show ":$file" 2>$null
     $content = $lines -join "`n"
 
@@ -34,27 +34,29 @@ foreach ($file in $staged) {
         Write-Host "  OK   [ASCII] $file" -ForegroundColor Green
     }
 
-    # PSScriptAnalyzer check -- uses .config/PSScriptAnalyzerSettings.psd1 to match CI
-    if ($analyzerAvailable) {
-        try {
-            $analyzerArgs = @{ ScriptDefinition = $content; Severity = 'Error','Warning' }
-            if ($hasSettings) { $analyzerArgs['Settings'] = $settingsPath }
-            $results = Invoke-ScriptAnalyzer @analyzerArgs
-            if ($results) {
-                foreach ($r in $results) {
-                    Write-Host ("  FAIL [LINT]  ${file} line $($r.Line): " +
-                        "$($r.Severity) $($r.RuleName) -- $($r.Message)") -ForegroundColor Red
+    # PSScriptAnalyzer check (.ps1 only) -- uses .config/PSScriptAnalyzerSettings.psd1 to match CI
+    if ($file -like '*.ps1') {
+        if ($analyzerAvailable) {
+            try {
+                $analyzerArgs = @{ ScriptDefinition = $content; Severity = 'Error','Warning' }
+                if ($hasSettings) { $analyzerArgs['Settings'] = $settingsPath }
+                $results = Invoke-ScriptAnalyzer @analyzerArgs
+                if ($results) {
+                    foreach ($r in $results) {
+                        Write-Host ("  FAIL [LINT]  ${file} line $($r.Line): " +
+                            "$($r.Severity) $($r.RuleName) -- $($r.Message)") -ForegroundColor Red
+                    }
+                    $failed = $true
+                } else {
+                    Write-Host "  OK   [LINT]  $file" -ForegroundColor Green
                 }
-                $failed = $true
-            } else {
-                Write-Host "  OK   [LINT]  $file" -ForegroundColor Green
+            } catch {
+                Write-Host "  WARN [LINT]  PSScriptAnalyzer error on ${file}: $_" -ForegroundColor Yellow
             }
-        } catch {
-            Write-Host "  WARN [LINT]  PSScriptAnalyzer error on ${file}: $_" -ForegroundColor Yellow
+        } else {
+            Write-Host ("  SKIP [LINT]  PSScriptAnalyzer not installed -- " +
+                "run: Install-Module PSScriptAnalyzer -Scope CurrentUser") -ForegroundColor Yellow
         }
-    } else {
-        Write-Host ("  SKIP [LINT]  PSScriptAnalyzer not installed -- " +
-            "run: Install-Module PSScriptAnalyzer -Scope CurrentUser") -ForegroundColor Yellow
     }
 }
 
