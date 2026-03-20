@@ -1,0 +1,35 @@
+{
+    "version": "0.2.0",
+    "inputs": [
+        {
+            "id": "receiptsRoot",
+            "type": "promptString",
+            "description": "RECEIPTS_ROOT path (from Config/Config.env)"
+        }
+    ],
+    "configurations": [
+        {
+            "name": "Debug: Test workbook",
+            "type": "PowerShell",
+            "request": "launch",
+            "script": "${workspaceFolder}/Scripts/Sync-Receipts.ps1",
+            "args": [
+                "-ReceiptsRoot", "${input:receiptsRoot}",
+                "-WorkbookPath", "${workspaceFolder}/Tests/Receipts (test).xlsx"
+            ],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Debug: Test workbook (verbose)",
+            "type": "PowerShell",
+            "request": "launch",
+            "script": "${workspaceFolder}/Scripts/Sync-Receipts.ps1",
+            "args": [
+                "-ReceiptsRoot", "${input:receiptsRoot}",
+                "-WorkbookPath", "${workspaceFolder}/Tests/Receipts (test).xlsx",
+                "-Verbose"
+            ],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}
