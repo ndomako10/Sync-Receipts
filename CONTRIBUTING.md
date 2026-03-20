@@ -28,7 +28,7 @@ This is done automatically when you run `Setup.bat` on a new machine.
 | Hook | What it checks |
 |------|----------------|
 | `commit-msg` | Commit message follows Conventional Commits format (`type(scope): description`) |
-| `pre-commit` | PSScriptAnalyzer (`-Severity Error,Warning`) and ASCII-only check on every staged `.ps1` file |
+| `pre-commit` | ASCII-only check on staged `.ps1`, `.json`, and `.md` files; PSScriptAnalyzer (`-Severity Error,Warning`) on `.ps1` files |
 | `pre-push` | Full Pester test suite (`Invoke-Pester Tests/`) |
 
 Hook sources live in `Scripts/hooks/` and are installed into `.git/hooks/` by the installer.
@@ -85,7 +85,7 @@ type(scope): short description
 | `tests` | Tests/ (per-function test files and Lint.Tests.ps1) |
 | `adr` | Docs/ADRs/ |
 | `readme` | README.md |
-| `ci` | GitHub Actions |
+| `ci` | GitHub Actions workflows (.github/) |
 | `claude.md` | CLAUDE.md |
 | `changelog` | CHANGELOG.md |
 | `security` | SECURITY.md |
