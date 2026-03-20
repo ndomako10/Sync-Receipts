@@ -81,8 +81,10 @@ Script files (e.g. C:\Scripts\Sync-Receipts\):
         Sync-Receipts.ps1
     Launchers\
         Run-SyncReceipts.bat
+        Run-SyncMonthReceipts.bat
+        Run-SyncYearReceipts.bat
         Run-SyncAllReceipts.bat
-    Kill-Excel.bat           <- force-closes hung EXCEL.EXE processes (not in repo)
+    Kill-Excel.bat           <- force-closes hung EXCEL.EXE processes (gitignored)
 
 RECEIPTS_ROOT (e.g. \\Server\Share\Receipts\):
     2026.xlsx                <- created automatically on first sync for that year
