@@ -1,5 +1,23 @@
 ## [2.0.0] - 2026-03-20
 
+### Added
+- Add configurable date format with per-field parse error flags, closes #25
+- Add DATE_FORMAT to Config.template.bat and launchers, refs #25
+- Allow Method and Account to be omitted; flag Method missing rows, closes #28
+- Add WorkbooksRoot parameter to separate workbook output from receipts root, closes #31
+- Prompt for WORKBOOKS_ROOT during setup, defaulting to RECEIPTS_ROOT
+- Replace Config.bat with Config.env for safe editing, closes #37
+
+### Fixed
+- Support single-digit M and d tokens in separator-delimited DateFormat, closes #32
+- Fix month/day range validation for single-digit M and d tokens, refs #32
+- Read Accounts.xlsx from Config\ instead of ReceiptsRoot
+- Sanitize category names for Excel named ranges, closes #34
+- XML-escape ampersand in INDIRECT SUBSTITUTE formula
+
+---
+## [2.0.0] - 2026-03-20
+
 ### Changed (breaking)
 - Config file renamed from `Config.bat` to `Config.env`. The new format is plain
   `KEY=value` text with `#` comments -- no batch syntax. To upgrade: copy your
