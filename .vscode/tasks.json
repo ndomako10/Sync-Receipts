@@ -271,6 +271,52 @@
             "problemMatcher": []
         },
         {
+            "label": "Lint: PSScriptAnalyzer",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy", "Bypass",
+                "-Command",
+                "$settings = '${workspaceFolder}\\.config\\PSScriptAnalyzerSettings.psd1'; $a = @{ Path = '${workspaceFolder}\\Scripts'; Recurse = $true; Severity = 'Error','Warning' }; if (Test-Path $settings) { $a['Settings'] = $settings }; $results = Invoke-ScriptAnalyzer @a; if (-not $results) { Write-Host 'No issues found.' } else { $results | ForEach-Object { \"$($_.ScriptPath)($($_.Line),$($_.Column)): $($_.Severity): [$($_.RuleName)] $($_.Message)\" } }"
+            ],
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": {
+                "owner": "psscriptanalyzer",
+                "fileLocation": ["absolute"],
+                "pattern": {
+                    "regexp": "^(.+?)\\((\\d+),(\\d+)\\):\\s+(Warning|Error|Information):\\s+\\[.+?\\]\\s+(.+)$",
+                    "file": 1,
+                    "line": 2,
+                    "column": 3,
+                    "severity": 4,
+                    "message": 5
+                }
+            }
+        },
+        {
+            "label": "Release: Draft CHANGELOG entry",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-NoProfile",
+                "-Command",
+                "$t = git describe --tags --abbrev=0 2>$null; $r = if ($t) { \"$t..HEAD\" } else { 'HEAD' }; $cs = git log $r --format='%s' 2>$null | Where-Object { $_ }; $a = @(); $ch = @(); $f = @(); foreach ($c in $cs) { $d = $c -replace '^[a-z]+\\([^)]+\\)?: ',''; $d = $d -replace '^[a-z]+?: ',''; if ($c -match '^feat') { $a += $d } elseif ($c -match '^fix') { $f += $d } elseif ($c -match '^(refactor|perf)') { $ch += $d } }; $dt = Get-Date -Format 'yyyy-MM-dd'; Write-Host \"## [x.y.z] - $dt\"; Write-Host ''; if ($a) { Write-Host '### Added'; $a | ForEach-Object { Write-Host \"- $_\" }; Write-Host '' }; if ($ch) { Write-Host '### Changed'; $ch | ForEach-Object { Write-Host \"- $_\" }; Write-Host '' }; if ($f) { Write-Host '### Fixed'; $f | ForEach-Object { Write-Host \"- $_\" }; Write-Host '' }; Write-Host '---'; Write-Host \"(Commits since $(if ($t) { $t } else { 'beginning' }))\""
+            ],
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
             "label": "Setup: Initialize",
             "type": "shell",
             "command": "cmd",
