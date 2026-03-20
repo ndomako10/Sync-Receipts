@@ -1,7 +1,7 @@
 #Requires -Version 5.0
 <#
 .SYNOPSIS
-    Pre-commit checks: PSScriptAnalyzer lint and ASCII validation on staged .ps1, .json, and .md files.
+    Pre-commit checks: ASCII validation on staged .ps1, .json, and .md files; PSScriptAnalyzer lint on .ps1 only.
 
 .DESCRIPTION
     Called by .git/hooks/pre-commit via Scripts/Install-GitHooks.ps1.
