@@ -17,6 +17,7 @@ ADRs capture *why* a significant decision was made -- the context, alternatives 
 | [ADR-007](ADR-007-xlsx-not-xlsm.md) | Keep Workbooks as .xlsx (Non-Macro-Enabled) | Accepted |
 | [ADR-008](ADR-008-env-config-format.md) | Use .env Format for Configuration File Instead of Batch | Accepted |
 | [ADR-009](ADR-009-accounts-schema.md) | Accounts.xlsx Schema Restructure | Accepted |
+| [ADR-010](ADR-010-configurable-method-tokens.md) | Configurable Payment Method Tokens | Accepted |
 
 ## Template
 
