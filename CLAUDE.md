@@ -89,7 +89,7 @@ Docs/
 Tests/
     <Function>.Tests.ps1     <- Pester unit tests (one file per pure-PowerShell function)
     Lint.Tests.ps1           <- PSScriptAnalyzer validation
-    run-sync-test.bat        <- local integration test launcher
+    run-sync-test.bat        <- local integration test launcher (tracked; not gitignored)
 .github/
     workflows/tests.yml     <- CI: runs Pester on windows-latest
     ISSUE_TEMPLATE/         <- bug report and feature request templates
