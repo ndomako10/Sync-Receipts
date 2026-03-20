@@ -2,7 +2,8 @@
 
 <#
 .SYNOPSIS
-    Syncs receipt filenames into a formatted Excel workbook, one sheet per month.
+    Parses receipt filenames and writes a formatted per-year Excel workbook, reading
+    account, category, and method config from the Config subfolder.
 
 .DESCRIPTION
     Parses every receipt file in a month folder and writes a formatted table into a
@@ -209,12 +210,15 @@ function ConvertFrom-ReceiptFileName {
 .PARAMETER DateFormat
     .NET ParseExact format string for the date portion of the filename.
     Default: yyMMdd. Examples: yyyyMMdd, yy-MM-dd, MMddyy, ddMMyy.
+    Single-digit tokens M (month) and d (day) are supported when the format uses
+    separators (e.g. M-d-yy). Without separators, use MM and dd to avoid ambiguous
+    parsing.
 
 .PARAMETER Methods
     Array of valid non-Cash method token strings. Defaults to the built-in set
     (Card, Check, Checking, Savings, Transfer, Wire). Pass the output of
-    Get-Methods to use the user-configured list. Cash is always valid and need
-    not be included.
+    Get-Methods to use the user-configured list. Cash is always valid and does
+    not need to be included.
 
 .OUTPUTS
     Hashtable with keys:
@@ -352,7 +356,8 @@ function Get-ValidAccounts {
     An open Excel.Application COM object used to open Accounts.xlsx.
 
 .PARAMETER ReceiptsRoot
-    Directory containing Accounts.xlsx. Defaults to the Config subfolder in the repo root.
+    Directory containing Accounts.xlsx. Defaults to the Config subfolder in the repo root
+    (Join-Path (Split-Path $PSScriptRoot -Parent) "Config").
 
 .OUTPUTS
     [array] of hashtables with keys Last4, Method, Account, Status.
@@ -421,7 +426,8 @@ function Get-Methods {
     cannot be parsed, logging a warning in either case.
 
 .PARAMETER ConfigRoot
-    Directory containing Methods.json. Defaults to the Config subfolder in the repo root.
+    Directory containing Methods.json. Defaults to the Config subfolder in the repo root
+    (Join-Path (Split-Path $PSScriptRoot -Parent) "Config").
 
 .OUTPUTS
     [string[]] of valid method token strings, excluding Cash.
@@ -473,7 +479,8 @@ function Get-Categories {
     subcategory strings. Returns $null if the file is missing or cannot be parsed.
 
 .PARAMETER ReceiptsRoot
-    Directory containing Categories.json. Defaults to the Config subfolder in the repo root.
+    Directory containing Categories.json. Defaults to the Config subfolder in the repo root
+    (Join-Path (Split-Path $PSScriptRoot -Parent) "Config").
 
 .OUTPUTS
     [ordered hashtable] mapping category name -> [string[]] subcategory list,
@@ -583,6 +590,9 @@ function Write-CategorySheet {
 
 .EXAMPLE
     $catSheet = Write-CategorySheet -Workbook $workbook -Categories $categories
+
+.EXAMPLE
+    Write-CategorySheet -Workbook $workbook -Categories $categories -WhatIf
 #>
     [CmdletBinding(SupportsShouldProcess)]
     param(
@@ -776,6 +786,9 @@ function Set-CategoryNamedRanges {
 
 .EXAMPLE
     Set-CategoryNamedRanges -Workbook $workbook -Categories $categories
+
+.EXAMPLE
+    Set-CategoryNamedRanges -Workbook $workbook -Categories $categories -WhatIf
 #>
     [CmdletBinding(SupportsShouldProcess)]
     param(
@@ -869,6 +882,9 @@ function Set-SubcategoryValidationXml {
 
 .EXAMPLE
     Set-SubcategoryValidationXml -WorkbookPath $wbPath -SyncResults $syncResults
+
+.EXAMPLE
+    Set-SubcategoryValidationXml -WorkbookPath $wbPath -SyncResults $syncResults -WhatIf
 #>
     [CmdletBinding(SupportsShouldProcess)]
     param(
@@ -1050,8 +1066,9 @@ function Write-MonthSheet {
     The Excel workbook COM object to write the sheet into.
 
 .PARAMETER ValidAccounts
-    Array of valid 4-digit account strings as returned by Get-ValidAccounts.
-    Used to flag accounts not present in Accounts.xlsx.
+    Array of account hashtables as returned by Get-ValidAccounts (keys: Last4, Method,
+    Account, Status). Used to flag accounts not present in Accounts.xlsx and to detect
+    inactive accounts.
 
 .PARAMETER DateFormat
     .NET ParseExact format string for the date portion of receipt filenames.
@@ -1067,9 +1084,10 @@ function Write-MonthSheet {
     Default: Card, Check, Checking, Savings, Transfer, Wire.
 
 .OUTPUTS
-    [PSCustomObject] with property DataEndRow [int] -- the last data row index
-    (used by Set-SubcategoryValidationXml to scope the dropdown validation range).
-    Returns $null if the folder could not be read or the sheet could not be created.
+    [PSCustomObject] with property DataEndRow [int] -- the last data row index.
+    For internal use by Set-SubcategoryValidationXml to scope the dropdown validation
+    range. Returns $null if the folder could not be read or the sheet could not be
+    created.
 
 .EXAMPLE
     $result = Write-MonthSheet -FolderPath "\\Server\Receipts\2026\2603 - March" `
