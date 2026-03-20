@@ -9,7 +9,7 @@
       2. Reads RECEIPTS_ROOT from Config\Config.env, or prompts for the path and creates
          Config\Config.env from Config\Config.template.env.
       3. Creates the RECEIPTS_ROOT folder if it does not already exist.
-      4. Copies Accounts.template.xlsx to RECEIPTS_ROOT\Accounts.xlsx (skipped if present).
+      4. Copies Accounts.template.xlsx to Config\Accounts.xlsx (skipped if present).
       5. Copies Categories.template.json to Config\Categories.json (skipped if present).
       6. Copies Methods.template.json to Config\Methods.json (skipped if present).
       7. Creates Windows shortcut (.lnk) files in RECEIPTS_ROOT that point to the batch
