@@ -1274,7 +1274,7 @@ function Write-MonthSheet {
 
     if ($table) {
         try {
-            $table.ListColumns.Item($COL_AMOUNT).DataBodyRange.NumberFormat = '$#,##0.00;[Red]($#,##0.00)'
+            $table.ListColumns.Item($COL_AMOUNT).DataBodyRange.NumberFormat = '_($* #,##0.00_);[Red]_($* (#,##0.00);_($* "-"??_);_(@_)'
         } catch {
             Write-SyncLog "Amount format: could not set -- $_" -Tag WARN
         }
@@ -1304,7 +1304,7 @@ function Write-MonthSheet {
         $sheet.Cells.Item($sumRow, $COL_VENDOR).Value2       = "Total"
         $sheet.Cells.Item($sumRow, $COL_VENDOR).Font.Bold    = $true
         $sheet.Cells.Item($sumRow, $COL_AMOUNT).Formula      = "=SUM(${amtColLetter}2:${amtColLetter}$dataEnd)"
-        $sheet.Cells.Item($sumRow, $COL_AMOUNT).NumberFormat = '$#,##0.00;[Red]($#,##0.00)'
+        $sheet.Cells.Item($sumRow, $COL_AMOUNT).NumberFormat = '_($* #,##0.00_);[Red]_($* (#,##0.00);_($* "-"??_);_(@_)'
         $sheet.Cells.Item($sumRow, $COL_AMOUNT).Font.Bold    = $true
         if ($flagCount -gt 0) {
             $sheet.Cells.Item($sumRow, $COL_FLAG).Value2          = "$flagCount flagged"
