@@ -1228,7 +1228,7 @@ function Write-MonthSheet {
             if (-not $match) {
                 $flag = "Account not in Accounts.xlsx"
             } elseif ($match.Status -eq "Inactive") {
-                $flag = "Inactive account"
+                $flag = "Account inactive"
             }
         }
         if ($flag -ne "") {
