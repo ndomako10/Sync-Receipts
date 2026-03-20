@@ -119,7 +119,7 @@ To force-close a crashed Excel instance holding the file locked, run the **Sync:
 
 | Parameter | Description |
 |-----------|-------------|
-| `-ReceiptsRoot` | **Required.** Path to the folder containing year subfolders and receipt files. Set via `Config\Config.env`. |
+| `-ReceiptsRoot` | Path to the folder containing year subfolders and receipt files. Set via `Config\Config.env`. Defaults to the parent of the Scripts folder if not provided. |
 | `-WorkbooksRoot` | Directory where per-year workbooks (e.g. `2026.xlsx`) are written. Defaults to `ReceiptsRoot`. Set `WORKBOOKS_ROOT` in `Config\Config.env` to store workbooks separately from receipts. |
 | `-YearMonth` | YYMM to sync (e.g. `2603`). Defaults to current month. |
 | `-Year` | 4-digit year (e.g. `2026`). Syncs all month folders under that year. Mutually exclusive with `-YearMonth` and `-All`. |
