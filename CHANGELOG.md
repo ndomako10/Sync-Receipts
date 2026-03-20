@@ -1,3 +1,15 @@
+## [2.0.0] - 2026-03-20
+
+### Documentation
+- Update changelog and versioning workflow for git-cliff, refs #30
+- Remove workflow rules now covered by global ~/.claude/CLAUDE.md
+- Update architecture and function table for Config\ file moves
+- Fix Config.bat path, add missing launchers, add Docs/ADRs
+- Fix heading capitalisation to match project title-case style
+- Add coding rule for XML-escaping injected strings
+- Fix stale refs and add missing functions to table
+
+---
 # Changelog
 
 All notable changes to this project will be documented in this file.
