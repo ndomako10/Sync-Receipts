@@ -16,7 +16,7 @@ body = """
 {% for group, commits in commits | group_by(attribute="group") %}
 ### {{ group }}
 {% for commit in commits %}\
-- {{ commit.message | upper_first }}
+- {{ commit.description | upper_first }}
 {% endfor %}\
 {% endfor %}
 ---
@@ -31,19 +31,17 @@ conventional_commits = true
 filter_unconventional = true
 split_commits = false
 
-commit_preprocessors = [
-    # Strip "type(scope): " and "type: " prefixes, leaving only the description
-    { pattern = "^[a-z]+\\([a-z0-9-]+\\)!?: ", replace = "" },
-    { pattern = "^[a-z]+!?: ", replace = "" },
-]
-
 commit_parsers = [
-    { message = "^feat", group = "Added" },
-    { message = "^fix", group = "Fixed" },
-    { message = "^refactor", group = "Changed" },
-    { message = "^docs", group = "Documentation" },
-    { message = "^test", group = "Tests" },
-    { message = "^chore", group = "Maintenance" },
+    { type = "feat", group = "Added" },
+    { type = "fix", group = "Fixed" },
+    { type = "refactor", group = "Changed" },
+    { type = "perf", group = "Changed" },
+    { type = "docs", group = "Documentation" },
+    { type = "test", group = "Tests" },
+    { type = "chore", group = "Maintenance" },
+    { type = "ci", group = "Maintenance" },
+    { type = "build", group = "Maintenance" },
+    { type = "style", group = "Maintenance" },
     { message = "^.*", skip = true },
 ]
 
