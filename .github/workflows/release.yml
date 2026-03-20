@@ -17,11 +17,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Validate changelog entry matches tag
+      - name: Extract version from tag
+        id: ver
         run: |
           TAG="${{ github.ref_name }}"
           VERSION="${TAG#v}"
+          echo "tag=$TAG"     >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Validate changelog entry matches tag
+        run: |
+          TAG="${{ steps.ver.outputs.tag }}"
+          VERSION="${{ steps.ver.outputs.version }}"
           TOP=$(grep -m1 '^## \[' CHANGELOG.md | grep -oP '(?<=\[)\d[^\]]+')
+          if [ -z "$TOP" ]; then
+            echo "ERROR: Could not find a versioned entry in CHANGELOG.md."
+            exit 1
+          fi
           if [ "$TOP" != "$VERSION" ]; then
             echo "ERROR: CHANGELOG.md top entry is [$TOP] but tag is $TAG."
             echo "Write a changelog entry for $VERSION before tagging."
@@ -31,9 +43,13 @@ jobs:
 
       - name: Validate script version matches tag
         run: |
-          TAG="${{ github.ref_name }}"
-          VERSION="${TAG#v}"
+          TAG="${{ steps.ver.outputs.tag }}"
+          VERSION="${{ steps.ver.outputs.version }}"
           SCRIPT_VER=$(grep -m1 '^# Sync-Receipts.ps1' Scripts/Sync-Receipts.ps1 | grep -oP '(?<=v)[\d.]+')
+          if [ -z "$SCRIPT_VER" ]; then
+            echo "ERROR: Could not extract version from Scripts/Sync-Receipts.ps1 header."
+            exit 1
+          fi
           if [ "$SCRIPT_VER" != "$VERSION" ]; then
             echo "ERROR: Sync-Receipts.ps1 header shows v$SCRIPT_VER but tag is $TAG."
             echo "Run the 'Release: Bump version' VS Code task and commit before tagging."
