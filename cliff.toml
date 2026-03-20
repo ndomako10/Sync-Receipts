@@ -32,16 +32,16 @@ filter_unconventional = true
 split_commits = false
 
 commit_parsers = [
-    { type = "feat", group = "Added" },
-    { type = "fix", group = "Fixed" },
-    { type = "refactor", group = "Changed" },
-    { type = "perf", group = "Changed" },
-    { type = "docs", group = "Documentation" },
-    { type = "test", group = "Tests" },
-    { type = "chore", group = "Maintenance" },
-    { type = "ci", group = "Maintenance" },
-    { type = "build", group = "Maintenance" },
-    { type = "style", group = "Maintenance" },
+    { message = "^feat", group = "Added" },
+    { message = "^fix", group = "Fixed" },
+    { message = "^refactor", group = "Changed" },
+    { message = "^perf", group = "Changed" },
+    { message = "^docs", group = "Documentation" },
+    { message = "^test", group = "Tests" },
+    { message = "^chore", group = "Maintenance" },
+    { message = "^ci", group = "Maintenance" },
+    { message = "^build", group = "Maintenance" },
+    { message = "^style", group = "Maintenance" },
     { message = "^.*", skip = true },
 ]
 
