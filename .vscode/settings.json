@@ -1,0 +1,11 @@
+{
+    "files.trimTrailingWhitespace": true,
+    "files.insertFinalNewline": true,
+    "files.eol": "\r\n",
+    "editor.formatOnSave": true,
+    "editor.rulers": [120],
+    "[powershell]": {
+        "editor.defaultFormatter": "ms-vscode.powershell"
+    },
+    "powershell.scriptAnalysis.enable": true
+}

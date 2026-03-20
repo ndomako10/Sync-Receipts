@@ -22,6 +22,16 @@
 .NOTES
     Requires: PowerShell 5.0+, Microsoft Excel (COM automation)
     Tested on: Windows 10/11
+
+    Steps performed:
+      1. Checks prerequisites (PowerShell 5.0+, Excel)
+      2. Creates Config\Config.env from template (prompts for RECEIPTS_ROOT, WORKBOOKS_ROOT)
+      3. Creates RECEIPTS_ROOT folder if absent
+      4. Creates WORKBOOKS_ROOT folder if absent and different from RECEIPTS_ROOT
+      5. Copies Accounts.template.xlsx to Config\Accounts.xlsx (skipped if present)
+      6. Creates .lnk shortcuts in RECEIPTS_ROOT pointing to Launchers\
+      7. Installs Pester and PSScriptAnalyzer (required by the pre-commit and pre-push hooks)
+      8. Installs local git hooks from Scripts\hooks\ into .git\hooks\
 #>
 
 $scriptDir    = $PSScriptRoot
@@ -327,6 +337,51 @@ foreach ($s in $shortcuts) {
     } catch {
         Write-Fail "Could not create shortcut '$($s.Name)' -- $_"
     }
+}
+
+# ---------------------------------------------------------------------------
+# 7. Install Pester and PSScriptAnalyzer
+# ---------------------------------------------------------------------------
+
+Write-Host ""
+Write-Step "Checking test dependencies (Pester, PSScriptAnalyzer)..."
+
+foreach ($module in @(
+    @{ Name = 'Pester';            MinVersion = [version]'5.0'; InstallArgs = @('-MinimumVersion', '5.0') },
+    @{ Name = 'PSScriptAnalyzer'; MinVersion = [version]'1.0'; InstallArgs = @() }
+)) {
+    $found = Get-Module -ListAvailable $module.Name -ErrorAction SilentlyContinue |
+        Where-Object { $_.Version -ge $module.MinVersion } |
+        Select-Object -First 1
+    if ($found) {
+        Write-Skip "$($module.Name) $($found.Version) already installed"
+    } else {
+        try {
+            Write-Host "  Installing $($module.Name)..." -ForegroundColor Cyan
+            Install-Module $module.Name @($module.InstallArgs) -Scope CurrentUser -Force -ErrorAction Stop
+            Write-OK "Installed $($module.Name)"
+        } catch {
+            Write-Fail "Could not install $($module.Name) -- $_"
+        }
+    }
+}
+
+# ---------------------------------------------------------------------------
+# 8. Install local git hooks
+# ---------------------------------------------------------------------------
+
+Write-Host ""
+Write-Step "Installing git hooks..."
+
+$installHooks = Join-Path $scriptDir "Install-GitHooks.ps1"
+if (Test-Path $installHooks) {
+    try {
+        & $installHooks
+    } catch {
+        Write-Fail "Could not install git hooks -- $_"
+    }
+} else {
+    Write-Skip "Install-GitHooks.ps1 not found -- skipping"
 }
 
 # ---------------------------------------------------------------------------

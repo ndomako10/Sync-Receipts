@@ -1,5 +1,17 @@
 {
     "version": "2.0.0",
+    "inputs": [
+        {
+            "id": "releaseVersion",
+            "type": "promptString",
+            "description": "Release version tag (e.g. v2.1.0)"
+        },
+        {
+            "id": "bumpVersion",
+            "type": "promptString",
+            "description": "New version number -- no v prefix (e.g. 2.1.0)"
+        }
+    ],
     "tasks": [
         {
             "label": "Test: All",
@@ -8,7 +20,7 @@
             "args": [
                 "-NoProfile",
                 "-Command",
-                "Import-Module Pester -MinimumVersion 5.0 -Force; Invoke-Pester ./tests -Output Detailed"
+                "Import-Module Pester -MinimumVersion 5.0 -Force; Invoke-Pester ./Tests -Output Detailed"
             ],
             "group": {
                 "kind": "test",
@@ -69,6 +81,32 @@
             "problemMatcher": []
         },
         {
+            "label": "Sync: Specific month",
+            "type": "shell",
+            "command": "cmd",
+            "args": ["/c", "${workspaceFolder}\\Launchers\\Run-SyncMonthReceipts.bat"],
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Sync: Specific year",
+            "type": "shell",
+            "command": "cmd",
+            "args": ["/c", "${workspaceFolder}\\Launchers\\Run-SyncYearReceipts.bat"],
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
             "label": "Sync: All months",
             "type": "shell",
             "command": "cmd",
@@ -84,10 +122,49 @@
         {
             "label": "Sync: Test workbook (current month)",
             "type": "shell",
-            "command": "cmd",
+            "command": "powershell",
             "args": [
-                "/c",
-                "call \"${workspaceFolder}\\Config\\Config.bat\" && powershell -NoProfile -ExecutionPolicy Bypass -NonInteractive -File \"${workspaceFolder}\\Scripts\\Sync-Receipts.ps1\" -ReceiptsRoot \"%RECEIPTS_ROOT_LOCAL%\" -WorkbookPath \"${workspaceFolder}\\Tests\\Receipts (test).xlsx\""
+                "-NoProfile",
+                "-ExecutionPolicy", "Bypass",
+                "-NonInteractive",
+                "-Command",
+                "$cfg = @{}; Get-Content '${workspaceFolder}\\Config\\Config.env' | Where-Object { $_ -notmatch '^\\s*#' -and $_ -match '=' } | ForEach-Object { $p = $_ -split '=',2; $cfg[$p[0].Trim()] = $p[1].Trim() }; & '${workspaceFolder}\\Scripts\\Sync-Receipts.ps1' -ReceiptsRoot $cfg['RECEIPTS_ROOT'] -WorkbookPath '${workspaceFolder}\\Tests\\Receipts (test).xlsx'"
+            ],
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Sync: Test workbook (verbose)",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy", "Bypass",
+                "-NonInteractive",
+                "-Command",
+                "$cfg = @{}; Get-Content '${workspaceFolder}\\Config\\Config.env' | Where-Object { $_ -notmatch '^\\s*#' -and $_ -match '=' } | ForEach-Object { $p = $_ -split '=',2; $cfg[$p[0].Trim()] = $p[1].Trim() }; & '${workspaceFolder}\\Scripts\\Sync-Receipts.ps1' -ReceiptsRoot $cfg['RECEIPTS_ROOT'] -WorkbookPath '${workspaceFolder}\\Tests\\Receipts (test).xlsx' -Verbose"
+            ],
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Kill Excel",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-NoProfile",
+                "-Command",
+                "Stop-Process -Name EXCEL -Force -ErrorAction SilentlyContinue; Write-Host 'Done'"
             ],
             "group": "build",
             "presentation": {
@@ -100,11 +177,150 @@
         {
             "label": "Sync: Current month (KillExcel)",
             "type": "shell",
-            "command": "cmd",
+            "command": "powershell",
             "args": [
-                "/c",
-                "call \"${workspaceFolder}\\Config\\Config.bat\" && powershell -NoProfile -ExecutionPolicy Bypass -NonInteractive -File \"${workspaceFolder}\\Scripts\\Sync-Receipts.ps1\" -ReceiptsRoot \"%RECEIPTS_ROOT%\" -KillExcel"
+                "-NoProfile",
+                "-ExecutionPolicy", "Bypass",
+                "-NonInteractive",
+                "-Command",
+                "$cfg = @{}; Get-Content '${workspaceFolder}\\Config\\Config.env' | Where-Object { $_ -notmatch '^\\s*#' -and $_ -match '=' } | ForEach-Object { $p = $_ -split '=',2; $cfg[$p[0].Trim()] = $p[1].Trim() }; & '${workspaceFolder}\\Scripts\\Sync-Receipts.ps1' -ReceiptsRoot $cfg['RECEIPTS_ROOT'] -KillExcel"
             ],
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Release: Bump version",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-NoProfile",
+                "-Command",
+                "$v = '${input:bumpVersion}'; $f = '${workspaceFolder}\\Scripts\\Sync-Receipts.ps1'; $lines = Get-Content $f; $lines[0] = \"# Sync-Receipts.ps1  v$v\"; for ($i = 0; $i -lt $lines.Count; $i++) { if ($lines[$i] -match '^\\s+Version\\s*:') { $lines[$i] = $lines[$i] -replace '\\d+\\.\\d+\\.\\d+', $v; break } }; Set-Content $f $lines -Encoding ASCII; code $f"
+            ],
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Release: Preview notes",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-NoProfile",
+                "-Command",
+                "$lines = Get-Content '${workspaceFolder}\\CHANGELOG.md'; $found = $false; foreach ($l in $lines) { if ($l -match '^## \\[\\d') { $found = $true }; if ($found -and $l -eq '---') { break }; if ($found) { Write-Host $l } }"
+            ],
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Release: Tag and push",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-NoProfile",
+                "-Command",
+                "$v = '${input:releaseVersion}'; git tag $v; if ($LASTEXITCODE -eq 0) { git push origin $v; Write-Host \"Tagged and pushed $v\" } else { Write-Error 'git tag failed -- tag may already exist' }"
+            ],
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "CI: View recent runs",
+            "type": "shell",
+            "command": "gh",
+            "args": ["run", "list", "--limit", "10"],
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Issues: List open",
+            "type": "shell",
+            "command": "gh",
+            "args": ["issue", "list"],
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Lint: PSScriptAnalyzer",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy", "Bypass",
+                "-Command",
+                "$settings = '${workspaceFolder}\\.config\\PSScriptAnalyzerSettings.psd1'; $a = @{ Path = '${workspaceFolder}\\Scripts'; Recurse = $true; Severity = 'Error','Warning' }; if (Test-Path $settings) { $a['Settings'] = $settings }; $results = Invoke-ScriptAnalyzer @a; if (-not $results) { Write-Host 'No issues found.' } else { $results | ForEach-Object { \"$($_.ScriptPath)($($_.Line),$($_.Column)): $($_.Severity): [$($_.RuleName)] $($_.Message)\" } }"
+            ],
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": {
+                "owner": "psscriptanalyzer",
+                "fileLocation": ["absolute"],
+                "pattern": {
+                    "regexp": "^(.+?)\\((\\d+),(\\d+)\\):\\s+(Warning|Error|Information):\\s+\\[.+?\\]\\s+(.+)$",
+                    "file": 1,
+                    "line": 2,
+                    "column": 3,
+                    "severity": 4,
+                    "message": 5
+                }
+            }
+        },
+        {
+            "label": "Release: Draft CHANGELOG entry",
+            "type": "shell",
+            "command": "powershell",
+            "args": [
+                "-NoProfile",
+                "-Command",
+                "$t = git describe --tags --abbrev=0 2>$null; $r = if ($t) { \"$t..HEAD\" } else { 'HEAD' }; $cs = git log $r --format='%s' 2>$null | Where-Object { $_ }; $a = @(); $ch = @(); $f = @(); foreach ($c in $cs) { $d = $c -replace '^[a-z]+\\([^)]+\\)?: ',''; $d = $d -replace '^[a-z]+?: ',''; if ($c -match '^feat') { $a += $d } elseif ($c -match '^fix') { $f += $d } elseif ($c -match '^(refactor|perf)') { $ch += $d } }; $dt = Get-Date -Format 'yyyy-MM-dd'; Write-Host \"## [x.y.z] - $dt\"; Write-Host ''; if ($a) { Write-Host '### Added'; $a | ForEach-Object { Write-Host \"- $_\" }; Write-Host '' }; if ($ch) { Write-Host '### Changed'; $ch | ForEach-Object { Write-Host \"- $_\" }; Write-Host '' }; if ($f) { Write-Host '### Fixed'; $f | ForEach-Object { Write-Host \"- $_\" }; Write-Host '' }; Write-Host '---'; Write-Host \"(Commits since $(if ($t) { $t } else { 'beginning' }))\""
+            ],
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Setup: Initialize",
+            "type": "shell",
+            "command": "cmd",
+            "args": ["/c", "${workspaceFolder}\\Setup.bat"],
             "group": "build",
             "presentation": {
                 "reveal": "always",

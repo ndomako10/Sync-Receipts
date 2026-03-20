@@ -1,0 +1,54 @@
+name: Commit Lint
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+
+jobs:
+  lint:
+    name: Validate commit message
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+
+      - name: Validate commit message format
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            MSG="${{ github.event.pull_request.title }}"
+          else
+            MSG=$(git log -1 --format=%s)
+          fi
+
+          echo "Validating: $MSG"
+
+          # Skip merge and revert commits
+          if echo "$MSG" | grep -qE '^(Merge|Revert) '; then
+            echo "Skipping merge/revert commit."
+            exit 0
+          fi
+
+          # Validate type(scope): description format
+          PATTERN='^(feat|fix|docs|test|refactor|chore|ci|perf|style|build)(\([a-z0-9._-]+\))?: .+'
+          if ! echo "$MSG" | grep -qE "$PATTERN"; then
+            echo "ERROR: commit message does not follow Conventional Commits format."
+            echo "  Expected : type(scope): short description"
+            echo "  Valid types: feat fix docs test refactor chore ci perf style build"
+            echo "  Got: $MSG"
+            exit 1
+          fi
+
+          # Warn if scope is not in the known list (non-blocking)
+          KNOWN="ps1 logging categories accounts write-month convert-receipt xml tests readme claude.md ci config changelog contributing security"
+          SCOPE=$(echo "$MSG" | grep -oP '(?<=\()[^)]+' || true)
+          if [ -n "$SCOPE" ]; then
+            if ! echo "$KNOWN" | grep -qw "$SCOPE"; then
+              echo "::warning::Scope '$SCOPE' is not in the known scope list. Consider updating CLAUDE.md if this is a new scope."
+            fi
+          fi
+
+          echo "OK"
