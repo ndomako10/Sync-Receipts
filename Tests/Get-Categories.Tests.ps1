@@ -16,9 +16,16 @@ BeforeAll {
 }
 
 # ---------------------------------------------------------------------------
-# Get-ValidAccounts is not unit-testable: it requires a live Excel COM
-# object ($Excel.Workbooks.Open) to read Accounts.xlsx. Integration testing
-# is local-only (see Tests/run-sync-test.bat).
+# The following functions are excluded from unit testing because they require
+# a live Excel COM instance and cannot run headless:
+#
+#   Get-ValidAccounts    -- opens Accounts.xlsx via $Excel.Workbooks.Open
+#   Write-CategorySheet  -- creates/overwrites a COM worksheet object
+#   Set-CategoryNamedRanges -- calls $workbook.Names.Add via COM
+#   Write-MonthSheet     -- creates tables, hyperlinks, and named ranges via COM
+#   Set-MonthSheetOrder  -- reorders sheet tabs via COM
+#
+# Integration testing for these functions is local-only (see Tests/run-sync-test.bat).
 # ---------------------------------------------------------------------------
 
 Describe 'Get-Categories' {
