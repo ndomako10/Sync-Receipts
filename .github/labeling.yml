@@ -1,0 +1,32 @@
+ps1:
+  - changed-files:
+    - any-glob-to-any-file: 'Scripts/Sync-Receipts.ps1'
+
+setup:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'Setup.bat'
+      - 'Scripts/Initialize-SyncReceipts.ps1'
+      - 'Scripts/Install-GitHooks.ps1'
+      - 'Scripts/hooks/**'
+
+test:
+  - changed-files:
+    - any-glob-to-any-file: 'Tests/**'
+
+github_actions:
+  - changed-files:
+    - any-glob-to-any-file: '.github/**'
+
+config:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'Config/**'
+      - '.vscode/**'
+      - 'Launchers/**'
+
+documentation:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*.md'
+      - 'Docs/**'
