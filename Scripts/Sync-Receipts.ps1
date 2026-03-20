@@ -1545,7 +1545,7 @@ foreach ($yearEntry in ($yearGroups.GetEnumerator() | Sort-Object Key)) {
     Write-SyncLog "Accounts: loading" -Tag VERB
     $validAccounts = @()
     try {
-        $validAccounts = Get-ValidAccounts -ReceiptsRoot $ReceiptsRoot -Excel $excel
+        $validAccounts = Get-ValidAccounts -Excel $excel
     } catch {
         Write-SyncLog "Accounts: error in Get-ValidAccounts -- $_" -Tag WARN
     }
