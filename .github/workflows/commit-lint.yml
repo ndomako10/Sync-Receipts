@@ -26,14 +26,14 @@ jobs:
 
           echo "Validating: $MSG"
 
-          # Skip merge and revert commits
-          if echo "$MSG" | grep -qE '^(Merge|Revert) '; then
-            echo "Skipping merge/revert commit."
+          # Skip merge, revert, fixup, and squash commits
+          if echo "$MSG" | grep -qE '^(Merge |Revert |fixup!|squash!)'; then
+            echo "Skipping merge/revert/fixup/squash commit."
             exit 0
           fi
 
-          # Validate type(scope): description format
-          PATTERN='^(feat|fix|docs|test|refactor|chore|ci|perf|style|build)(\([a-z0-9._-]+\))?: .+'
+          # Validate type(scope): description format (supports breaking-change marker !)
+          PATTERN='^(feat|fix|docs|test|refactor|chore|ci|perf|style|build)(\([a-z0-9._-]+\))?!?: .+'
           if ! echo "$MSG" | grep -qE "$PATTERN"; then
             echo "ERROR: commit message does not follow Conventional Commits format."
             echo "  Expected : type(scope): short description"
