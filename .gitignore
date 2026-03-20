@@ -9,13 +9,16 @@ Kill-Excel.bat
 # Excel workbooks (contain personal financial data)
 *.xlsx
 *.xls
+Config/Accounts.xlsx
 
 # Template files are safe to commit (no personal data)
 !Accounts.template.xlsx
 !Categories.template.json
+!Methods.template.json
 
 # Personal config files (may contain sensitive financial data)
 Config/Categories.json
+Config/Methods.json
 
 # Receipt files (personal financial documents)
 Receipts/
