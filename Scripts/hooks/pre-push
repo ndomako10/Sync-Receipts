@@ -1,0 +1,8 @@
+#!/bin/sh
+# pre-push hook -- runs the full Pester test suite before every push.
+# Installed by Scripts/Install-GitHooks.ps1; source lives in Scripts/hooks/.
+REPO_ROOT=$(git rev-parse --show-toplevel)
+PS=$(command -v pwsh 2>/dev/null || command -v powershell)
+"$PS" -NoProfile -NonInteractive -ExecutionPolicy Bypass \
+    -File "$REPO_ROOT/Scripts/hooks/Invoke-PrePushCheck.ps1"
+exit $?

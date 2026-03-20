@@ -1,0 +1,8 @@
+#!/bin/sh
+# pre-commit hook -- PSScriptAnalyzer lint and ASCII check on staged .ps1 files.
+# Installed by Scripts/Install-GitHooks.ps1; source lives in Scripts/hooks/.
+REPO_ROOT=$(git rev-parse --show-toplevel)
+PS=$(command -v pwsh 2>/dev/null || command -v powershell)
+"$PS" -NoProfile -NonInteractive -ExecutionPolicy Bypass \
+    -File "$REPO_ROOT/Scripts/hooks/Invoke-PreCommitCheck.ps1"
+exit $?
