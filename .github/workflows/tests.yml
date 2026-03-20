@@ -25,8 +25,13 @@ jobs:
       - name: Run tests
         shell: pwsh
         run: |
-          $result = Invoke-Pester Tests/ -Output Detailed -PassThru `
-            -CodeCoverage 'Scripts/Sync-Receipts.ps1'
+          $cfg = New-PesterConfiguration
+          $cfg.Run.Path             = 'Tests/'
+          $cfg.Output.Verbosity     = 'Detailed'
+          $cfg.Run.PassThru         = $true
+          $cfg.CodeCoverage.Enabled = $true
+          $cfg.CodeCoverage.Path    = 'Scripts/Sync-Receipts.ps1'
+          $result = Invoke-Pester -Configuration $cfg
           if ($result.FailedCount -gt 0) { exit 1 }
           $cc = $result.CodeCoverage
           if ($cc.NumberOfCommandsAnalyzed -gt 0) {
