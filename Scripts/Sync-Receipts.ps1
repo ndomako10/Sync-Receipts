@@ -1058,6 +1058,15 @@ function Write-MonthSheet {
     .NET ParseExact format string for the date portion of receipt filenames.
     Passed through to ConvertFrom-ReceiptFileName. Default: yyMMdd.
 
+.PARAMETER Categories
+    Hashtable of category -> subcategory array as returned by Get-Categories.
+    Used to auto-populate the Category column on each row. Pass $null to skip.
+
+.PARAMETER Methods
+    Array of recognised payment method tokens passed to ConvertFrom-ReceiptFileName.
+    Tokens not in this list are written as-is and flagged "Unrecognised method".
+    Default: Card, Check, Checking, Savings, Transfer, Wire.
+
 .OUTPUTS
     [PSCustomObject] with property DataEndRow [int] -- the last data row index
     (used by Set-SubcategoryValidationXml to scope the dropdown validation range).
