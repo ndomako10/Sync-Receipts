@@ -77,11 +77,13 @@ type(scope): short description
 | `ps1` | Sync-Receipts.ps1 (general) |
 | `logging` | Write-SyncLog and console output |
 | `categories` | Categories feature: Get-Categories, Write-CategorySheet, Config/Categories.json, Config/Categories.template.json |
-| `accounts` | Accounts feature: Get-ValidAccounts, Config/Accounts.xlsx, Config/Accounts.template.xlsx |
+| `accounts` | Accounts feature: Get-ValidAccounts, Config/Accounts.xlsx, Config/Accounts.template.xlsx, Scripts/New-AccountsTemplate.ps1 |
+| `methods`  | Configurable method tokens: Get-Methods, Config/Methods.json, Config/Methods.template.json |
 | `write-month` | Write-MonthSheet function |
 | `convert-receipt` | ConvertFrom-ReceiptFileName function |
 | `xml` | Set-SubcategoryValidationXml |
-| `tests` | Tests/ |
+| `tests` | Tests/ (per-function test files and Lint.Tests.ps1) |
+| `adr` | Docs/ADRs/ |
 | `readme` | README.md |
 | `ci` | GitHub Actions |
 | `claude.md` | CLAUDE.md |

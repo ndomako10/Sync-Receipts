@@ -8,9 +8,32 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- `Get-Methods` function: reads configurable payment method tokens from
+  `Config\Methods.json`; falls back to built-in defaults (`Card`, `Check`,
+  `Checking`, `Savings`, `Transfer`, `Wire`) if the file is absent or invalid.
+- `Config\Methods.template.json`: default method token list, committed to the
+  repo. Copy to `Config\Methods.json` to customise.
+- `Scripts\New-AccountsTemplate.ps1`: regenerates `Config\Accounts.template.xlsx`
+  with the correct column schema and dropdown validation. Re-run whenever the
+  Accounts schema changes.
+- `Account inactive` flag in the Flag column when a receipt's account is present
+  in `Accounts.xlsx` but has `Status = Inactive`.
+- `Unrecognised method` flag in the Flag column when a receipt's method token is
+  not in the loaded methods list.
+
+### Changed (breaking)
+- `Accounts.xlsx` schema restructured (see ADR-009): columns are now
+  Last 4 / Method / Holder / Institution / Account / Status (was
+  Last 4 / Holder / Institution / Network / Type). Rebuild `Config\Accounts.xlsx`
+  from `Config\Accounts.template.xlsx`.
+- `ConvertFrom-ReceiptFileName` now validates the method token against the loaded
+  methods list. Unrecognised tokens produce `OK=$true` with the flag
+  `Unrecognised method` rather than being silently accepted.
+
 ---
 
-## [2.0.0] - 2026-03-20
+## [2.0.0] - 2026-03-19
 
 ### Changed (breaking)
 - Config file renamed from `Config.bat` to `Config.env`. The new format is plain

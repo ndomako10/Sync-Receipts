@@ -57,8 +57,9 @@ Running a `.bat` launcher triggers the PowerShell script, which parses every rec
    - Create `Run Sync Receipts.lnk`, `Run Sync Month Receipts.lnk`, `Run Sync Year Receipts.lnk`, and `Run Sync All Receipts.lnk` shortcuts in `RECEIPTS_ROOT`
 2. Open `Config\Accounts.xlsx` and replace the example rows with your own accounts
 3. Copy `Config\Categories.template.json` to `Config\Categories.json` and edit to customise your categories (skipped if already present)
-4. For the first run, use the `Run Sync All Receipts.lnk` shortcut in `RECEIPTS_ROOT` to sync all existing receipts across all years into workbooks
-5. After the initial sync, use `Run Sync Receipts.lnk` for day-to-day syncing of the current month. Use the month and year launchers when correcting past entries.
+4. Copy `Config\Methods.template.json` to `Config\Methods.json` and edit to customise the accepted payment method tokens (skipped if already present)
+5. For the first run, use the `Run Sync All Receipts.lnk` shortcut in `RECEIPTS_ROOT` to sync all existing receipts across all years into workbooks
+6. After the initial sync, use `Run Sync Receipts.lnk` for day-to-day syncing of the current month. Use the month and year launchers when correcting past entries.
 
 `Setup.bat` is safe to re-run -- it skips steps that are already complete.
 
@@ -76,6 +77,8 @@ Script files (e.g. C:\Scripts\Sync-Receipts\):
         Accounts.xlsx           <- gitignored; your personal accounts
         Categories.template.json <- default categories template; committed to git
         Categories.json          <- gitignored; your personal categories
+        Methods.template.json    <- default method tokens template; committed to git
+        Methods.json             <- gitignored; your personal method tokens
     Scripts\
         Initialize-SyncReceipts.ps1
         Sync-Receipts.ps1
@@ -128,21 +131,21 @@ To force-close a crashed Excel instance holding the file locked, run the **Sync:
 ## Workbook Structure
 
 ### Accounts.xlsx
-A dedicated Excel workbook at `Config\Accounts.xlsx` (gitignored). Copy from `Config\Accounts.template.xlsx` and fill in your accounts. The script reads **Last 4** (column A) for validation; all other columns are for human reference only.
+A dedicated Excel workbook at `Config\Accounts.xlsx` (gitignored). Copy from `Config\Accounts.template.xlsx` and fill in your accounts. The script reads **Last 4** (column A) and **Method** (column B) for validation and disambiguation; all other columns are for human reference only.
 
 | Column | Header | Notes |
 |--------|--------|-------|
 | A | Last 4 | 4-digit account identifier used by the script |
-| B | Holder | Account owner |
-| C | Institution | Bank, credit union, or fintech (e.g. MFCU, Chase, Apple Pay) |
-| D | Network | Visa, Mastercard, Amex, Discover -- **blank for bank accounts and EBT** |
-| E | Type | `Credit`, `Debit`, `Checking`, `Savings`, or `EBT` |
+| B | Method | Payment method for this account (e.g. `Card`, `Checking`); leave blank if the Last 4 is unique across all methods |
+| C | Holder | Account owner |
+| D | Institution | Bank, credit union, or fintech (e.g. MFCU, Chase, Apple Pay) |
+| E | Account | Name of the balance-holding account (for reference only) |
+| F | Status | `Active` or `Inactive` (dropdown) |
 
 **Notes:**
-- Bank accounts (Checking/Savings ACH): leave Network blank; set Type to `Checking` or `Savings`
-- The same Last 4 may appear on multiple rows (e.g. a bank account number shared across Checking and Savings)
-- Cash: no entry needed in `Accounts.xlsx` -- Cash receipts carry no account number in the filename
-- EBT: leave Network blank, set Type to `EBT`
+- The same Last 4 may appear on multiple rows when the same number is used for different methods (e.g. a bank account number shared across Checking and Check). Set **Method** on each row to disambiguate.
+- Cash: no entry needed in `Accounts.xlsx` -- Cash receipts carry no account number in the filename.
+- Inactive accounts are flagged `Account inactive` in the workbook rather than `Account not in Accounts.xlsx`.
 
 If `Accounts.xlsx` is absent, account validation is skipped.
 
@@ -158,11 +161,11 @@ Created or overwritten on each run. Contains a 9-column table:
 | B | Date | Formatted `d-mmm` |
 | C | Vendor | Name of the merchant or payee |
 | D | Amount | Currency formatted; positive = expense, negative = income |
-| E | Method | `Card`, `Cash`, `Checking`, `Savings`, or blank if omitted |
+| E | Method | `Card`, `Cash`, `Check`, `Checking`, `Savings`, `Transfer`, `Wire`, or blank if omitted; custom tokens configurable via `Config\Methods.json` |
 | F | Account | 4-digit number, or `xxxx` (obfuscated) / `----` (unknown), text formatted; blank if Method omitted |
 | G | Category | Dropdown; list sourced from the hidden Category sheet (auto-populated) |
 | H | Subcategory | Dropdown filtered by selected Category via `INDIRECT` |
-| I | Flag | Parse errors: `Could not parse filename`, `Month out of range`, `Day out of range`, `Invalid date`; missing field: `Method missing`; account flags: `Account obfuscated`, `Account unknown`, `Account not in Accounts.xlsx` |
+| I | Flag | Parse errors: `Could not parse filename`, `Month out of range`, `Day out of range`, `Invalid date`; missing field: `Method missing`; account flags: `Account obfuscated`, `Account unknown`, `Account not in Accounts.xlsx`, `Account inactive`, `Unrecognised method` |
 
 ## License
 

@@ -16,6 +16,7 @@ ADRs capture *why* a significant decision was made -- the context, alternatives 
 | [ADR-006](ADR-006-separate-workbooks-root.md) | Add WorkbooksRoot Parameter to Separate Workbook Output from Receipts | Accepted |
 | [ADR-007](ADR-007-xlsx-not-xlsm.md) | Keep Workbooks as .xlsx (Non-Macro-Enabled) | Accepted |
 | [ADR-008](ADR-008-env-config-format.md) | Use .env Format for Configuration File Instead of Batch | Accepted |
+| [ADR-009](ADR-009-accounts-schema.md) | Accounts.xlsx Schema Restructure | Accepted |
 
 ## Template
 

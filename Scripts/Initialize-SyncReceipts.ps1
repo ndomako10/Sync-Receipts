@@ -9,9 +9,10 @@
       2. Reads RECEIPTS_ROOT from Config\Config.env, or prompts for the path and creates
          Config\Config.env from Config\Config.template.env.
       3. Creates the RECEIPTS_ROOT folder if it does not already exist.
-      4. Copies Accounts.template.xlsx to RECEIPTS_ROOT\Accounts.xlsx (skipped if present).
+      4. Copies Accounts.template.xlsx to Config\Accounts.xlsx (skipped if present).
       5. Copies Categories.template.json to Config\Categories.json (skipped if present).
-      6. Creates Windows shortcut (.lnk) files in RECEIPTS_ROOT that point to the batch
+      6. Copies Methods.template.json to Config\Methods.json (skipped if present).
+      7. Creates Windows shortcut (.lnk) files in RECEIPTS_ROOT that point to the batch
          launchers in the script directory, with WorkingDirectory set so UNC-path shortcuts
          open without the "UNC paths are not supported" CMD error.
 
@@ -31,9 +32,10 @@
       4. Creates WORKBOOKS_ROOT folder if absent and different from RECEIPTS_ROOT
       5. Copies Accounts.template.xlsx to Config\Accounts.xlsx (skipped if present)
       6. Copies Categories.template.json to Config\Categories.json (skipped if present)
-      7. Creates .lnk shortcuts in RECEIPTS_ROOT pointing to Launchers\
-      8. Installs Pester and PSScriptAnalyzer (required by the pre-commit and pre-push hooks)
-      9. Installs local git hooks from Scripts\hooks\ into .git\hooks\
+      7. Copies Methods.template.json to Config\Methods.json (skipped if present)
+      8. Creates .lnk shortcuts in RECEIPTS_ROOT pointing to Launchers\
+      9. Installs Pester and PSScriptAnalyzer (required by the pre-commit and pre-push hooks)
+     10. Installs local git hooks from Scripts\hooks\ into .git\hooks\
 #>
 
 $scriptDir    = $PSScriptRoot
@@ -316,6 +318,31 @@ if (Test-Path $categoriesJson) {
         Write-Host "  before running the script." -ForegroundColor Yellow
     } catch {
         Write-Fail "Could not copy Categories.template.json -- $_"
+        exit 1
+    }
+}
+
+# ---------------------------------------------------------------------------
+# 4.6 Copy Methods.template.json -> Config\Methods.json
+# ---------------------------------------------------------------------------
+
+Write-Host ""
+Write-Step "Setting up Methods.json..."
+
+$templateMethods = Join-Path $repoRoot "Config\Methods.template.json"
+$methodsJson     = Join-Path $repoRoot "Config\Methods.json"
+
+if (Test-Path $methodsJson) {
+    Write-Skip "Methods.json already exists -- edit it directly to update your payment methods"
+} else {
+    try {
+        Copy-Item $templateMethods $methodsJson
+        Write-OK "Copied Methods.template.json -> Config\Methods.json"
+        Write-Host ""
+        Write-Host "  Edit Config\Methods.json to add or remove payment method tokens" -ForegroundColor Yellow
+        Write-Host "  before running the script. Cash is always valid and must not be added." -ForegroundColor Yellow
+    } catch {
+        Write-Fail "Could not copy Methods.template.json -- $_"
         exit 1
     }
 }

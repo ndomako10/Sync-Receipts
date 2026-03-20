@@ -183,9 +183,16 @@ function ConvertFrom-ReceiptFileName {
     Parses a receipt filename stem into its metadata components.
 
 .DESCRIPTION
-    Applies a regex to a filename stem (no extension) in the expected format:
+    Applies a two-pass regex to a filename stem (no extension) in the expected format:
 
         yyMMdd Vendor $Amount [Method [Account]]
+
+    Pass 1 -- broad match: accepts any single word in the Method position to confirm
+    the filename is structurally valid.
+
+    Pass 2 -- method check: validates the captured token against -Methods. Cash is
+    always valid regardless of -Methods. Any other unrecognised token returns
+    ParseError = "Unrecognised method".
 
     Method and Account are optional. If omitted, both are returned as "" and
     OK is $true; Write-MonthSheet will flag the row as "Method missing".
@@ -204,6 +211,12 @@ function ConvertFrom-ReceiptFileName {
     .NET ParseExact format string for the date portion of the filename.
     Default: yyMMdd. Examples: yyyyMMdd, yy-MM-dd, MMddyy, ddMMyy.
 
+.PARAMETER Methods
+    Array of valid non-Cash method token strings. Defaults to the built-in set
+    (Card, Check, Checking, Savings, Transfer, Wire). Pass the output of
+    Get-Methods to use the user-configured list. Cash is always valid and need
+    not be included.
+
 .OUTPUTS
     Hashtable with keys:
         OK         [bool]     -- $true if the filename matched the expected pattern
@@ -211,7 +224,7 @@ function ConvertFrom-ReceiptFileName {
         Date       [datetime] -- parsed transaction date; $null if OK is $false
         Vendor     [string]   -- vendor name
         Amount     [string]   -- numeric amount string (e.g. "5.27" or "-34.99")
-        Method     [string]   -- payment method: Card, Cash, Checking, Savings, or "" if omitted
+        Method     [string]   -- payment method token, or "" if omitted
         Account    [string]   -- last 4 digits, "xxxx", "----", "" for Cash, or "" if Method omitted
 
 .EXAMPLE
@@ -229,10 +242,14 @@ function ConvertFrom-ReceiptFileName {
 
 .EXAMPLE
     ConvertFrom-ReceiptFileName -Stem "26-03-16 CVS -$12.00 Cash" -DateFormat "yy-MM-dd"
+
+.EXAMPLE
+    ConvertFrom-ReceiptFileName -Stem "260316 Sunoco $5.27 Wire 9080" -Methods (Get-Methods)
 #>
     param(
-        [string]$Stem,
-        [string]$DateFormat = 'yyMMdd'
+        [string]  $Stem,
+        [string]  $DateFormat = 'yyMMdd',
+        [string[]]$Methods    = @('Card', 'Check', 'Checking', 'Savings', 'Transfer', 'Wire')
     )
     $fail = { param([string]$Reason)
         Write-SyncLog "Parse: $Reason in '$Stem'" -Tag WARN
@@ -255,10 +272,15 @@ function ConvertFrom-ReceiptFileName {
         -replace '~5~',  '\d{2}' `
         -replace '~6~',  '\d{1,2}' `
         -replace '~7~',  '\d{1,2}'
-    $pattern         = '^(' + $datePattern + ')\s+(.+?)\s+(-?\$[\d]+\.[\d]{2})\s+(Card|Cash|Checking|Savings)(?:\s+(\d{4}|xxxx|----))?$'
+
+    # Pass 1 -- broad patterns: accept any single word as the method token.
+    # This confirms the filename is structurally valid before checking the token.
+    $patternBroad    = '^(' + $datePattern + ')\s+(.+?)\s+(-?\$[\d]+\.[\d]{2})\s+(\w+)(?:\s+(\d{4}|xxxx|----))?$'
     $patternNoMethod = '^(' + $datePattern + ')\s+(.+?)\s+(-?\$[\d]+\.[\d]{2})$'
-    $hasMethod   = $Stem -match $pattern
+
+    $hasMethod   = $Stem -match $patternBroad
     $hasNoMethod = -not $hasMethod -and ($Stem -match $patternNoMethod)
+
     if ($hasMethod -or $hasNoMethod) {
         $rawDate = $Matches[1]
         try {
@@ -289,7 +311,15 @@ function ConvertFrom-ReceiptFileName {
         if ($hasMethod) {
             $method  = $Matches[4]
             $account = if ($Matches[5]) { $Matches[5] } else { "" }
-            if ($method -in 'Card', 'Checking', 'Savings' -and $account -eq '') {
+
+            # Pass 2 -- validate method token against the allowed list.
+            # Cash is always valid; all other tokens must appear in -Methods.
+            if ($method -ne 'Cash' -and $Methods -notcontains $method) {
+                return (& $fail "Unrecognised method")
+            }
+
+            # Cash never requires an account; all other methods do.
+            if ($method -ne 'Cash' -and $account -eq '') {
                 return (& $fail "Could not parse filename")
             }
         }
@@ -301,41 +331,65 @@ function ConvertFrom-ReceiptFileName {
 function Get-ValidAccounts {
 <#
 .SYNOPSIS
-    Returns a list of valid 4-digit account numbers from Accounts.xlsx.
+    Returns structured account records from Accounts.xlsx.
 
 .DESCRIPTION
-    Reads column A (Last 4) of the first sheet in Config\Accounts.xlsx
-    using the provided Excel COM instance. If Accounts.xlsx is not found,
-    returns an empty array and account validation is skipped.
+    Reads the Accounts table from Config\Accounts.xlsx using the provided Excel COM
+    instance and returns one hashtable per row with the following keys:
+
+        Last4       [string] -- 4-digit account number, left-padded with zeros
+        Method      [string] -- disambiguation token (blank when Last 4 is unambiguous)
+        Account     [string] -- name of the balance-holding account
+        Status      [string] -- "Active" or "Inactive"
+
+    Column positions (1-based):
+        A (1) Last 4 | B (2) Method | C (3) Holder | D (4) Institution |
+        E (5) Account | F (6) Status
+
+    If Accounts.xlsx is not found, returns an empty array and account validation
+    is skipped.
 
 .PARAMETER Excel
     An open Excel.Application COM object used to open Accounts.xlsx.
 
+.PARAMETER ReceiptsRoot
+    Directory containing Accounts.xlsx. Defaults to the Config subfolder in the repo root.
+
 .OUTPUTS
-    [array] of 4-digit strings left-padded with zeros (e.g. @("1234", "0099")).
+    [array] of hashtables with keys Last4, Method, Account, Status.
     Returns an empty array if Accounts.xlsx is not found.
 
 .EXAMPLE
     $accounts = Get-ValidAccounts -Excel $excel
 #>
     param(
-        [object]$Excel = $null
+        [object]$Excel       = $null,
+        [string]$ReceiptsRoot = (Join-Path (Split-Path $PSScriptRoot -Parent) "Config")
     )
     $accounts = @()
-    $xlsxPath = Join-Path (Split-Path $PSScriptRoot -Parent) "Config\Accounts.xlsx"
+    $xlsxPath = Join-Path $ReceiptsRoot "Accounts.xlsx"
     if (Test-Path $xlsxPath) {
         Write-SyncLog "Accounts: reading from Accounts.xlsx" -Tag VERB
         $accWorkbook = $null
         try {
             $accWorkbook = $Excel.Workbooks.Open($xlsxPath, 0, $true)
-            $accSheet = $accWorkbook.Sheets.Item(1)
+            $accSheet    = $accWorkbook.Sheets.Item(1)
             $row = 2
             while ($true) {
-                $val = $null
-                try { $val = $accSheet.Cells.Item($row, 1).Value2 } catch { break }
-                if ($null -eq $val -or "$val" -eq "") { break }
-                $acct = $val.ToString().Trim().PadLeft(4, "0")
-                if ($accounts -notcontains $acct) { $accounts += $acct }
+                $last4 = $null
+                try { $last4 = $accSheet.Cells.Item($row, 1).Value2 } catch { break }
+                if ($null -eq $last4 -or "$last4" -eq "") { break }
+
+                $methodVal  = try { "$($accSheet.Cells.Item($row, 2).Value2)".Trim() } catch { "" }
+                $accountVal = try { "$($accSheet.Cells.Item($row, 5).Value2)".Trim() } catch { "" }
+                $statusVal  = try { "$($accSheet.Cells.Item($row, 6).Value2)".Trim() } catch { "" }
+
+                $accounts += @{
+                    Last4   = $last4.ToString().Trim().PadLeft(4, "0")
+                    Method  = $methodVal
+                    Account = $accountVal
+                    Status  = $statusVal
+                }
                 $row++
             }
         } catch {
@@ -348,6 +402,65 @@ function Get-ValidAccounts {
         Write-SyncLog "Accounts: Accounts.xlsx not found in Config\ -- account validation skipped" -Tag WARN
     }
     return $accounts
+}
+
+function Get-Methods {
+<#
+.SYNOPSIS
+    Returns the list of valid non-Cash payment method tokens from Methods.json.
+
+.DESCRIPTION
+    Reads Methods.json from the Config subfolder and returns the token list as a
+    string array. Each token is validated: it must be a single word containing only
+    word characters (letters, digits, underscore). Invalid tokens are skipped with a
+    warning.
+
+    Cash is not included in Methods.json and is always valid regardless of the
+    contents of this file.
+
+    Falls back to the built-in default token set if Methods.json is absent or
+    cannot be parsed, logging a warning in either case.
+
+.PARAMETER ConfigRoot
+    Directory containing Methods.json. Defaults to the Config subfolder in the repo root.
+
+.OUTPUTS
+    [string[]] of valid method token strings, excluding Cash.
+
+.EXAMPLE
+    $methods = Get-Methods
+#>
+    param([string]$ConfigRoot = (Join-Path (Split-Path $PSScriptRoot -Parent) "Config"))
+
+    $defaults = @('Card', 'Check', 'Checking', 'Savings', 'Transfer', 'Wire')
+    $jsonPath = Join-Path $ConfigRoot "Methods.json"
+
+    if (-not (Test-Path $jsonPath)) {
+        Write-SyncLog "Methods: Methods.json not found in '$ConfigRoot' -- using built-in defaults" -Tag WARN
+        return $defaults
+    }
+
+    Write-SyncLog "Methods: reading from $jsonPath" -Tag VERB
+    try {
+        $tokens = Get-Content $jsonPath -Raw | ConvertFrom-Json
+        $valid  = @()
+        foreach ($token in $tokens) {
+            if ($token -match '^\w+$') {
+                $valid += $token
+            } else {
+                Write-SyncLog "Methods: skipping invalid token '$token' (must be a single word)" -Tag WARN
+            }
+        }
+        if ($valid.Count -eq 0) {
+            Write-SyncLog "Methods: no valid tokens in Methods.json -- using built-in defaults" -Tag WARN
+            return $defaults
+        }
+        Write-SyncLog "Methods: $($valid.Count) token(s) loaded" -Tag VERB
+        return $valid
+    } catch {
+        Write-SyncLog "Methods: failed to parse Methods.json -- $_ -- using built-in defaults" -Tag WARN
+        return $defaults
+    }
 }
 
 function Get-Categories {
@@ -945,6 +1058,15 @@ function Write-MonthSheet {
     .NET ParseExact format string for the date portion of receipt filenames.
     Passed through to ConvertFrom-ReceiptFileName. Default: yyMMdd.
 
+.PARAMETER Categories
+    Hashtable of category -> subcategory array as returned by Get-Categories.
+    Used to auto-populate the Category column on each row. Pass $null to skip.
+
+.PARAMETER Methods
+    Array of recognised payment method tokens passed to ConvertFrom-ReceiptFileName.
+    Tokens not in this list are written as-is and flagged "Unrecognised method".
+    Default: Card, Check, Checking, Savings, Transfer, Wire.
+
 .OUTPUTS
     [PSCustomObject] with property DataEndRow [int] -- the last data row index
     (used by Set-SubcategoryValidationXml to scope the dropdown validation range).
@@ -955,18 +1077,19 @@ function Write-MonthSheet {
                          -SheetName "2603" -Workbook $wb -ValidAccounts $accounts
 #>
     param(
-        [string]$FolderPath,
-        [string]$SheetName,
-        [object]$Workbook,
-        [array]$ValidAccounts,
-        [string]$DateFormat = 'yyMMdd',
-        [object]$Categories = $null
+        [string]  $FolderPath,
+        [string]  $SheetName,
+        [object]  $Workbook,
+        [array]   $ValidAccounts,
+        [string]  $DateFormat = 'yyMMdd',
+        [object]  $Categories = $null,
+        [string[]]$Methods    = @('Card', 'Check', 'Checking', 'Savings', 'Transfer', 'Wire')
     )
 
     $receipts = @()
     try {
         Get-ChildItem -Path $FolderPath -File -ErrorAction Stop | Sort-Object Name | ForEach-Object {
-            $parsed = ConvertFrom-ReceiptFileName -Stem $_.BaseName -DateFormat $DateFormat
+            $parsed = ConvertFrom-ReceiptFileName -Stem $_.BaseName -DateFormat $DateFormat -Methods $Methods
             $receipts += [PSCustomObject]@{
                 FilePath   = $_.FullName
                 FileName   = $_.Name
@@ -1096,8 +1219,18 @@ function Write-MonthSheet {
             $flag = "Account obfuscated"
         } elseif ($r.Account -eq "----") {
             $flag = "Account unknown"
-        } elseif ($r.Account -ne "" -and $ValidAccounts.Count -gt 0 -and $ValidAccounts -notcontains $r.Account) {
-            $flag = "Account not in Accounts.xlsx"
+        } elseif ($r.Account -ne "" -and $ValidAccounts.Count -gt 0) {
+            # Find matching account record: Last4 must match; Method must match if the
+            # table row has a Method value (disambiguation), otherwise Last4 alone is sufficient.
+            $match = $ValidAccounts | Where-Object {
+                $_.Last4 -eq $r.Account -and
+                ($_.Method -eq "" -or $_.Method -eq $r.Method)
+            } | Select-Object -First 1
+            if (-not $match) {
+                $flag = "Account not in Accounts.xlsx"
+            } elseif ($match.Status -eq "Inactive") {
+                $flag = "Inactive account"
+            }
         }
         if ($flag -ne "") {
             try {
@@ -1162,7 +1295,9 @@ function Write-MonthSheet {
         $_.Method -eq "" -or
         $_.Account -eq "xxxx" -or
         $_.Account -eq "----" -or
-        ($_.Account -ne "" -and $ValidAccounts.Count -gt 0 -and $ValidAccounts -notcontains $_.Account)
+        ($_.Account -ne "" -and $ValidAccounts.Count -gt 0 -and -not ($ValidAccounts | Where-Object {
+            $_.Last4 -eq $PSItem.Account -and ($_.Method -eq "" -or $_.Method -eq $PSItem.Method)
+        }))
     }).Count
 
     $amtColLetter = [char](64 + $COL_AMOUNT)
@@ -1419,12 +1554,19 @@ foreach ($yearEntry in ($yearGroups.GetEnumerator() | Sort-Object Key)) {
     Write-SyncLog "Accounts: loading" -Tag VERB
     $validAccounts = @()
     try {
-        $validAccounts = Get-ValidAccounts -ReceiptsRoot $ReceiptsRoot -Excel $excel
+        $validAccounts = Get-ValidAccounts -Excel $excel
     } catch {
         Write-SyncLog "Accounts: error in Get-ValidAccounts -- $_" -Tag WARN
     }
 
     Write-SyncLog "Categories: loading" -Tag VERB
+    $methods = @('Card', 'Check', 'Checking', 'Savings', 'Transfer', 'Wire')
+    try {
+        $methods = Get-Methods
+    } catch {
+        Write-SyncLog "Methods: error in Get-Methods -- $_" -Tag WARN
+    }
+
     $categories = $null
     try {
         $categories = Get-Categories
@@ -1455,7 +1597,7 @@ foreach ($yearEntry in ($yearGroups.GetEnumerator() | Sort-Object Key)) {
         Write-Host ""
         Write-SyncLog "Syncing: $($m.FolderPath)" -Tag STEP
         try {
-            $result = Write-MonthSheet -FolderPath $m.FolderPath -SheetName $m.SheetName -Workbook $workbook -ValidAccounts $validAccounts -DateFormat $DateFormat -Categories $categories
+            $result = Write-MonthSheet -FolderPath $m.FolderPath -SheetName $m.SheetName -Workbook $workbook -ValidAccounts $validAccounts -DateFormat $DateFormat -Categories $categories -Methods $methods
             $syncResults += [PSCustomObject]@{ SheetName = $m.SheetName; Result = $result }
         } catch {
             Write-SyncLog "Sync error: unhandled exception syncing '$($m.SheetName)' -- $_" -Tag ERROR
