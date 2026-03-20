@@ -33,6 +33,18 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.0.1] - 2026-03-20
+
+### Added
+- `Setup.bat` now automatically installs local git hooks (pre-commit, pre-push,
+  commit-msg) during setup. Previously required running the installer manually.
+
+### Fixed
+- Setup script now correctly copies `Config\Categories.template.json` to
+  `Config\Categories.json` on first run (step was missing in v2.0.0).
+
+---
+
 ## [2.0.0] - 2026-03-19
 
 ### Changed (breaking)
@@ -66,6 +78,69 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   after the v1.0.0 reorganisation.
 
 ---
+
+## [1.3.2] - 2026-03-19
+
+### Added
+- `Config\Categories.template.json` committed to the repo as the default categories
+  template. Copy to `Config\Categories.json` to customise.
+
+### Changed
+- `Accounts.xlsx` moved from `RECEIPTS_ROOT` to `Config\`. Move your existing file or
+  copy `Config\Accounts.template.xlsx` to `Config\Accounts.xlsx` and re-enter your
+  accounts.
+
+### Fixed
+- `Accounts.xlsx` was being read from `ReceiptsRoot` instead of `Config\` after the
+  v1.0.0 folder reorganisation.
+
+---
+
+## [1.3.1] - 2026-03-18
+
+### Fixed
+- Month and day out-of-range validation now correctly flags single-digit `M` and `d`
+  tokens in separator-delimited `-DateFormat` strings (e.g. `M-d-yy`).
+
+---
+
+## [1.3.0] - 2026-03-18
+
+### Added
+- `-WorkbooksRoot` parameter: store per-year workbooks in a separate location from
+  receipts (e.g. a local drive while receipts live on a network share). Set
+  `WORKBOOKS_ROOT` in `Config\Config.bat`. `Setup.bat` now prompts for this during
+  setup, defaulting to `RECEIPTS_ROOT`.
+
+### Fixed
+- `-DateFormat` separator-delimited formats (e.g. `M-d-yy`) now correctly accept
+  single-digit month and day values.
+
+---
+
+## [1.2.0] - 2026-03-18
+
+### Added
+- `Method` and `Account` fields in receipt filenames are now optional. Rows with no
+  Method are written with both fields blank and flagged `Method missing` in the Flag
+  column.
+- `Run-SyncMonthReceipts.bat` and `Run-SyncYearReceipts.bat` launchers: sync a
+  specific month (prompts for YYMM) or all months in a specific year (prompts for
+  YYYY).
+
+---
+
+## [1.1.0] - 2026-03-18
+
+### Added
+- `-DateFormat` parameter: configurable `.NET ParseExact` format string for the date
+  portion of receipt filenames (default: `yyMMdd`). Set `DATE_FORMAT` in
+  `Config\Config.bat`. Per-field parse error flags (`Could not parse filename`,
+  `Month out of range`, `Day out of range`, `Invalid date`) are written to the Flag
+  column when a filename date cannot be parsed.
+
+---
+
 ## [1.0.0] - 2026-03-17
 
 ### Added
