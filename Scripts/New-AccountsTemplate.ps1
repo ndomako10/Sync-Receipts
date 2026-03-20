@@ -16,7 +16,9 @@
       - Dropdown validation on Method (loaded from Config\Methods.template.json, with
         Cash prepended; blank allowed) and Status (Active, Inactive; required).
 
-      - Two example rows to illustrate the schema; replace with real account data.
+      - Four example rows to illustrate the schema, covering common disambiguation
+        scenarios (same Last 4 across Card/Checking/Check, and a blank-Method row);
+        replace with real account data.
 
     Run this script whenever the Accounts schema changes and commit the result.
     Initialize-SyncReceipts.ps1 copies the template to Config\Accounts.xlsx on
