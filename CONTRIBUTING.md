@@ -16,7 +16,7 @@ Install-Module PSScriptAnalyzer -Scope CurrentUser
 
 ## Local Git Hooks
 
-This repo ships pre-commit and pre-push hooks that enforce coding rules locally
+This repo ships pre-commit, pre-push, and commit-msg hooks that enforce coding rules locally
 before changes reach CI. Install them by running:
 
 ```powershell
