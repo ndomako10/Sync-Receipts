@@ -17,6 +17,30 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Validate changelog entry matches tag
+        run: |
+          TAG="${{ github.ref_name }}"
+          VERSION="${TAG#v}"
+          TOP=$(grep -m1 '^## \[' CHANGELOG.md | grep -oP '(?<=\[)\d[^\]]+')
+          if [ "$TOP" != "$VERSION" ]; then
+            echo "ERROR: CHANGELOG.md top entry is [$TOP] but tag is $TAG."
+            echo "Write a changelog entry for $VERSION before tagging."
+            exit 1
+          fi
+          echo "Changelog entry OK: [$VERSION]"
+
+      - name: Validate script version matches tag
+        run: |
+          TAG="${{ github.ref_name }}"
+          VERSION="${TAG#v}"
+          SCRIPT_VER=$(grep -m1 '^# Sync-Receipts.ps1' Scripts/Sync-Receipts.ps1 | grep -oP '(?<=v)[\d.]+')
+          if [ "$SCRIPT_VER" != "$VERSION" ]; then
+            echo "ERROR: Sync-Receipts.ps1 header shows v$SCRIPT_VER but tag is $TAG."
+            echo "Run the 'Release: Bump version' VS Code task and commit before tagging."
+            exit 1
+          fi
+          echo "Script version OK: v$VERSION"
+
       - name: Extract release notes
         id: notes
         run: |
