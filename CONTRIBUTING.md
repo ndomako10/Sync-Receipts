@@ -60,10 +60,11 @@ type(scope): short description
 | `tests` | Tests/ |
 | `readme` | README.md |
 | `ci` | GitHub Actions |
-| `config` | Config.env, Config/ subfolder, .vscode/, batch launcher files |
+| `claude.md` | CLAUDE.md |
 | `changelog` | CHANGELOG.md |
-| `contributing` | CONTRIBUTING.md |
 | `security` | SECURITY.md |
+| `config` | Config.env, Config/ subfolder, .vscode/, batch launcher files |
+| `contributing` | CONTRIBUTING.md |
 
 ## Releasing
 
