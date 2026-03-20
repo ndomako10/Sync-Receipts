@@ -27,7 +27,7 @@ jobs:
           echo "Validating: $MSG"
 
           # Skip merge, revert, fixup, and squash commits
-          if echo "$MSG" | grep -qE '^(Merge |Revert |fixup!|squash!)'; then
+          if echo "$MSG" | grep -qE '^(Merge|Revert|fixup!|squash!) '; then
             echo "Skipping merge/revert/fixup/squash commit."
             exit 0
           fi
