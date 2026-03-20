@@ -8,6 +8,10 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+---
+
+## [3.0.0] - 2026-03-20
+
 ### Added
 - `Get-Methods` function: reads configurable payment method tokens from
   `Config\Methods.json`; falls back to built-in defaults (`Card`, `Check`,
