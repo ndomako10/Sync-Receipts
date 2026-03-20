@@ -412,7 +412,8 @@ foreach ($module in @(
     } else {
         try {
             Write-Host "  Installing $($module.Name)..." -ForegroundColor Cyan
-            Install-Module $module.Name @($module.InstallArgs) -Scope CurrentUser -Force -ErrorAction Stop
+            $iArgs = $module.InstallArgs
+            Install-Module $module.Name @iArgs -Scope CurrentUser -Force -ErrorAction Stop
             Write-OK "Installed $($module.Name)"
         } catch {
             Write-Fail "Could not install $($module.Name) -- $_"
