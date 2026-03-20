@@ -1273,10 +1273,13 @@ function Write-MonthSheet {
     }
 
     if ($table) {
-        try {
-            $table.ListColumns.Item($COL_AMOUNT).DataBodyRange.NumberFormat = '_($* #,##0.00_);[Red]_($* (#,##0.00);_($* "-"??_);_(@_)'
-        } catch {
-            Write-SyncLog "Amount format: could not set -- $_" -Tag WARN
+        $amountBodyRange = $table.ListColumns.Item($COL_AMOUNT).DataBodyRange
+        if ($amountBodyRange) {
+            try {
+                $amountBodyRange.NumberFormat = '_($* #,##0.00_);[Red]_($* (#,##0.00);_($* "-"??_);_(@_)'
+            } catch {
+                Write-SyncLog "Amount format: could not set -- $_" -Tag WARN
+            }
         }
     }
 
