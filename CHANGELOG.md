@@ -10,6 +10,18 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [3.0.1] - 2026-03-20
+
+### Fixed
+
+- Pre-commit hook now validates ASCII encoding in staged `.json` and `.md` files (previously `.ps1` only)
+- `commit-lint` CI workflow now accepts breaking-change commits (`feat!:`, `fix!:` forms)
+- `commit-lint` CI workflow now skips `fixup!` and `squash!` commits (matches local hook behaviour)
+- `.gitignore` path for `Tests/sync-output.txt` was lowercase (`tests/`); fixed for case-sensitive CI
+- `.gitattributes` missing line-ending rules for `*.psd1`, `*.editorconfig`, and `*.lnk`
+
+---
+
 ## [3.0.0] - 2026-03-20
 
 ### Added
