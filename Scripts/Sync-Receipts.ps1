@@ -1322,8 +1322,8 @@ function Write-MonthSheet {
     $sheet.Columns.Item($COL_AMOUNT).ColumnWidth      = 14
     $sheet.Columns.Item($COL_METHOD).ColumnWidth      = 12
     $sheet.Columns.Item($COL_ACCOUNT).ColumnWidth     = 12
-    $sheet.Columns.Item($COL_CATEGORY).ColumnWidth    = 20
-    $sheet.Columns.Item($COL_SUBCATEGORY).ColumnWidth = 20
+    $sheet.Columns.Item($COL_CATEGORY).ColumnWidth    = 15.71
+    $sheet.Columns.Item($COL_SUBCATEGORY).ColumnWidth = 25
     $sheet.Columns.Item($COL_FLAG).ColumnWidth        = 28
 
     try {
