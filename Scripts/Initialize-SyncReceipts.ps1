@@ -347,11 +347,11 @@ Write-Host ""
 Write-Step "Checking test dependencies (Pester, PSScriptAnalyzer)..."
 
 foreach ($module in @(
-    @{ Name = 'Pester';            MinVersion = '5.0'; InstallArgs = @('-MinimumVersion', '5.0') },
-    @{ Name = 'PSScriptAnalyzer'; MinVersion = '1.0'; InstallArgs = @() }
+    @{ Name = 'Pester';            MinVersion = [version]'5.0'; InstallArgs = @('-MinimumVersion', '5.0') },
+    @{ Name = 'PSScriptAnalyzer'; MinVersion = [version]'1.0'; InstallArgs = @() }
 )) {
     $found = Get-Module -ListAvailable $module.Name -ErrorAction SilentlyContinue |
-        Where-Object { $_.Version -ge [version]$module.MinVersion } |
+        Where-Object { $_.Version -ge $module.MinVersion } |
         Select-Object -First 1
     if ($found) {
         Write-Skip "$($module.Name) $($found.Version) already installed"
