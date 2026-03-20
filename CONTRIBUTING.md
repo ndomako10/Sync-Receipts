@@ -100,13 +100,7 @@ GitHub Release creation is automated via GitHub Actions. To cut a release:
    Follow the [Keep a Changelog](https://keepachangelog.com) format -- user-facing language,
    grouped under `### Added`, `### Changed (breaking)`, `### Fixed`, `### Removed` as needed.
    End the entry with a `---` separator line.
-2. Bump the version in `Scripts/Sync-Receipts.ps1` using the VS Code task
-   **Release: Bump version** (prompts for the new version and patches both locations automatically),
-   or edit manually (line 1 and the `Version :` line in `.NOTES`). Commit both changes together:
-   ```
-   docs(ps1): bump version to vX.Y.Z
-   ```
-3. Ensure all changes are committed and pushed to `master`.
+2. Ensure all changes are committed and pushed to `master`.
 4. Tag the release and push the tag using the VS Code task **Release: Tag and push**,
    or manually:
    ```bash

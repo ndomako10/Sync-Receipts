@@ -52,8 +52,8 @@ This project uses [Semantic Versioning](https://semver.org) and [Conventional Co
 - `MAJOR` -- breaking changes (file format changes, removed parameters, renamed files)
 - `MINOR` -- new features
 - `PATCH` -- bug fixes, docs, tests
-- Version is tracked in the `Sync-Receipts.ps1` header and git tags (e.g. `v1.0.0`)
-- `CHANGELOG.md` is hand-crafted; the release workflow reads the top entry and publishes it as the GitHub Release body
+- Version is tracked in git tags only (e.g. `v1.0.0`); the script header carries no version number
+- `CHANGELOG.md` is hand-crafted; the release workflow finds the entry matching the tag and publishes it as the GitHub Release body
 
 ## Architecture
 

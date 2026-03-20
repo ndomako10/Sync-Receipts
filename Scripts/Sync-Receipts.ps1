@@ -1,4 +1,4 @@
-# Sync-Receipts.ps1  v2.0.0
+# Sync-Receipts.ps1
 
 <#
 .SYNOPSIS
@@ -100,7 +100,6 @@
     Terminates any running Excel processes, then syncs the current month.
 
 .NOTES
-    Version : 2.0.0
     Requires: Windows PowerShell 5.0+, Microsoft Excel 2016+
     License : GNU General Public License v3.0
 #>
