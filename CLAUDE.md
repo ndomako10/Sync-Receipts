@@ -18,7 +18,7 @@ A PowerShell automation tool for syncing receipt file metadata into Excel workbo
 - **No smart quotes or em-dashes** -- the file must be pure ASCII. Non-ASCII characters break PowerShell parsing on the network share. Verify after any edit: `[System.Text.Encoding]::ASCII.GetByteCount($content) -eq $content.Length`
 - **Use .NET ParseExact format strings for dates** -- write `yyMMdd`, not informal `YYMMDD`. In documentation, always use the actual format string and note what each token means (`yy` = 2-digit year, `MM` = month, `dd` = day)
 - **XML-escape string literals injected into XML** -- when building XML strings in PowerShell for the post-save patch (`Set-SubcategoryValidationXml`), escape `&` as `&amp;`, `<` as `&lt;`, and `>` as `&gt;`. A bare `&` in injected XML causes Excel to report a parse error on open. Add a Pester assertion on the escaped form whenever a new string literal is injected.
-- **Write Pester tests for new pure-PowerShell functions** -- functions with no COM dependency must have unit tests in `Tests/Sync-Receipts.Tests.ps1`. Prefer pure helpers (like `Read-PreservedCategoryValues`) over COM-coupled logic wherever testability allows
+- **Write Pester tests for new pure-PowerShell functions** -- functions with no COM dependency must have unit tests in `Tests/<FunctionName>.Tests.ps1` (one file per function). Prefer pure helpers (like `Read-PreservedCategoryValues`) over COM-coupled logic wherever testability allows
 
 ## Versioning and Commits
 
@@ -33,11 +33,13 @@ This project uses [Semantic Versioning](https://semver.org) and [Conventional Co
 | `ps1` | Sync-Receipts.ps1 (general; use a narrower scope when one applies) |
 | `logging` | Write-SyncLog function and console output |
 | `categories` | Categories feature: Get-Categories, Write-CategorySheet, Config/Categories.json, Config/Categories.template.json |
-| `accounts` | Accounts feature: Get-ValidAccounts, Config/Accounts.xlsx, Config/Accounts.template.xlsx |
+| `accounts` | Accounts feature: Get-ValidAccounts, Config/Accounts.xlsx, Config/Accounts.template.xlsx, Scripts/New-AccountsTemplate.ps1 |
+| `methods` | Configurable method tokens: Get-Methods, Config/Methods.json, Config/Methods.template.json |
 | `write-month` | Write-MonthSheet function |
 | `convert-receipt` | ConvertFrom-ReceiptFileName function |
 | `xml` | Set-SubcategoryValidationXml XML patching |
-| `tests` | Tests/Sync-Receipts.Tests.ps1, Tests/Lint.Tests.ps1 |
+| `tests` | Tests/ (per-function test files and Lint.Tests.ps1) |
+| `adr` | Docs/ADRs/ |
 | `readme` | README.md |
 | `claude.md` | CLAUDE.md |
 | `ci` | GitHub Actions workflows (.github/) |
@@ -64,10 +66,18 @@ Config/
     Accounts.xlsx            <- gitignored; personal accounts
     Categories.template.json <- default categories template; committed to git
     Categories.json          <- gitignored; personal categories
+    Methods.template.json    <- default method token list; committed to git
+    Methods.json             <- gitignored; personal method token list
 Scripts/
     Initialize-SyncReceipts.ps1 <- one-time setup: checks prerequisites, creates Config\Config.env,
-                             copies Accounts.template.xlsx to Config\Accounts.xlsx, creates shortcuts in RECEIPTS_ROOT
-    Sync-Receipts.ps1     <- core automation (Excel COM)
+                             copies template files to Config\, installs git hooks, creates shortcuts in RECEIPTS_ROOT
+    Sync-Receipts.ps1        <- core automation (Excel COM)
+    New-AccountsTemplate.ps1 <- regenerates Config\Accounts.template.xlsx from current schema; run after schema changes
+    Install-GitHooks.ps1     <- copies Scripts\hooks\ into .git\hooks\
+    hooks/
+        commit-msg           <- enforces Conventional Commits format
+        pre-commit           <- ASCII check and PSScriptAnalyzer lint on staged .ps1 files
+        pre-push             <- full Pester suite
 Launchers/
     Run-SyncReceipts.bat     <- reads Config/Config.env, syncs current month
     Run-SyncMonthReceipts.bat <- reads Config/Config.env, syncs a specific month
@@ -77,16 +87,16 @@ Docs/
     ADRs/                    <- Architecture Decision Records
         README.md            <- index of all ADRs
 Tests/
-    Sync-Receipts.Tests.ps1 <- Pester unit tests (pure-PowerShell functions only)
-    Lint.Tests.ps1          <- PSScriptAnalyzer validation
-    run-sync-test.bat       <- local integration test launcher (gitignored output)
+    <Function>.Tests.ps1     <- Pester unit tests (one file per pure-PowerShell function)
+    Lint.Tests.ps1           <- PSScriptAnalyzer validation
+    run-sync-test.bat        <- local integration test launcher
 .github/
     workflows/tests.yml     <- CI: runs Pester on windows-latest
     ISSUE_TEMPLATE/         <- bug report and feature request templates
     dependabot.yml          <- weekly dependency update checks
 Kill-Excel.bat            <- standalone utility: force-closes hung EXCEL.EXE (gitignored)
 CONTRIBUTING.md           <- dev guide: prerequisites, test instructions, commit format
-CHANGELOG.md              <- version history; auto-generated by git-cliff on tag push
+CHANGELOG.md              <- version history; hand-crafted before each tag; release workflow reads the top entry as the GitHub Release body
 ```
 
 The script files live in their own directory. The data (per-year workbooks and receipt folders) lives at `RECEIPTS_ROOT`, which is set in `Config/Config.env`. Each year gets its own workbook (`2026.xlsx`, `2025.xlsx`, etc.) created automatically on first sync. `Categories.json` and `Accounts.xlsx` both live in `Config/` (gitignored) and are read via `Join-Path (Split-Path $PSScriptRoot -Parent) "Config"`. The two locations are completely independent -- `-ReceiptsRoot` must always be provided explicitly; the script's own folder has no special meaning at runtime.
@@ -96,9 +106,10 @@ The script files live in their own directory. The data (per-year workbooks and r
 | Function | Purpose |
 |----------|---------|
 | `Write-SyncLog` | Writes timestamped, tagged log lines to the console; routes VERB-tagged messages to `Write-Verbose` |
-| `ConvertFrom-ReceiptFileName` | Regex-parses a receipt filename stem into date, vendor, amount, method, account |
+| `ConvertFrom-ReceiptFileName` | Regex-parses a receipt filename stem into date, vendor, amount, method, account; two-pass parse validates method tokens against the Methods list |
 | `Read-PreservedCategoryValues` | Pure helper: extracts Category/Subcategory keyed by File Name from a 2D string array (no COM dependency; unit-testable) |
-| `Get-ValidAccounts` | Reads 4-digit account numbers from `Accounts.xlsx` in `Config\`; skips validation if absent |
+| `Get-Methods` | Loads configurable non-Cash method tokens from `Config/Methods.json`; falls back to built-in defaults on missing or malformed file |
+| `Get-ValidAccounts` | Reads structured account records (Last4, Method, Account, Status) from `Accounts.xlsx` in `Config\`; skips validation if absent |
 | `Get-Categories` | Reads category/subcategory data from `Categories.json` in `Config/` (repo root + "Config") |
 | `Write-CategorySheet` | Writes category data from hashtable into the Category sheet (creates if absent, overwrites if present, hides the sheet) |
 | `Get-ExcelColumnLetter` | Converts a 1-based column index to an Excel column letter (e.g. 1 -> "A", 27 -> "AA"); used to build named range address strings without COM |
