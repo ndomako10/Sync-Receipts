@@ -30,12 +30,10 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `ConvertFrom-ReceiptFileName` now validates the method token against the loaded
   methods list. Unrecognised tokens produce `OK=$true` with the flag
   `Unrecognised method` rather than being silently accepted.
-- Test suite split from a single `Tests\Sync-Receipts.Tests.ps1` into one file
-  per function under `Tests\`.
 
 ---
 
-## [2.0.0] - 2026-03-20
+## [2.0.0] - 2026-03-19
 
 ### Changed (breaking)
 - Config file renamed from `Config.bat` to `Config.env`. The new format is plain
