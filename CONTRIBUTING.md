@@ -68,27 +68,26 @@ type(scope): short description
 
 ## Releasing
 
-Changelog generation and GitHub Release creation are fully automated via [git-cliff](https://git-cliff.org/) and GitHub Actions. To cut a release:
+GitHub Release creation is automated via GitHub Actions. To cut a release:
 
-1. Ensure all changes are committed and pushed to `master`
-2. Bump the version in the `Scripts/Sync-Receipts.ps1` header and commit:
+1. Write the changelog entry at the top of `CHANGELOG.md`, before all existing entries.
+   Follow the [Keep a Changelog](https://keepachangelog.com) format -- user-facing language,
+   grouped under `### Added`, `### Changed (breaking)`, `### Fixed`, `### Removed` as needed.
+   End the entry with a `---` separator line.
+2. Bump the version in the `Scripts/Sync-Receipts.ps1` header (line 1 and `.NOTES`) and
+   commit both changes together:
    ```
    docs(ps1): bump version to vX.Y.Z
    ```
-3. Tag the release and push the tag:
+3. Ensure all changes are committed and pushed to `master`.
+4. Tag the release and push the tag:
    ```bash
    git tag vX.Y.Z
    git push origin vX.Y.Z
    ```
-4. The release workflow (`.github/workflows/release.yml`) automatically:
-   - Generates the changelog entry from commits since the last tag using `cliff.toml`
-   - Prepends the entry to `CHANGELOG.md` and commits it to `master`
-   - Creates a GitHub Release with the generated release notes
-
-To preview what the next release entry will look like before tagging, run locally:
-```bash
-git cliff --unreleased
-```
+5. The release workflow (`.github/workflows/release.yml`) automatically reads the top
+   section of `CHANGELOG.md` (everything before the first `---`) and creates a GitHub
+   Release with that text as the release notes.
 
 ## Submitting a Pull Request
 
