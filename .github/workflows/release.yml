@@ -20,15 +20,12 @@ jobs:
           fetch-depth: 0
           ref: master
 
-      - name: Generate release notes
+      - name: Generate release notes and update CHANGELOG.md
         uses: orhun/git-cliff-action@v4
         id: git-cliff
         with:
           config: cliff.toml
-          args: --latest --strip all
-
-      - name: Update CHANGELOG.md
-        run: git-cliff --latest --strip all --prepend CHANGELOG.md
+          args: --latest --strip all --prepend CHANGELOG.md
 
       - name: Commit and push CHANGELOG.md
         run: |
