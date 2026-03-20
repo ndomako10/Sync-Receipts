@@ -24,4 +24,12 @@ jobs:
 
       - name: Run tests
         shell: pwsh
-        run: Invoke-Pester Tests/ -Output Detailed -CI
+        run: |
+          $result = Invoke-Pester Tests/ -Output Detailed -PassThru `
+            -CodeCoverage 'Scripts/Sync-Receipts.ps1'
+          $cc = $result.CodeCoverage
+          if ($cc.NumberOfCommandsAnalyzed -gt 0) {
+            $pct = [math]::Round(($cc.NumberOfCommandsExecuted / $cc.NumberOfCommandsAnalyzed) * 100, 1)
+            Write-Host "Coverage: $pct% ($($cc.NumberOfCommandsExecuted)/$($cc.NumberOfCommandsAnalyzed) commands) -- Scripts/Sync-Receipts.ps1"
+          }
+          if ($result.FailedCount -gt 0) { exit 1 }
