@@ -13,7 +13,7 @@
       5. Copies Accounts.template.xlsx to Config\Accounts.xlsx (skipped if present).
       6. Copies Categories.template.json to Config\Categories.json (skipped if present).
       7. Copies Methods.template.json to Config\Methods.json (skipped if present).
-      8. Creates Windows shortcut (.lnk) files in RECEIPTS_ROOT that point to the batch
+      8. Creates Windows shortcut (.lnk) files in WORKBOOKS_ROOT that point to the batch
          launchers in the script directory, with WorkingDirectory set so UNC-path shortcuts
          open without the "UNC paths are not supported" CMD error.
       9. Installs Pester and PSScriptAnalyzer (required by the pre-commit and pre-push hooks).
@@ -146,6 +146,32 @@ if (-not $excelInstalled) {
     exit 1
 }
 Write-OK "Microsoft Excel"
+
+# ---------------------------------------------------------------------------
+# 1.5 Migration: move template files from Config\ to Config\Templates\ (pre-v4.0.0)
+# ---------------------------------------------------------------------------
+
+$templatesDir = Join-Path $repoRoot "Config\Templates"
+$templateMoves = @(
+    @{ From = "Config\Config.template.env"; To = "Config\Templates\Config.template.ini" }
+    @{ From = "Config\Config.template.ini"; To = "Config\Templates\Config.template.ini" }
+    @{ From = "Config\Accounts.template.xlsx";    To = "Config\Templates\Accounts.template.xlsx" }
+    @{ From = "Config\Categories.template.json";  To = "Config\Templates\Categories.template.json" }
+    @{ From = "Config\Methods.template.json";     To = "Config\Templates\Methods.template.json" }
+)
+foreach ($m in $templateMoves) {
+    $src = Join-Path $repoRoot $m.From
+    $dst = Join-Path $repoRoot $m.To
+    if ((Test-Path $src) -and -not (Test-Path $dst)) {
+        try {
+            if (-not (Test-Path $templatesDir)) { New-Item -ItemType Directory -Path $templatesDir | Out-Null }
+            Move-Item -Path $src -Destination $dst -ErrorAction Stop
+            Write-OK "Migrated $($m.From) -> $($m.To)"
+        } catch {
+            Write-Fail "Could not migrate $($m.From) -- $_"
+        }
+    }
+}
 
 # ---------------------------------------------------------------------------
 # 2. Resolve RECEIPTS_ROOT -- read Config.ini or prompt
@@ -358,11 +384,11 @@ if (Test-Path $methodsJson) {
 }
 
 # ---------------------------------------------------------------------------
-# 5. Create shortcuts in RECEIPTS_ROOT
+# 5. Create shortcuts in WORKBOOKS_ROOT
 # ---------------------------------------------------------------------------
 
 Write-Host ""
-Write-Step "Creating shortcuts in $receiptsRoot..."
+Write-Step "Creating shortcuts in $workbooksRoot..."
 
 $shortcuts = @(
     @{
@@ -390,7 +416,7 @@ $shortcuts = @(
 $wsh = New-Object -ComObject WScript.Shell
 foreach ($s in $shortcuts) {
     try {
-        $lnkPath          = Join-Path $receiptsRoot $s.Name
+        $lnkPath          = Join-Path $workbooksRoot $s.Name
         $verb             = if (Test-Path $lnkPath) { "Updated" } else { "Created" }
         $shortcut         = $wsh.CreateShortcut($lnkPath)
         $shortcut.TargetPath       = $s.Target
