@@ -18,8 +18,10 @@ Describe 'Copy-ConfigTemplate' {
 
     Context 'given the destination file does not exist' {
         BeforeEach {
-            $script:src  = Join-Path $TestDrive 'source.json'
-            $script:dest = Join-Path $TestDrive 'dest.json'
+            $dir = Join-Path $TestDrive ([System.Guid]::NewGuid())
+            New-Item -ItemType Directory -Path $dir | Out-Null
+            $script:src  = Join-Path $dir 'source.json'
+            $script:dest = Join-Path $dir 'dest.json'
             'template-content' | Set-Content $script:src
             Mock Write-OK   {}
             Mock Write-Skip {}
@@ -40,8 +42,10 @@ Describe 'Copy-ConfigTemplate' {
 
     Context 'given the destination file already exists' {
         BeforeEach {
-            $script:src  = Join-Path $TestDrive 'source.json'
-            $script:dest = Join-Path $TestDrive 'dest.json'
+            $dir = Join-Path $TestDrive ([System.Guid]::NewGuid())
+            New-Item -ItemType Directory -Path $dir | Out-Null
+            $script:src  = Join-Path $dir 'source.json'
+            $script:dest = Join-Path $dir 'dest.json'
             'template-content'  | Set-Content $script:src
             'original-content'  | Set-Content $script:dest
             Mock Write-OK   {}
