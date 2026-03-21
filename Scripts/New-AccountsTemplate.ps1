@@ -30,15 +30,27 @@
     Requires: PowerShell 5.0+, Microsoft Excel (COM automation)
     Tested on: Windows 10/11
 
+.PARAMETER OutputPath
+    Full path to write the accounts template workbook to. Defaults to
+    Config\Accounts.template.xlsx in the repo root. Override to write the
+    template to a different location (e.g. a test fixture directory).
+
 .EXAMPLE
     PowerShell -NoProfile -ExecutionPolicy Bypass -File Scripts\New-AccountsTemplate.ps1
+
+.EXAMPLE
+    PowerShell -NoProfile -ExecutionPolicy Bypass -File Scripts\New-AccountsTemplate.ps1 -OutputPath C:\Temp\Accounts.template.xlsx
 #>
+
+param(
+    [string]$OutputPath = (Join-Path (Split-Path $PSScriptRoot -Parent) "Config\Accounts.template.xlsx")
+)
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $repoRoot    = Split-Path $PSScriptRoot -Parent
-$outPath     = Join-Path $repoRoot "Config\Accounts.template.xlsx"
+$outPath     = $OutputPath
 $methodsJson = Join-Path $repoRoot "Config\Methods.template.json"
 
 # Load method tokens from Methods.template.json; Cash is always prepended.
