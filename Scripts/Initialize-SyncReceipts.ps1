@@ -148,6 +148,32 @@ if (-not $excelInstalled) {
 Write-OK "Microsoft Excel"
 
 # ---------------------------------------------------------------------------
+# 1.5 Migration: move template files from Config\ to Config\Templates\ (pre-v4.0.0)
+# ---------------------------------------------------------------------------
+
+$templatesDir = Join-Path $repoRoot "Config\Templates"
+$templateMoves = @(
+    @{ From = "Config\Config.template.env"; To = "Config\Templates\Config.template.ini" }
+    @{ From = "Config\Config.template.ini"; To = "Config\Templates\Config.template.ini" }
+    @{ From = "Config\Accounts.template.xlsx";    To = "Config\Templates\Accounts.template.xlsx" }
+    @{ From = "Config\Categories.template.json";  To = "Config\Templates\Categories.template.json" }
+    @{ From = "Config\Methods.template.json";     To = "Config\Templates\Methods.template.json" }
+)
+foreach ($m in $templateMoves) {
+    $src = Join-Path $repoRoot $m.From
+    $dst = Join-Path $repoRoot $m.To
+    if ((Test-Path $src) -and -not (Test-Path $dst)) {
+        try {
+            if (-not (Test-Path $templatesDir)) { New-Item -ItemType Directory -Path $templatesDir | Out-Null }
+            Move-Item -Path $src -Destination $dst -ErrorAction Stop
+            Write-OK "Migrated $($m.From) -> $($m.To)"
+        } catch {
+            Write-Fail "Could not migrate $($m.From) -- $_"
+        }
+    }
+}
+
+# ---------------------------------------------------------------------------
 # 2. Resolve RECEIPTS_ROOT -- read Config.ini or prompt
 # ---------------------------------------------------------------------------
 
