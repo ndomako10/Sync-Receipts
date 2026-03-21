@@ -23,7 +23,11 @@ $repoRoot  = Split-Path $PSScriptRoot -Parent | Split-Path -Parent
 $testsPath = Join-Path $repoRoot "Tests"
 
 Write-Host "pre-push: running tests in $testsPath..." -ForegroundColor Cyan
-$result = Invoke-Pester $testsPath -Output Detailed -PassThru
+$cfg                  = New-PesterConfiguration
+$cfg.Run.Path         = $testsPath
+$cfg.Output.Verbosity = 'Detailed'
+$cfg.Run.PassThru     = $true
+$result = Invoke-Pester -Configuration $cfg
 
 if ($result.FailedCount -gt 0) {
     Write-Host ""
