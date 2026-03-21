@@ -295,5 +295,40 @@ Describe 'Set-SubcategoryValidationXml' {
             $out = Get-XlsxEntry -Path $p -Entry 'xl/worksheets/sheet1.xml'
             $out.IndexOf('<dataValidations') | Should -BeLessThan ($out.IndexOf('<tableParts'))
         }
+
+        It 'aborts without overwriting the workbook when the reconstructed zip is under 1 KB' {
+            # Build a two-entry zip: only xl/workbook.xml and xl/_rels/workbook.xml.rels.
+            # With DataEndRow=1 no sheet is patched; the reconstructed temp file contains
+            # only these two tiny entries and stays well under 1024 bytes, triggering the
+            # size-guard early-return path.
+            $p = Join-Path $TestDrive 'tiny.xlsx'
+            Add-Type -AssemblyName System.IO.Compression
+            Add-Type -AssemblyName System.IO.Compression.FileSystem
+            $tinyFiles = [ordered]@{
+                'xl/workbook.xml'            = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+                    '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"' +
+                    ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+                    '<sheets><sheet name="2603" sheetId="1" r:id="rId1"/></sheets></workbook>'
+                'xl/_rels/workbook.xml.rels' = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+                    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+                    '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>' +
+                    '</Relationships>'
+            }
+            $zip = [System.IO.Compression.ZipFile]::Open($p, [System.IO.Compression.ZipArchiveMode]::Create)
+            foreach ($kvp in $tinyFiles.GetEnumerator()) {
+                $e = $zip.CreateEntry($kvp.Key, [System.IO.Compression.CompressionLevel]::Optimal)
+                $s = $e.Open()
+                $b = [System.Text.Encoding]::UTF8.GetBytes($kvp.Value)
+                $s.Write($b, 0, $b.Length)
+                $s.Close()
+            }
+            $zip.Dispose()
+
+            $originalBytes = [System.IO.File]::ReadAllBytes($p)
+            $results = @([PSCustomObject]@{ SheetName = '2603'; Result = [PSCustomObject]@{ DataEndRow = 1 } })
+            { Set-SubcategoryValidationXml -WorkbookPath $p -SyncResults $results } | Should -Not -Throw
+            # Workbook must not be overwritten -- the size guard fired and discarded the temp file
+            [System.IO.File]::ReadAllBytes($p) | Should -Be $originalBytes
+        }
     }
 }
