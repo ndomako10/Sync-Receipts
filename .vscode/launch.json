@@ -4,7 +4,7 @@
         {
             "id": "receiptsRoot",
             "type": "promptString",
-            "description": "RECEIPTS_ROOT path (from Config/Config.env)"
+            "description": "RECEIPTS_ROOT path (from Config/Config.ini)"
         }
     ],
     "configurations": [

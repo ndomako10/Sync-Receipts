@@ -1,9 +1,9 @@
 <#
 .SYNOPSIS
-    Generates Config/Accounts.template.xlsx with the correct schema and data validation.
+    Generates Config/Templates/Accounts.template.xlsx with the correct schema and data validation.
 
 .DESCRIPTION
-    Creates a formatted Excel workbook at Config\Accounts.template.xlsx containing:
+    Creates a formatted Excel workbook at Config\Templates\Accounts.template.xlsx containing:
 
       - A structured table (Accounts) with the following columns:
             Last 4       -- account number as it appears in receipt filenames
@@ -13,7 +13,7 @@
             Account      -- name of the balance-holding account
             Status       -- Active or Inactive (dropdown validation)
 
-      - Dropdown validation on Method (loaded from Config\Methods.template.json, with
+      - Dropdown validation on Method (loaded from Config\Templates\Methods.template.json, with
         Cash prepended; blank allowed) and Status (Active, Inactive; required).
 
       - Four example rows to illustrate the schema, covering common disambiguation
@@ -32,7 +32,7 @@
 
 .PARAMETER OutputPath
     Full path to write the accounts template workbook to. Defaults to
-    Config\Accounts.template.xlsx in the repo root. Override to write the
+    Config\Templates\Accounts.template.xlsx in the repo root. Override to write the
     template to a different location (e.g. a test fixture directory).
 
 .EXAMPLE
@@ -43,7 +43,7 @@
 #>
 
 param(
-    [string]$OutputPath = (Join-Path (Split-Path $PSScriptRoot -Parent) "Config\Accounts.template.xlsx")
+    [string]$OutputPath = (Join-Path (Split-Path $PSScriptRoot -Parent) "Config\Templates\Accounts.template.xlsx")
 )
 
 Set-StrictMode -Version Latest
@@ -51,20 +51,20 @@ $ErrorActionPreference = 'Stop'
 
 $repoRoot    = Split-Path $PSScriptRoot -Parent
 $outPath     = $OutputPath
-$methodsJson = Join-Path $repoRoot "Config\Methods.template.json"
+$methodsJson = Join-Path $repoRoot "Config\Templates\Methods.template.json"
 
-# Load method tokens from Methods.template.json; Cash is always prepended.
+# Load method tokens from Config\Templates\Methods.template.json; Cash is always prepended.
 $defaultMethods = @('Card', 'Check', 'Checking', 'Savings', 'Transfer', 'Wire')
 $loadedMethods  = $defaultMethods
 if (Test-Path $methodsJson) {
     try {
         $loadedMethods = Get-Content $methodsJson -Raw | ConvertFrom-Json
-        Write-Host "  Loaded method tokens from Methods.template.json."
+        Write-Host "  Loaded method tokens from Config\Templates\Methods.template.json."
     } catch {
-        Write-Host "  WARNING: Could not parse Methods.template.json -- using built-in defaults." -ForegroundColor Yellow
+        Write-Host "  WARNING: Could not parse Config\Templates\Methods.template.json -- using built-in defaults." -ForegroundColor Yellow
     }
 } else {
-    Write-Host "  WARNING: Methods.template.json not found -- using built-in defaults." -ForegroundColor Yellow
+    Write-Host "  WARNING: Config\Templates\Methods.template.json not found -- using built-in defaults." -ForegroundColor Yellow
 }
 # Cash is always first; exclude it from the loaded list in case it was added manually.
 $methodList = (@('Cash') + ($loadedMethods | Where-Object { $_ -ne 'Cash' })) -join ','
@@ -185,7 +185,7 @@ try {
 
     # 51 = xlOpenXMLWorkbook (.xlsx)
     $workbook.SaveAs($outPath, 51)
-    Write-Host "  [OK] Saved to Config\Accounts.template.xlsx"
+    Write-Host "  [OK] Saved to Config\Templates\Accounts.template.xlsx"
 
 } catch {
     Write-Host "  [FAIL] $_" -ForegroundColor Red

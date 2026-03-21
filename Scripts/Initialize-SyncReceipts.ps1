@@ -6,8 +6,8 @@
     Performs all first-time configuration steps needed before running Sync-Receipts:
 
       1. Checks that PowerShell 5.0+ and Microsoft Excel are installed.
-      2. Reads RECEIPTS_ROOT from Config\Config.env, or prompts for the path and creates
-         Config\Config.env from Config\Config.template.env.
+      2. Reads RECEIPTS_ROOT from Config\Config.ini, or prompts for the path and creates
+         Config\Config.ini from Config\Templates\Config.template.ini.
       3. Creates the RECEIPTS_ROOT folder if it does not already exist.
       4. Creates the WORKBOOKS_ROOT folder if absent and different from RECEIPTS_ROOT.
       5. Copies Accounts.template.xlsx to Config\Accounts.xlsx (skipped if present).
@@ -148,15 +148,34 @@ if (-not $excelInstalled) {
 Write-OK "Microsoft Excel"
 
 # ---------------------------------------------------------------------------
-# 2. Resolve RECEIPTS_ROOT -- read Config.env or prompt
+# 2. Resolve RECEIPTS_ROOT -- read Config.ini or prompt
 # ---------------------------------------------------------------------------
 
 Write-Host ""
 Write-Step "Configuring RECEIPTS_ROOT..."
 
-$configPath = Join-Path $repoRoot "Config\Config.env"
+$configPath = Join-Path $repoRoot "Config\Config.ini"
 $receiptsRoot  = $null
 $workbooksRoot = $null
+
+# Migration: rename legacy Config.env -> Config.ini (pre-v4.0.0 upgrade path)
+$legacyConfigPath = Join-Path $repoRoot "Config\Config.env"
+if ((Test-Path $legacyConfigPath) -and -not (Test-Path $configPath)) {
+    Write-Host ""
+    Write-Host "  Config\Config.env found (pre-v4.0.0 name)." -ForegroundColor Yellow
+    Write-Host "  From v4.0.0, the config file is named Config.ini." -ForegroundColor Yellow
+    $r = Read-Host "  Rename it now? [Y/N]"
+    if ($r -match '^[Yy]') {
+        try {
+            Rename-Item -Path $legacyConfigPath -NewName "Config.ini" -ErrorAction Stop
+            Write-OK "Renamed Config\Config.env -> Config\Config.ini"
+        } catch {
+            Write-Fail "Could not rename Config\Config.env -- $_"
+        }
+    } else {
+        Write-Host "  Skipped. Rename manually before running the launchers." -ForegroundColor Yellow
+    }
+}
 
 if (Test-Path $configPath) {
     foreach ($line in (Get-Content $configPath)) {
@@ -168,14 +187,14 @@ if (Test-Path $configPath) {
         }
     }
     if (-not $receiptsRoot) {
-        Write-Fail "Config.env exists but RECEIPTS_ROOT could not be parsed."
+        Write-Fail "Config.ini exists but RECEIPTS_ROOT could not be parsed."
         exit 1
     }
     if (-not $workbooksRoot) { $workbooksRoot = $receiptsRoot }
-    Write-OK "Config.env found -- RECEIPTS_ROOT: $receiptsRoot"
+    Write-OK "Config.ini found -- RECEIPTS_ROOT: $receiptsRoot"
 } else {
     Write-Host ""
-    Write-Host "  Config.env not found. Enter the path to your receipts root folder." -ForegroundColor Yellow
+    Write-Host "  Config.ini not found. Enter the path to your receipts root folder." -ForegroundColor Yellow
     Write-Host "  Example: \\Server\Share\Receipts  or  C:\Users\You\Documents\Receipts" -ForegroundColor Yellow
     Write-Host ""
     $userInput = Read-Host "  RECEIPTS_ROOT"
@@ -194,21 +213,21 @@ if (Test-Path $configPath) {
     $workbooksRoot = if ($wbInput.Trim()) { $wbInput.Trim().TrimEnd('\') } else { $receiptsRoot }
 
     try {
-        $template = Get-Content (Join-Path $repoRoot "Config\Config.template.env") -Raw
+        $template = Get-Content (Join-Path $repoRoot "Config\Templates\Config.template.ini") -Raw
         $config   = $template `
             -replace 'RECEIPTS_ROOT=.*',       "RECEIPTS_ROOT=$receiptsRoot" `
             -replace 'RECEIPTS_ROOT_LOCAL=.*', "RECEIPTS_ROOT_LOCAL=$receiptsRoot" `
             -replace 'WORKBOOKS_ROOT=.*',      "WORKBOOKS_ROOT=$workbooksRoot"
         Set-Content $configPath $config -Encoding ASCII
-        Write-OK "Created Config.env (set RECEIPTS_ROOT=$receiptsRoot)"
+        Write-OK "Created Config.ini (set RECEIPTS_ROOT=$receiptsRoot)"
         if ($workbooksRoot -ne $receiptsRoot) {
             Write-OK "WORKBOOKS_ROOT: $workbooksRoot"
         }
         Write-Host ""
         Write-Host "  NOTE: If your receipts root has a local drive-letter equivalent, edit" -ForegroundColor Yellow
-        Write-Host "  Config.env and update RECEIPTS_ROOT_LOCAL. This is only used by tests." -ForegroundColor Yellow
+        Write-Host "  Config.ini and update RECEIPTS_ROOT_LOCAL. This is only used by tests." -ForegroundColor Yellow
     } catch {
-        Write-Fail "Could not create Config.env -- $_"
+        Write-Fail "Could not create Config.ini -- $_"
         exit 1
     }
 }
@@ -270,7 +289,7 @@ if ($workbooksRoot -ne $receiptsRoot) {
 Write-Host ""
 Write-Step "Setting up Accounts.xlsx..."
 
-$templateXlsx = Join-Path $repoRoot "Config\Accounts.template.xlsx"
+$templateXlsx = Join-Path $repoRoot "Config\Templates\Accounts.template.xlsx"
 $accountsXlsx = Join-Path $repoRoot "Config\Accounts.xlsx"
 
 if (Test-Path $accountsXlsx) {
@@ -278,12 +297,12 @@ if (Test-Path $accountsXlsx) {
 } else {
     try {
         Copy-Item $templateXlsx $accountsXlsx
-        Write-OK "Copied Accounts.template.xlsx -> Config\Accounts.xlsx"
+        Write-OK "Copied Config\Templates\Accounts.template.xlsx -> Config\Accounts.xlsx"
         Write-Host ""
         Write-Host "  Open Config\Accounts.xlsx and replace the" -ForegroundColor Yellow
         Write-Host "  example rows with your own accounts before running the script." -ForegroundColor Yellow
     } catch {
-        Write-Fail "Could not copy Accounts.template.xlsx -- $_"
+        Write-Fail "Could not copy Config\Templates\Accounts.template.xlsx -- $_"
         exit 1
     }
 }
@@ -295,7 +314,7 @@ if (Test-Path $accountsXlsx) {
 Write-Host ""
 Write-Step "Setting up Categories.json..."
 
-$templateJson  = Join-Path $repoRoot "Config\Categories.template.json"
+$templateJson  = Join-Path $repoRoot "Config\Templates\Categories.template.json"
 $categoriesJson = Join-Path $repoRoot "Config\Categories.json"
 
 if (Test-Path $categoriesJson) {
@@ -303,12 +322,12 @@ if (Test-Path $categoriesJson) {
 } else {
     try {
         Copy-Item $templateJson $categoriesJson
-        Write-OK "Copied Categories.template.json -> Config\Categories.json"
+        Write-OK "Copied Config\Templates\Categories.template.json -> Config\Categories.json"
         Write-Host ""
         Write-Host "  Edit Config\Categories.json to add or remove categories" -ForegroundColor Yellow
         Write-Host "  before running the script." -ForegroundColor Yellow
     } catch {
-        Write-Fail "Could not copy Categories.template.json -- $_"
+        Write-Fail "Could not copy Config\Templates\Categories.template.json -- $_"
         exit 1
     }
 }
@@ -320,7 +339,7 @@ if (Test-Path $categoriesJson) {
 Write-Host ""
 Write-Step "Setting up Methods.json..."
 
-$templateMethods = Join-Path $repoRoot "Config\Methods.template.json"
+$templateMethods = Join-Path $repoRoot "Config\Templates\Methods.template.json"
 $methodsJson     = Join-Path $repoRoot "Config\Methods.json"
 
 if (Test-Path $methodsJson) {
@@ -328,12 +347,12 @@ if (Test-Path $methodsJson) {
 } else {
     try {
         Copy-Item $templateMethods $methodsJson
-        Write-OK "Copied Methods.template.json -> Config\Methods.json"
+        Write-OK "Copied Config\Templates\Methods.template.json -> Config\Methods.json"
         Write-Host ""
         Write-Host "  Edit Config\Methods.json to add or remove payment method tokens" -ForegroundColor Yellow
         Write-Host "  before running the script. Cash is always valid and must not be added." -ForegroundColor Yellow
     } catch {
-        Write-Fail "Could not copy Methods.template.json -- $_"
+        Write-Fail "Could not copy Config\Templates\Methods.template.json -- $_"
         exit 1
     }
 }

@@ -76,9 +76,9 @@ type(scope): short description
 |-------|------|
 | `ps1` | Sync-Receipts.ps1 (general) |
 | `logging` | Write-SyncLog and console output |
-| `categories` | Categories feature: Get-Categories, Write-CategorySheet, Config/Categories.json, Config/Categories.template.json |
-| `accounts` | Accounts feature: Get-ValidAccounts, Config/Accounts.xlsx, Config/Accounts.template.xlsx, Scripts/New-AccountsTemplate.ps1 |
-| `methods`  | Configurable method tokens: Get-Methods, Config/Methods.json, Config/Methods.template.json |
+| `categories` | Categories feature: Get-Categories, Write-CategorySheet, Config/Categories.json, Config/Templates/Categories.template.json |
+| `accounts` | Accounts feature: Get-ValidAccounts, Config/Accounts.xlsx, Config/Templates/Accounts.template.xlsx, Scripts/New-AccountsTemplate.ps1 |
+| `methods`  | Configurable method tokens: Get-Methods, Config/Methods.json, Config/Templates/Methods.template.json |
 | `write-month` | Write-MonthSheet function |
 | `convert-receipt` | ConvertFrom-ReceiptFileName function |
 | `xml` | Set-SubcategoryValidationXml |
@@ -89,7 +89,7 @@ type(scope): short description
 | `claude.md` | CLAUDE.md |
 | `changelog` | CHANGELOG.md |
 | `security` | SECURITY.md |
-| `config` | Config.env, Config/ subfolder, .vscode/, batch launcher files |
+| `config` | Config.ini, Config/ subfolder, .vscode/, batch launcher files |
 | `contributing` | CONTRIBUTING.md |
 
 ## Releasing
