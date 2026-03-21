@@ -10,6 +10,8 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Template files moved from `Config/` to `Config/Templates/`: `Accounts.template.xlsx`,
   `Categories.template.json`, `Methods.template.json`, `Config.template.ini`
   (was `Config.template.env`). Update any scripts that reference template paths directly.
+  `Initialize-SyncReceipts.ps1` detects and moves leftover pre-v4.0.0 template files
+  automatically on next run.
 - `Config/Config.env` renamed to `Config/Config.ini`. Existing users must rename their
   local file before running the launchers. `Initialize-SyncReceipts.ps1` detects the old
   name on upgrade and prompts to rename it automatically.
