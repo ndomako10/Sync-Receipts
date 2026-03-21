@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+---
+
+## [4.0.2] - 2026-03-21
+
+### Added
+- `Get-ReceiptFlag` pure helper extracted from `Write-MonthSheet`; evaluated parsed receipt rows against configured rules and returns a flag string. Unit-tested in `Tests/Get-ReceiptFlag.Tests.ps1`.
+- `Copy-ConfigTemplate` pure helper extracted from `Initialize-SyncReceipts.ps1`; copies template files without overwriting existing ones. Unit-tested in `Tests/Initialize-SyncReceipts.Tests.ps1`.
+- Integration test fixture and runner scripts in `Tests/Integration/` covering flag scenarios, accounts template schema, and setup idempotency.
+- Lint.Tests.ps1 extended to cover all `Scripts/*.ps1` files (previously only covered `Sync-Receipts.ps1`).
+
+### Fixed
+- Pre-push hook now auto-installs PSScriptAnalyzer when missing, so lint tests run on first push without manual setup.
+- Pre-push hook now fails correctly when a Pester test file fails to load (container/discovery error), preventing lint from being silently skipped.
+
+---
+
 ## [4.0.1] - 2026-03-21
 
 ### Fixed
