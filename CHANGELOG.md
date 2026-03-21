@@ -4,13 +4,19 @@ All notable changes to this project will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [3.0.2] - 2026-03-21
 
 ### Fixed
 
 - Corrected `Install-Module` splatting in `Initialize-SyncReceipts.ps1` so PSScriptAnalyzer installs without error on first setup
 - Guarded `NumberFormat` assignment against null `DataBodyRange` when a month sheet has zero receipts
 - Corrected inactive account flag cell value to `"Account inactive"` to match documented behaviour
+- Amount column now uses accounting number format; Category and Subcategory column widths corrected to measured values
+- `Test: Unit only` VS Code task filter corrected to exclude `Lint.Tests.ps1` properly
+- Escaped regex special characters and removed XPath string interpolation to prevent injection vulnerabilities in receipt parsing
+- Moved PR title into an environment variable in the `commit-lint` workflow to prevent shell injection
+- Updated pre-push hook to use the Pester 5 `New-PesterConfiguration` API (was using the deprecated v4 call)
+- Pinned all GitHub Actions to commit SHAs; updated `actions/checkout` to v4
 
 ---
 
