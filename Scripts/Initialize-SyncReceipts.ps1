@@ -117,6 +117,50 @@ function Write-Fail {
     Write-Host "  [FAIL] $msg" -ForegroundColor Red
 }
 
+function Copy-ConfigTemplate {
+    <#
+    .SYNOPSIS
+        Copies a config template file to its destination if the destination is absent.
+
+    .DESCRIPTION
+        If the destination file does not exist, copies the source file and writes
+        an OK confirmation. If the destination already exists, writes a SKIP notice.
+        On copy failure, writes a FAIL message and exits the script with code 1.
+
+    .PARAMETER Source
+        Full path to the template file to copy from.
+
+    .PARAMETER Destination
+        Full path to write the file to.
+
+    .PARAMETER Label
+        Human-readable name for the file, used in log messages.
+
+    .OUTPUTS
+        [bool] $true if the file was copied; $false if it was skipped.
+
+    .EXAMPLE
+        Copy-ConfigTemplate -Source $templateXlsx -Destination $accountsXlsx -Label 'Accounts.xlsx'
+    #>
+    param(
+        [string]$Source,
+        [string]$Destination,
+        [string]$Label
+    )
+    if (Test-Path $Destination) {
+        Write-Skip "$Label already exists -- edit it directly to update your settings"
+        return $false
+    }
+    try {
+        Copy-Item $Source $Destination
+        Write-OK "Copied $Label"
+        return $true
+    } catch {
+        Write-Fail "Could not copy $Label -- $_"
+        exit 1
+    }
+}
+
 Write-Host ""
 Write-Host "Sync-Receipts Setup" -ForegroundColor Cyan
 Write-Host "-------------------" -ForegroundColor Cyan
@@ -318,19 +362,10 @@ Write-Step "Setting up Accounts.xlsx..."
 $templateXlsx = Join-Path $repoRoot "Config\Templates\Accounts.template.xlsx"
 $accountsXlsx = Join-Path $repoRoot "Config\Accounts.xlsx"
 
-if (Test-Path $accountsXlsx) {
-    Write-Skip "Accounts.xlsx already exists -- edit it directly to update your accounts"
-} else {
-    try {
-        Copy-Item $templateXlsx $accountsXlsx
-        Write-OK "Copied Config\Templates\Accounts.template.xlsx -> Config\Accounts.xlsx"
-        Write-Host ""
-        Write-Host "  Open Config\Accounts.xlsx and replace the" -ForegroundColor Yellow
-        Write-Host "  example rows with your own accounts before running the script." -ForegroundColor Yellow
-    } catch {
-        Write-Fail "Could not copy Config\Templates\Accounts.template.xlsx -- $_"
-        exit 1
-    }
+if (Copy-ConfigTemplate -Source $templateXlsx -Destination $accountsXlsx -Label 'Accounts.xlsx') {
+    Write-Host ""
+    Write-Host "  Open Config\Accounts.xlsx and replace the" -ForegroundColor Yellow
+    Write-Host "  example rows with your own accounts before running the script." -ForegroundColor Yellow
 }
 
 # ---------------------------------------------------------------------------
@@ -343,19 +378,10 @@ Write-Step "Setting up Categories.json..."
 $templateJson  = Join-Path $repoRoot "Config\Templates\Categories.template.json"
 $categoriesJson = Join-Path $repoRoot "Config\Categories.json"
 
-if (Test-Path $categoriesJson) {
-    Write-Skip "Categories.json already exists -- edit it directly to update your categories"
-} else {
-    try {
-        Copy-Item $templateJson $categoriesJson
-        Write-OK "Copied Config\Templates\Categories.template.json -> Config\Categories.json"
-        Write-Host ""
-        Write-Host "  Edit Config\Categories.json to add or remove categories" -ForegroundColor Yellow
-        Write-Host "  before running the script." -ForegroundColor Yellow
-    } catch {
-        Write-Fail "Could not copy Config\Templates\Categories.template.json -- $_"
-        exit 1
-    }
+if (Copy-ConfigTemplate -Source $templateJson -Destination $categoriesJson -Label 'Categories.json') {
+    Write-Host ""
+    Write-Host "  Edit Config\Categories.json to add or remove categories" -ForegroundColor Yellow
+    Write-Host "  before running the script." -ForegroundColor Yellow
 }
 
 # ---------------------------------------------------------------------------
@@ -368,19 +394,10 @@ Write-Step "Setting up Methods.json..."
 $templateMethods = Join-Path $repoRoot "Config\Templates\Methods.template.json"
 $methodsJson     = Join-Path $repoRoot "Config\Methods.json"
 
-if (Test-Path $methodsJson) {
-    Write-Skip "Methods.json already exists -- edit it directly to update your payment methods"
-} else {
-    try {
-        Copy-Item $templateMethods $methodsJson
-        Write-OK "Copied Config\Templates\Methods.template.json -> Config\Methods.json"
-        Write-Host ""
-        Write-Host "  Edit Config\Methods.json to add or remove payment method tokens" -ForegroundColor Yellow
-        Write-Host "  before running the script. Cash is always valid and must not be added." -ForegroundColor Yellow
-    } catch {
-        Write-Fail "Could not copy Config\Templates\Methods.template.json -- $_"
-        exit 1
-    }
+if (Copy-ConfigTemplate -Source $templateMethods -Destination $methodsJson -Label 'Methods.json') {
+    Write-Host ""
+    Write-Host "  Edit Config\Methods.json to add or remove payment method tokens" -ForegroundColor Yellow
+    Write-Host "  before running the script. Cash is always valid and must not be added." -ForegroundColor Yellow
 }
 
 # ---------------------------------------------------------------------------

@@ -16,6 +16,11 @@ Kill-Excel.bat
 !Categories.template.json
 !Methods.template.json
 
+# Integration test fixture config is safe to commit (fictitious data only)
+!Tests/Integration/Config/Accounts.xlsx
+!Tests/Integration/Config/Categories.json
+!Tests/Integration/Config/Methods.json
+
 # Personal config files (may contain sensitive financial data)
 Config/Accounts.xlsx
 Config/Categories.json

@@ -1042,6 +1042,73 @@ function Set-SubcategoryValidationXml {
 }
 
 
+function Get-ReceiptFlag {
+<#
+.SYNOPSIS
+    Returns the flag string for a parsed receipt row, or "" if no flag applies.
+
+.DESCRIPTION
+    Evaluates the parse result and account validation state for a single receipt
+    row and returns the appropriate flag string. Priority order:
+
+        1. ParseOK = $false  -> ParseError value, or "Could not parse filename"
+        2. Method = ""       -> "Method missing"
+        3. Account = "xxxx"  -> "Account obfuscated"
+        4. Account = "----"  -> "Account unknown"
+        5. Account present and ValidAccounts non-empty:
+               no match       -> "Account not in Accounts.xlsx"
+               match/Inactive -> "Account inactive"
+        6. Otherwise         -> "" (no flag)
+
+    Pure helper with no COM dependency.
+
+.PARAMETER ParseResult
+    A PSCustomObject with properties: ParseOK [bool], ParseError [string],
+    Method [string], Account [string].
+
+.PARAMETER ValidAccounts
+    Array of hashtables with keys: Last4, Method, Account, Status.
+    Pass an empty array to skip account validation.
+
+.OUTPUTS
+    [string] Flag text, or "" if no flag applies.
+
+.EXAMPLE
+    $flag = Get-ReceiptFlag -ParseResult $r -ValidAccounts $ValidAccounts
+#>
+    param(
+        [PSObject]$ParseResult,
+        [array]  $ValidAccounts = @()
+    )
+    if (-not $ParseResult.ParseOK) {
+        if ($ParseResult.ParseError) { return $ParseResult.ParseError }
+        return "Could not parse filename"
+    }
+    if ($ParseResult.Method -eq "") {
+        return "Method missing"
+    }
+    if ($ParseResult.Account -eq "xxxx") {
+        return "Account obfuscated"
+    }
+    if ($ParseResult.Account -eq "----") {
+        return "Account unknown"
+    }
+    if ($ParseResult.Account -ne "" -and $ValidAccounts.Count -gt 0) {
+        $match = $ValidAccounts | Where-Object {
+            $_.Last4 -eq $ParseResult.Account -and
+            ($_.Method -eq "" -or $_.Method -eq $ParseResult.Method)
+        } | Select-Object -First 1
+        if (-not $match) {
+            return "Account not in Accounts.xlsx"
+        }
+        if ($match.Status -eq "Inactive") {
+            return "Account inactive"
+        }
+    }
+    return ""
+}
+
+
 function Write-MonthSheet {
 <#
 .SYNOPSIS
@@ -1237,28 +1304,7 @@ function Write-MonthSheet {
             Write-SyncLog "Row ${row}: error writing data cells ('$($r.FileName)') -- $_" -Tag WARN
         }
 
-        $flag = ""
-        if (-not $r.ParseOK) {
-            $flag = if ($r.ParseError) { $r.ParseError } else { "Could not parse filename" }
-        } elseif ($r.Method -eq "") {
-            $flag = "Method missing"
-        } elseif ($r.Account -eq "xxxx") {
-            $flag = "Account obfuscated"
-        } elseif ($r.Account -eq "----") {
-            $flag = "Account unknown"
-        } elseif ($r.Account -ne "" -and $ValidAccounts.Count -gt 0) {
-            # Find matching account record: Last4 must match; Method must match if the
-            # table row has a Method value (disambiguation), otherwise Last4 alone is sufficient.
-            $match = $ValidAccounts | Where-Object {
-                $_.Last4 -eq $r.Account -and
-                ($_.Method -eq "" -or $_.Method -eq $r.Method)
-            } | Select-Object -First 1
-            if (-not $match) {
-                $flag = "Account not in Accounts.xlsx"
-            } elseif ($match.Status -eq "Inactive") {
-                $flag = "Account inactive"
-            }
-        }
+        $flag = Get-ReceiptFlag -ParseResult $r -ValidAccounts $ValidAccounts
         if ($flag -ne "") {
             try {
                 $sheet.Cells.Item($row, $COL_FLAG).Value2 = $flag
