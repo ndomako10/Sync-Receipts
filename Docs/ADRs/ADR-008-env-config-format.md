@@ -1,7 +1,9 @@
 # ADR-008: Use .env Format for Configuration File Instead of Batch
 
 ## Status
-Accepted
+Superseded by ADR-011
+
+Superseded by [ADR-011](ADR-011-ini-config-format.md) which documents the rename to .ini format.
 
 ## Context
 The script requires one machine-specific setting at minimum: `RECEIPTS_ROOT`, the path

@@ -11,7 +11,7 @@ places:
 1. The regex in `ConvertFrom-ReceiptFileName` -- determines which tokens are accepted at
    parse time.
 2. The dropdown validation list in `New-AccountsTemplate.ps1` -- determines which tokens
-   appear as choices in `Accounts.template.xlsx`.
+   appear as choices in `Config/Templates/Accounts.template.xlsx`.
 
 Having two independent hardcoded lists creates a drift risk: a token added to the dropdown
 but not the regex (or vice versa) produces an inconsistent user experience. It also means
@@ -57,10 +57,10 @@ validation regardless of the contents of this file.
   built-in default token set and logs a warning.
 - `New-AccountsTemplate.ps1` reads `Methods.json` to populate the Method dropdown,
   prepending `Cash` so it always appears first in the list.
-- `Initialize-SyncReceipts.ps1` copies `Config/Methods.template.json` to
+- `Initialize-SyncReceipts.ps1` copies `Config/Templates/Methods.template.json` to
   `Config/Methods.json` during setup (skipped if already present), matching the
   `Categories.json` pattern.
-- `Config/Methods.json` is gitignored; `Config/Methods.template.json` is committed.
+- `Config/Methods.json` is gitignored; `Config/Templates/Methods.template.json` is committed.
 
 ### Constraints
 
@@ -99,8 +99,8 @@ followed by a check of the token against the loaded Methods list. See issue #63.
 - A misconfigured `Methods.json` (e.g. a token containing spaces or regex metacharacters)
   can cause parse failures. The parser guards against this by validating tokens before
   building the regex.
-- Adding a new built-in method in future requires updating `Config/Methods.template.json`
-  and regenerating `Accounts.template.xlsx` via `New-AccountsTemplate.ps1`; no parser code
+- Adding a new built-in method in future requires updating `Config/Templates/Methods.template.json`
+  and regenerating `Config/Templates/Accounts.template.xlsx` via `New-AccountsTemplate.ps1`; no parser code
   change is needed.
 - `Initialize-SyncReceipts.ps1` gains a new copy step for `Methods.json`, consistent with
   the existing `Categories.json` and `Accounts.xlsx` steps.

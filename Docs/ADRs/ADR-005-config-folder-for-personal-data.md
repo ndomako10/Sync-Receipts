@@ -13,8 +13,8 @@ to accidental commits. (Issue #35.)
 
 ## Decision
 Both files live in `Config/` at the repo root and are listed in `.gitignore`. Committed
-template files (`Accounts.template.xlsx`, `Categories.template.json`) provide the
-schema and are copied to their live names during setup. The script resolves both paths
+template files (`Config/Templates/Accounts.template.xlsx`, `Config/Templates/Categories.template.json`)
+provide the schema and are copied to their live names during setup. The script resolves both paths
 from `$PSScriptRoot` (the `Scripts/` folder), walking up one level to reach `Config/`:
 
     Join-Path (Split-Path $PSScriptRoot -Parent) "Config"
