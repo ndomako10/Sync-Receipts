@@ -40,7 +40,42 @@ Re-run the installer after pulling changes to `Scripts/hooks/` to pick up update
 Invoke-Pester Tests/ -Output Detailed
 ```
 
-All tests run without Excel. Excel COM integration tests are local-only and not part of the automated suite.
+All Pester unit tests run without Excel and are part of the CI suite.
+
+## Integration Tests
+
+Integration tests live in `Tests/Integration/` and require Microsoft Excel.
+They are **not run in CI** and must be executed manually on a machine with Excel.
+
+### Running integration tests
+
+```powershell
+# Sync-Receipts flag pipeline (7 receipt files, asserts Flag column)
+PowerShell -NoProfile -ExecutionPolicy Bypass -File Tests\Integration\Invoke-SyncReceiptsTest.ps1
+
+# New-AccountsTemplate schema validation (headers, table, row count)
+PowerShell -NoProfile -ExecutionPolicy Bypass -File Tests\Integration\Invoke-NewAccountsTemplateTest.ps1
+
+# Initialize-SyncReceipts idempotency smoke test (exit 0, 4 .lnk shortcuts)
+PowerShell -NoProfile -ExecutionPolicy Bypass -File Tests\Integration\Invoke-InitializeSyncReceiptsTest.ps1
+```
+
+All three scripts exit 0 on success and 1 on failure, with per-assertion output.
+
+### Preconditions
+
+- `Invoke-SyncReceiptsTest.ps1` -- no preconditions; all fixture files are self-contained
+  in `Tests\Integration\Config\` and `Tests\Integration\Fixture\`.
+- `Invoke-NewAccountsTemplateTest.ps1` -- no preconditions; generates a temp file and deletes it.
+- `Invoke-InitializeSyncReceiptsTest.ps1` -- requires that setup has been run at least once
+  so that `Config\Accounts.xlsx`, `Config\Categories.json`, and `Config\Methods.json` exist.
+  The test backs up and restores `Config\Config.ini` automatically.
+
+### Fixture layout
+
+`Tests\Integration\Fixture\2026\2601\` contains 7 zero-byte placeholder receipt files,
+one per flag scenario. `Tests\Integration\Config\Accounts.xlsx` contains two fictitious
+accounts (Last4=1234 Active, Last4=9999 Inactive) and is safe to commit.
 
 ## Coding Rules
 
