@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - 2026-03-21
+
+### Added
+
+- `-ConfigRoot` parameter on `Sync-Receipts.ps1`: override the config directory (`Accounts.xlsx`, `Categories.json`, `Methods.json`) without touching the real `Config/` folder. Defaults to the repo's `Config/` subfolder --existing behaviour unchanged.
+- `-OutputPath` parameter on `New-AccountsTemplate.ps1`: write the generated accounts template to any path instead of the fixed `Config\Accounts.template.xlsx`. Defaults to the original path --existing behaviour unchanged.
+
+---
+
 ## [3.0.2] - 2026-03-21
 
 ### Fixed
