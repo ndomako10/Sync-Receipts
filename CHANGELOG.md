@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.1] - 2026-03-21
+
+### Fixed
+- Launcher shortcuts are now created in `WORKBOOKS_ROOT` instead of `RECEIPTS_ROOT`.
+  For users with a separate workbooks location (ADR-006), shortcuts now appear alongside
+  the year workbooks where they are most useful. Single-location setups are unaffected
+  (`WORKBOOKS_ROOT` defaults to `RECEIPTS_ROOT` when not set).
+
+---
+
 ## [4.0.0] - 2026-03-21
 
 ### Changed (breaking)

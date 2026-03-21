@@ -13,7 +13,7 @@
       5. Copies Accounts.template.xlsx to Config\Accounts.xlsx (skipped if present).
       6. Copies Categories.template.json to Config\Categories.json (skipped if present).
       7. Copies Methods.template.json to Config\Methods.json (skipped if present).
-      8. Creates Windows shortcut (.lnk) files in RECEIPTS_ROOT that point to the batch
+      8. Creates Windows shortcut (.lnk) files in WORKBOOKS_ROOT that point to the batch
          launchers in the script directory, with WorkingDirectory set so UNC-path shortcuts
          open without the "UNC paths are not supported" CMD error.
       9. Installs Pester and PSScriptAnalyzer (required by the pre-commit and pre-push hooks).
@@ -384,11 +384,11 @@ if (Test-Path $methodsJson) {
 }
 
 # ---------------------------------------------------------------------------
-# 5. Create shortcuts in RECEIPTS_ROOT
+# 5. Create shortcuts in WORKBOOKS_ROOT
 # ---------------------------------------------------------------------------
 
 Write-Host ""
-Write-Step "Creating shortcuts in $receiptsRoot..."
+Write-Step "Creating shortcuts in $workbooksRoot..."
 
 $shortcuts = @(
     @{
@@ -416,7 +416,7 @@ $shortcuts = @(
 $wsh = New-Object -ComObject WScript.Shell
 foreach ($s in $shortcuts) {
     try {
-        $lnkPath          = Join-Path $receiptsRoot $s.Name
+        $lnkPath          = Join-Path $workbooksRoot $s.Name
         $verb             = if (Test-Path $lnkPath) { "Updated" } else { "Created" }
         $shortcut         = $wsh.CreateShortcut($lnkPath)
         $shortcut.TargetPath       = $s.Target
