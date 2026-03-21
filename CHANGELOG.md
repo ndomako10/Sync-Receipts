@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.0] - 2026-03-21
+
+### Changed (breaking)
+- Template files moved from `Config/` to `Config/Templates/`: `Accounts.template.xlsx`,
+  `Categories.template.json`, `Methods.template.json`, `Config.template.ini`
+  (was `Config.template.env`). Update any scripts that reference template paths directly.
+- `Config/Config.env` renamed to `Config/Config.ini`. Existing users must rename their
+  local file before running the launchers. `Initialize-SyncReceipts.ps1` detects the old
+  name on upgrade and prompts to rename it automatically.
+
+---
+
 ## [3.1.0] - 2026-03-21
 
 ### Added
