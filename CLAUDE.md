@@ -91,6 +91,13 @@ Tests/
     <Function>.Tests.ps1     <- Pester unit tests (one file per pure-PowerShell function)
     Lint.Tests.ps1           <- PSScriptAnalyzer validation
     run-sync-test.bat        <- local integration test launcher (tracked; not gitignored)
+    Integration/             <- COM-dependent integration tests (local-only; not run in CI)
+        Fixture/             <- zero-byte placeholder receipt files covering every flag scenario
+            2026/2601/       <- month folder matching YearMonth=2601
+        Config/              <- fixture config: Accounts.xlsx (fictitious), Categories.json, Methods.json
+        Invoke-SyncReceiptsTest.ps1           <- syncs fixture; asserts Flag column (7 rows)
+        Invoke-NewAccountsTemplateTest.ps1    <- runs New-AccountsTemplate.ps1; validates schema
+        Invoke-InitializeSyncReceiptsTest.ps1 <- idempotency smoke test; asserts 4 .lnk shortcuts
 .github/
     workflows/tests.yml     <- CI: runs Pester on windows-latest
     ISSUE_TEMPLATE/         <- bug report and feature request templates
