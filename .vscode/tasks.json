@@ -40,7 +40,7 @@
             "args": [
                 "-NoProfile",
                 "-Command",
-                "Import-Module Pester -MinimumVersion 5.0 -Force; Invoke-Pester ./Tests/Sync-Receipts.Tests.ps1 -Output Detailed"
+                "Import-Module Pester -MinimumVersion 5.0 -Force; Invoke-Pester (Get-ChildItem ./Tests -Filter '*.Tests.ps1' | Where-Object { $_.Name -ne 'Lint.Tests.ps1' }) -Output Detailed"
             ],
             "group": "test",
             "presentation": {
