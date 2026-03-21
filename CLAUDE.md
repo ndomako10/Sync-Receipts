@@ -32,9 +32,9 @@ This project uses [Semantic Versioning](https://semver.org) and [Conventional Co
 |-------|-------------|
 | `ps1` | Sync-Receipts.ps1 (general; use a narrower scope when one applies) |
 | `logging` | Write-SyncLog function and console output |
-| `categories` | Categories feature: Get-Categories, Write-CategorySheet, Config/Categories.json, Config/Categories.template.json |
-| `accounts` | Accounts feature: Get-ValidAccounts, Config/Accounts.xlsx, Config/Accounts.template.xlsx, Scripts/New-AccountsTemplate.ps1 |
-| `methods` | Configurable method tokens: Get-Methods, Config/Methods.json, Config/Methods.template.json |
+| `categories` | Categories feature: Get-Categories, Write-CategorySheet, Config/Categories.json, Config/Templates/Categories.template.json |
+| `accounts` | Accounts feature: Get-ValidAccounts, Config/Accounts.xlsx, Config/Templates/Accounts.template.xlsx, Scripts/New-AccountsTemplate.ps1 |
+| `methods` | Configurable method tokens: Get-Methods, Config/Methods.json, Config/Templates/Methods.template.json |
 | `write-month` | Write-MonthSheet function |
 | `convert-receipt` | ConvertFrom-ReceiptFileName function |
 | `xml` | Set-SubcategoryValidationXml XML patching |
@@ -43,7 +43,7 @@ This project uses [Semantic Versioning](https://semver.org) and [Conventional Co
 | `readme` | README.md |
 | `claude.md` | CLAUDE.md |
 | `ci` | GitHub Actions workflows (.github/) |
-| `config` | Config.env, Config/ subfolder, .vscode/, batch launcher files |
+| `config` | Config.ini, Config/ subfolder, .vscode/, batch launcher files |
 | `changelog` | CHANGELOG.md |
 | `contributing` | CONTRIBUTING.md |
 | `security` | SECURITY.md |
@@ -60,29 +60,30 @@ This project uses [Semantic Versioning](https://semver.org) and [Conventional Co
 ```
 Setup.bat                 <- one-time setup launcher (runs Scripts\Initialize-SyncReceipts.ps1)
 Config/
-    Config.env               <- local machine settings (gitignored); sets RECEIPTS_ROOT
-    Config.template.env      <- generic template committed to git
-    Accounts.template.xlsx   <- default accounts template; committed to git
+    Config.ini               <- local machine settings (gitignored); sets RECEIPTS_ROOT
     Accounts.xlsx            <- gitignored; personal accounts
-    Categories.template.json <- default categories template; committed to git
     Categories.json          <- gitignored; personal categories
-    Methods.template.json    <- default method token list; committed to git
     Methods.json             <- gitignored; personal method token list
+    Templates/
+        Config.template.ini      <- generic template committed to git
+        Accounts.template.xlsx   <- default accounts template; committed to git
+        Categories.template.json <- default categories template; committed to git
+        Methods.template.json    <- default method token list; committed to git
 Scripts/
-    Initialize-SyncReceipts.ps1 <- one-time setup: checks prerequisites, creates Config\Config.env,
-                             copies template files to Config\, installs git hooks, creates shortcuts in RECEIPTS_ROOT
+    Initialize-SyncReceipts.ps1 <- one-time setup: checks prerequisites, creates Config\Config.ini,
+                             copies template files from Config\Templates\ to Config\, installs git hooks, creates shortcuts in RECEIPTS_ROOT
     Sync-Receipts.ps1        <- core automation (Excel COM)
-    New-AccountsTemplate.ps1 <- regenerates Config\Accounts.template.xlsx from current schema; run after schema changes
+    New-AccountsTemplate.ps1 <- regenerates Config\Templates\Accounts.template.xlsx from current schema; run after schema changes
     Install-GitHooks.ps1     <- copies Scripts\hooks\ into .git\hooks\
     hooks/
         commit-msg           <- enforces Conventional Commits format
         pre-commit           <- ASCII check and PSScriptAnalyzer lint on staged .ps1 files
         pre-push             <- full Pester suite
 Launchers/
-    Run-SyncReceipts.bat     <- reads Config/Config.env, syncs current month
-    Run-SyncMonthReceipts.bat <- reads Config/Config.env, syncs a specific month
-    Run-SyncYearReceipts.bat  <- reads Config/Config.env, syncs all months in a specific year
-    Run-SyncAllReceipts.bat  <- reads Config/Config.env, syncs all months (-All)
+    Run-SyncReceipts.bat     <- reads Config/Config.ini, syncs current month
+    Run-SyncMonthReceipts.bat <- reads Config/Config.ini, syncs a specific month
+    Run-SyncYearReceipts.bat  <- reads Config/Config.ini, syncs all months in a specific year
+    Run-SyncAllReceipts.bat  <- reads Config/Config.ini, syncs all months (-All)
 Docs/
     ADRs/                    <- Architecture Decision Records
         README.md            <- index of all ADRs
@@ -99,7 +100,7 @@ CONTRIBUTING.md           <- dev guide: prerequisites, test instructions, commit
 CHANGELOG.md              <- version history; hand-crafted before each tag; release workflow reads the top entry as the GitHub Release body
 ```
 
-The script files live in their own directory. The data (per-year workbooks and receipt folders) lives at `RECEIPTS_ROOT`, which is set in `Config/Config.env`. Each year gets its own workbook (`2026.xlsx`, `2025.xlsx`, etc.) created automatically on first sync. Workbooks are written to `WORKBOOKS_ROOT` when set in `Config/Config.env`, defaulting to `RECEIPTS_ROOT`; this allows workbooks to be stored on a fast local drive while receipts remain on a network share (see ADR-006). `Categories.json` and `Accounts.xlsx` both live in `Config/` (gitignored) and are read via `Join-Path (Split-Path $PSScriptRoot -Parent) "Config"`. The two locations are completely independent -- `-ReceiptsRoot` defaults to the parent of Scripts/ but should always be set explicitly via Config/Config.env.
+The script files live in their own directory. The data (per-year workbooks and receipt folders) lives at `RECEIPTS_ROOT`, which is set in `Config/Config.ini`. Each year gets its own workbook (`2026.xlsx`, `2025.xlsx`, etc.) created automatically on first sync. Workbooks are written to `WORKBOOKS_ROOT` when set in `Config/Config.ini`, defaulting to `RECEIPTS_ROOT`; this allows workbooks to be stored on a fast local drive while receipts remain on a network share (see ADR-006). `Categories.json` and `Accounts.xlsx` both live in `Config/` (gitignored) and are read via `Join-Path (Split-Path $PSScriptRoot -Parent) "Config"`. The two locations are completely independent -- `-ReceiptsRoot` defaults to the parent of Scripts/ but should always be set explicitly via Config/Config.ini.
 
 ### Key Functions in Sync-Receipts.ps1
 

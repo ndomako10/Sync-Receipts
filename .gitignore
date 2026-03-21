@@ -1,6 +1,7 @@
-# Local config (contains machine name and username -- see Config/Config.template.env)
+# Local config (contains machine name and username -- see Config/Templates/Config.template.ini)
+Config/Config.ini
+# Legacy config names -- kept ignored so upgrading users cannot accidentally commit them
 Config/Config.env
-# Legacy config name -- kept ignored so upgrading users cannot accidentally commit it
 Config/Config.bat
 
 # Standalone utility -- not needed in the repo

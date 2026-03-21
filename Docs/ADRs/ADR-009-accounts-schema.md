@@ -140,7 +140,7 @@ uses the same token values.
 - The Method column lookup matches on Method + Last 4.
 - `ConvertFrom-ReceiptFileName` must enforce that non-Cash methods require a Last 4 value.
   Omitting both Method and Last 4 is valid and produces no flag.
-- `Accounts.template.xlsx` must be updated to the new schema with Status dropdown validation.
+- `Config/Templates/Accounts.template.xlsx` must be updated to the new schema with Status dropdown validation.
 - Existing `Accounts.xlsx` files must be migrated manually: rename/remove columns and
   populate Account, Method, and Status values.
 - When #60 is implemented, Apple Pay alias mapping should be handled via a separate opt-in

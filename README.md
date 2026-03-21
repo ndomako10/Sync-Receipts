@@ -51,13 +51,13 @@ Running a `.bat` launcher triggers the PowerShell script, which parses every rec
 
 1. Double-click `Setup.bat` -- it will:
    - Check that PowerShell 5.0+ and Excel are installed
-   - Prompt for `RECEIPTS_ROOT` and `WORKBOOKS_ROOT` (defaults to `RECEIPTS_ROOT`), then create `Config.env` (skipped if `Config.env` already exists)
+   - Prompt for `RECEIPTS_ROOT` and `WORKBOOKS_ROOT` (defaults to `RECEIPTS_ROOT`), then create `Config.ini` (skipped if `Config.ini` already exists)
    - Create the `RECEIPTS_ROOT` and `WORKBOOKS_ROOT` folders if they do not exist (prompts for confirmation)
-   - Copy `Config\Accounts.template.xlsx` to `Config\Accounts.xlsx` (skipped if already present)
+   - Copy `Config\Templates\Accounts.template.xlsx` to `Config\Accounts.xlsx` (skipped if already present)
    - Create `Run Sync Receipts.lnk`, `Run Sync Month Receipts.lnk`, `Run Sync Year Receipts.lnk`, and `Run Sync All Receipts.lnk` shortcuts in `RECEIPTS_ROOT`
 2. Open `Config\Accounts.xlsx` and replace the example rows with your own accounts
-3. Copy `Config\Categories.template.json` to `Config\Categories.json` and edit to customise your categories (skipped if already present)
-4. Copy `Config\Methods.template.json` to `Config\Methods.json` and edit to customise the accepted payment method tokens (skipped if already present)
+3. Copy `Config\Templates\Categories.template.json` to `Config\Categories.json` and edit to customise your categories (skipped if already present)
+4. Copy `Config\Templates\Methods.template.json` to `Config\Methods.json` and edit to customise the accepted payment method tokens (skipped if already present)
 5. For the first run, use the `Run Sync All Receipts.lnk` shortcut in `RECEIPTS_ROOT` to sync all existing receipts across all years into workbooks
 6. After the initial sync, use `Run Sync Receipts.lnk` for day-to-day syncing of the current month. Use the month and year launchers when correcting past entries.
 
@@ -65,20 +65,21 @@ Running a `.bat` launcher triggers the PowerShell script, which parses every rec
 
 ## Folder Structure
 
-The script files and the data are kept in separate locations. `RECEIPTS_ROOT` is set in `Config\Config.env`.
+The script files and the data are kept in separate locations. `RECEIPTS_ROOT` is set in `Config\Config.ini`.
 
 ```
 Script files (e.g. C:\Scripts\Sync-Receipts\):
     Setup.bat                <- one-time setup launcher
     Config\
-        Config.env               <- gitignored; sets RECEIPTS_ROOT
-        Config.template.env
-        Accounts.template.xlsx  <- default accounts template; committed to git
+        Config.ini               <- gitignored; sets RECEIPTS_ROOT
         Accounts.xlsx           <- gitignored; your personal accounts
-        Categories.template.json <- default categories template; committed to git
         Categories.json          <- gitignored; your personal categories
-        Methods.template.json    <- default method tokens template; committed to git
         Methods.json             <- gitignored; your personal method tokens
+        Templates\
+            Config.template.ini      <- generic template committed to git
+            Accounts.template.xlsx   <- default accounts template; committed to git
+            Categories.template.json <- default categories template; committed to git
+            Methods.template.json    <- default method tokens template; committed to git
     Scripts\
         Initialize-SyncReceipts.ps1
         Sync-Receipts.ps1
@@ -102,7 +103,7 @@ RECEIPTS_ROOT (e.g. \\Server\Share\Receipts\):
         ...
 ```
 
-Per-year workbooks (e.g. `2026.xlsx`) are written to `WORKBOOKS_ROOT` when set in `Config\Config.env`, defaulting to `RECEIPTS_ROOT` if `WORKBOOKS_ROOT` is not configured.
+Per-year workbooks (e.g. `2026.xlsx`) are written to `WORKBOOKS_ROOT` when set in `Config\Config.ini`, defaulting to `RECEIPTS_ROOT` if `WORKBOOKS_ROOT` is not configured.
 
 ## Usage
 
@@ -121,19 +122,19 @@ To force-close a crashed Excel instance holding the file locked, run the **Sync:
 
 | Parameter | Description |
 |-----------|-------------|
-| `-ReceiptsRoot` | Path to the folder containing year subfolders and receipt files. Set via `Config\Config.env`. Defaults to the parent of the Scripts folder if not provided. |
-| `-WorkbooksRoot` | Directory where per-year workbooks (e.g. `2026.xlsx`) are written. Defaults to `ReceiptsRoot`. Set `WORKBOOKS_ROOT` in `Config\Config.env` to store workbooks separately from receipts. |
+| `-ReceiptsRoot` | Path to the folder containing year subfolders and receipt files. Set via `Config\Config.ini`. Defaults to the parent of the Scripts folder if not provided. |
+| `-WorkbooksRoot` | Directory where per-year workbooks (e.g. `2026.xlsx`) are written. Defaults to `ReceiptsRoot`. Set `WORKBOOKS_ROOT` in `Config\Config.ini` to store workbooks separately from receipts. |
 | `-YearMonth` | YYMM to sync (e.g. `2603`). Defaults to current month. |
 | `-Year` | 4-digit year (e.g. `2026`). Syncs all month folders under that year. Mutually exclusive with `-YearMonth` and `-All`. |
 | `-WorkbookPath` | Full path to a specific `.xlsx` to write into. Overrides the default per-year path derived from `WorkbooksRoot`. Useful for testing. |
-| `-DateFormat` | [.NET ParseExact format string](https://learn.microsoft.com/en-us/dotnet/standard/base-types/custom-date-and-time-format-strings) for the date portion of receipt filenames. Default: `yyMMdd`. Set `DATE_FORMAT` in `Config\Config.env` to change. Single-digit tokens `M` and `d` are supported only in separator-delimited formats (e.g. `M-d-yy`); use `MM`/`dd` for compact formats. |
+| `-DateFormat` | [.NET ParseExact format string](https://learn.microsoft.com/en-us/dotnet/standard/base-types/custom-date-and-time-format-strings) for the date portion of receipt filenames. Default: `yyMMdd`. Set `DATE_FORMAT` in `Config\Config.ini` to change. Single-digit tokens `M` and `d` are supported only in separator-delimited formats (e.g. `M-d-yy`); use `MM`/`dd` for compact formats. |
 | `-All` | Sync every month folder under every year folder. |
 | `-KillExcel` | Kill any running `EXCEL.EXE` before starting. |
 
 ## Workbook Structure
 
 ### Accounts.xlsx
-A dedicated Excel workbook at `Config\Accounts.xlsx` (gitignored). Copy from `Config\Accounts.template.xlsx` and fill in your accounts. The script reads **Last 4** (column A) and **Method** (column B) for validation and disambiguation; all other columns are for human reference only.
+A dedicated Excel workbook at `Config\Accounts.xlsx` (gitignored). Copy from `Config\Templates\Accounts.template.xlsx` and fill in your accounts. The script reads **Last 4** (column A) and **Method** (column B) for validation and disambiguation; all other columns are for human reference only.
 
 | Column | Header | Notes |
 |--------|--------|-------|
@@ -152,7 +153,7 @@ A dedicated Excel workbook at `Config\Accounts.xlsx` (gitignored). Copy from `Co
 If `Accounts.xlsx` is absent, account validation is skipped.
 
 ### Category Sheet
-Written and maintained automatically by the script on every run; hidden in the tab bar. Category and subcategory data is sourced from `Config\Categories.json` (gitignored). Copy from `Config\Categories.template.json` to get started.
+Written and maintained automatically by the script on every run; hidden in the tab bar. Category and subcategory data is sourced from `Config\Categories.json` (gitignored). Copy from `Config\Templates\Categories.template.json` to get started.
 
 ### Month Sheets (e.g. `2603`)
 Created or overwritten on each run. Contains a 9-column table:

@@ -5,7 +5,7 @@
 pushd "%~dp0"
 
 set "DATE_FORMAT=yyMMdd"
-for /f "usebackq tokens=1,* delims==" %%A in (`findstr /v "^#" "%~dp0..\Config\Config.env"`) do if not "%%A"=="" set "%%A=%%B"
+for /f "usebackq tokens=1,* delims==" %%A in (`findstr /v "^#" "%~dp0..\Config\Config.ini"`) do if not "%%A"=="" set "%%A=%%B"
 if "%WORKBOOKS_ROOT%"=="" set "WORKBOOKS_ROOT=%RECEIPTS_ROOT%"
 
 for /f %%M in ('PowerShell -NoProfile -Command "(Get-Date).ToString('yyMM')"') do set "DEFAULT_MONTH=%%M"

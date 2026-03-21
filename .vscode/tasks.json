@@ -1,4 +1,4 @@
-{
+﻿{
     "version": "2.0.0",
     "inputs": [
         {
@@ -128,7 +128,7 @@
                 "-ExecutionPolicy", "Bypass",
                 "-NonInteractive",
                 "-Command",
-                "$cfg = @{}; Get-Content '${workspaceFolder}\\Config\\Config.env' | Where-Object { $_ -notmatch '^\\s*#' -and $_ -match '=' } | ForEach-Object { $p = $_ -split '=',2; $cfg[$p[0].Trim()] = $p[1].Trim() }; & '${workspaceFolder}\\Scripts\\Sync-Receipts.ps1' -ReceiptsRoot $cfg['RECEIPTS_ROOT'] -WorkbookPath '${workspaceFolder}\\Tests\\Receipts (test).xlsx'"
+                "$cfg = @{}; Get-Content '${workspaceFolder}\\Config\\Config.ini' | Where-Object { $_ -notmatch '^\\s*#' -and $_ -match '=' } | ForEach-Object { $p = $_ -split '=',2; $cfg[$p[0].Trim()] = $p[1].Trim() }; & '${workspaceFolder}\\Scripts\\Sync-Receipts.ps1' -ReceiptsRoot $cfg['RECEIPTS_ROOT'] -WorkbookPath '${workspaceFolder}\\Tests\\Receipts (test).xlsx'"
             ],
             "group": "build",
             "presentation": {
@@ -147,7 +147,7 @@
                 "-ExecutionPolicy", "Bypass",
                 "-NonInteractive",
                 "-Command",
-                "$cfg = @{}; Get-Content '${workspaceFolder}\\Config\\Config.env' | Where-Object { $_ -notmatch '^\\s*#' -and $_ -match '=' } | ForEach-Object { $p = $_ -split '=',2; $cfg[$p[0].Trim()] = $p[1].Trim() }; & '${workspaceFolder}\\Scripts\\Sync-Receipts.ps1' -ReceiptsRoot $cfg['RECEIPTS_ROOT'] -WorkbookPath '${workspaceFolder}\\Tests\\Receipts (test).xlsx' -Verbose"
+                "$cfg = @{}; Get-Content '${workspaceFolder}\\Config\\Config.ini' | Where-Object { $_ -notmatch '^\\s*#' -and $_ -match '=' } | ForEach-Object { $p = $_ -split '=',2; $cfg[$p[0].Trim()] = $p[1].Trim() }; & '${workspaceFolder}\\Scripts\\Sync-Receipts.ps1' -ReceiptsRoot $cfg['RECEIPTS_ROOT'] -WorkbookPath '${workspaceFolder}\\Tests\\Receipts (test).xlsx' -Verbose"
             ],
             "group": "build",
             "presentation": {
@@ -183,7 +183,7 @@
                 "-ExecutionPolicy", "Bypass",
                 "-NonInteractive",
                 "-Command",
-                "$cfg = @{}; Get-Content '${workspaceFolder}\\Config\\Config.env' | Where-Object { $_ -notmatch '^\\s*#' -and $_ -match '=' } | ForEach-Object { $p = $_ -split '=',2; $cfg[$p[0].Trim()] = $p[1].Trim() }; & '${workspaceFolder}\\Scripts\\Sync-Receipts.ps1' -ReceiptsRoot $cfg['RECEIPTS_ROOT'] -KillExcel"
+                "$cfg = @{}; Get-Content '${workspaceFolder}\\Config\\Config.ini' | Where-Object { $_ -notmatch '^\\s*#' -and $_ -match '=' } | ForEach-Object { $p = $_ -split '=',2; $cfg[$p[0].Trim()] = $p[1].Trim() }; & '${workspaceFolder}\\Scripts\\Sync-Receipts.ps1' -ReceiptsRoot $cfg['RECEIPTS_ROOT'] -KillExcel"
             ],
             "group": "build",
             "presentation": {
