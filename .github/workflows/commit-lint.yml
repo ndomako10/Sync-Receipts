@@ -12,14 +12,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 2
 
       - name: Validate commit message format
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            MSG="${{ github.event.pull_request.title }}"
+            MSG="$PR_TITLE"
           else
             MSG=$(git log -1 --format=%s)
           fi
