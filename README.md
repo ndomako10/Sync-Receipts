@@ -102,6 +102,8 @@ RECEIPTS_ROOT (e.g. \\Server\Share\Receipts\):
         ...
 ```
 
+Per-year workbooks (e.g. `2026.xlsx`) are written to `WORKBOOKS_ROOT` when set in `Config\Config.env`, defaulting to `RECEIPTS_ROOT` if `WORKBOOKS_ROOT` is not configured.
+
 ## Usage
 
 `Launchers\Run-SyncReceipts.bat` is the standard day-to-day launcher. The other launchers are for initial setup and correcting past entries.

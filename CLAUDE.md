@@ -99,7 +99,7 @@ CONTRIBUTING.md           <- dev guide: prerequisites, test instructions, commit
 CHANGELOG.md              <- version history; hand-crafted before each tag; release workflow reads the top entry as the GitHub Release body
 ```
 
-The script files live in their own directory. The data (per-year workbooks and receipt folders) lives at `RECEIPTS_ROOT`, which is set in `Config/Config.env`. Each year gets its own workbook (`2026.xlsx`, `2025.xlsx`, etc.) created automatically on first sync. `Categories.json` and `Accounts.xlsx` both live in `Config/` (gitignored) and are read via `Join-Path (Split-Path $PSScriptRoot -Parent) "Config"`. The two locations are completely independent -- `-ReceiptsRoot` must always be provided explicitly; the script's own folder has no special meaning at runtime.
+The script files live in their own directory. The data (per-year workbooks and receipt folders) lives at `RECEIPTS_ROOT`, which is set in `Config/Config.env`. Each year gets its own workbook (`2026.xlsx`, `2025.xlsx`, etc.) created automatically on first sync. Workbooks are written to `WORKBOOKS_ROOT` when set in `Config/Config.env`, defaulting to `RECEIPTS_ROOT`; this allows workbooks to be stored on a fast local drive while receipts remain on a network share (see ADR-006). `Categories.json` and `Accounts.xlsx` both live in `Config/` (gitignored) and are read via `Join-Path (Split-Path $PSScriptRoot -Parent) "Config"`. The two locations are completely independent -- `-ReceiptsRoot` defaults to the parent of Scripts/ but should always be set explicitly via Config/Config.env.
 
 ### Key Functions in Sync-Receipts.ps1
 
