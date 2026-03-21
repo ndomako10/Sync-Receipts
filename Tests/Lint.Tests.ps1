@@ -7,6 +7,10 @@ BeforeAll {
     $script:scriptPath    = Join-Path (Split-Path $PSScriptRoot -Parent) 'Scripts\Sync-Receipts.ps1'
     $script:settingsPath  = Join-Path (Join-Path (Split-Path $PSScriptRoot -Parent) '.config') 'PSScriptAnalyzerSettings.psd1'
 
+    if (-not (Test-Path $script:settingsPath)) {
+        throw "PSScriptAnalyzerSettings.psd1 not found at '$script:settingsPath' -- lint results would be unreliable"
+    }
+
     $script:results = Invoke-ScriptAnalyzer -Path $script:scriptPath -Settings $script:settingsPath
 }
 

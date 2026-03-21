@@ -127,12 +127,12 @@ Describe 'ConvertFrom-ReceiptFileName' {
     Context 'invalid filenames' {
 
         # Structural failures
-        It 'returns ParseOK=false for a non-receipt filename' {
+        It 'returns OK=false for a non-receipt filename' {
             $r = ConvertFrom-ReceiptFileName -Stem 'not a receipt'
             $r.OK | Should -Be $false
         }
 
-        It 'returns ParseOK=false and ParseError for a non-receipt filename' {
+        It 'returns OK=false and ParseError for a non-receipt filename' {
             $r = ConvertFrom-ReceiptFileName -Stem 'garbage'
             $r.OK         | Should -Be $false
             $r.ParseError | Should -Be 'Could not parse filename'
@@ -144,27 +144,28 @@ Describe 'ConvertFrom-ReceiptFileName' {
             $r.Amount  | Should -Be ''
             $r.Method  | Should -Be ''
             $r.Account | Should -Be ''
+            $r.Date    | Should -BeNullOrEmpty
         }
 
-        It 'returns ParseOK=false when amount has no decimal' {
+        It 'returns OK=false when amount has no decimal' {
             $r = ConvertFrom-ReceiptFileName -Stem '260301 Amazon -$10 Card 1234'
             $r.OK | Should -Be $false
         }
 
         # Date validation
-        It 'returns ParseOK=false and ParseError for an out-of-range month' {
+        It 'returns OK=false and ParseError for an out-of-range month' {
             $r = ConvertFrom-ReceiptFileName -Stem '261316 Amazon -$10.00 Card 1234'
             $r.OK         | Should -Be $false
             $r.ParseError | Should -Be 'Month out of range'
         }
 
-        It 'returns ParseOK=false and ParseError for an out-of-range day' {
+        It 'returns OK=false and ParseError for an out-of-range day' {
             $r = ConvertFrom-ReceiptFileName -Stem '260332 Amazon -$10.00 Card 1234'
             $r.OK         | Should -Be $false
             $r.ParseError | Should -Be 'Day out of range'
         }
 
-        It 'returns ParseOK=false and ParseError for an invalid date (e.g. Feb 31)' {
+        It 'returns OK=false and ParseError for an invalid date (e.g. Feb 31)' {
             $r = ConvertFrom-ReceiptFileName -Stem '260231 Amazon -$10.00 Card 1234'
             $r.OK         | Should -Be $false
             $r.ParseError | Should -Be 'Invalid date'
@@ -180,32 +181,38 @@ Describe 'ConvertFrom-ReceiptFileName' {
         # Missing account
         It 'rejects Card method with no account' {
             $r = ConvertFrom-ReceiptFileName -Stem '260301 Amazon -$10.00 Card'
-            $r.OK | Should -Be $false
+            $r.OK         | Should -Be $false
+            $r.ParseError | Should -Be 'Could not parse filename'
         }
 
         It 'rejects Checking method with no account' {
             $r = ConvertFrom-ReceiptFileName -Stem '260301 Bank -$100.00 Checking'
-            $r.OK | Should -Be $false
+            $r.OK         | Should -Be $false
+            $r.ParseError | Should -Be 'Could not parse filename'
         }
 
         It 'rejects Savings method with no account' {
             $r = ConvertFrom-ReceiptFileName -Stem '260301 ATM -$200.00 Savings'
-            $r.OK | Should -Be $false
+            $r.OK         | Should -Be $false
+            $r.ParseError | Should -Be 'Could not parse filename'
         }
 
         It 'rejects Check method with no account' {
             $r = ConvertFrom-ReceiptFileName -Stem '260301 Landlord -$1200.00 Check'
-            $r.OK | Should -Be $false
+            $r.OK         | Should -Be $false
+            $r.ParseError | Should -Be 'Could not parse filename'
         }
 
         It 'rejects Wire method with no account' {
             $r = ConvertFrom-ReceiptFileName -Stem '260301 Vendor -$500.00 Wire'
-            $r.OK | Should -Be $false
+            $r.OK         | Should -Be $false
+            $r.ParseError | Should -Be 'Could not parse filename'
         }
 
         It 'rejects Transfer method with no account' {
             $r = ConvertFrom-ReceiptFileName -Stem '260301 Friend -$50.00 Transfer'
-            $r.OK | Should -Be $false
+            $r.OK         | Should -Be $false
+            $r.ParseError | Should -Be 'Could not parse filename'
         }
     }
 
@@ -257,13 +264,13 @@ Describe 'ConvertFrom-ReceiptFileName' {
             $r.Method | Should -Be 'Cash'
         }
 
-        It 'returns ParseOK=false and ParseError for out-of-range month in yyyyMMdd' {
+        It 'returns OK=false and ParseError for out-of-range month in yyyyMMdd' {
             $r = ConvertFrom-ReceiptFileName -Stem '20261316 Amazon -$10.00 Card 1234' -DateFormat 'yyyyMMdd'
             $r.OK         | Should -Be $false
             $r.ParseError | Should -Be 'Month out of range'
         }
 
-        It 'returns ParseOK=false and ParseError for out-of-range day in yy-MM-dd' {
+        It 'returns OK=false and ParseError for out-of-range day in yy-MM-dd' {
             $r = ConvertFrom-ReceiptFileName -Stem '26-03-32 Amazon -$10.00 Card 1234' -DateFormat 'yy-MM-dd'
             $r.OK         | Should -Be $false
             $r.ParseError | Should -Be 'Day out of range'

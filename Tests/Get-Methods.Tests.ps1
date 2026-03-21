@@ -20,8 +20,8 @@ Describe 'Get-Methods' {
     Context 'reading from Methods.json' {
 
         It 'returns the token list from a valid JSON file' {
-            $dir = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), [System.Guid]::NewGuid())
-            [System.IO.Directory]::CreateDirectory($dir) | Out-Null
+            $dir = Join-Path $TestDrive ([System.Guid]::NewGuid())
+            New-Item -ItemType Directory -Path $dir | Out-Null
             '["Card","Checking","Wire"]' | Set-Content (Join-Path $dir 'Methods.json')
             $result = Get-Methods -ConfigRoot $dir
             $result | Should -Contain 'Card'
@@ -31,24 +31,34 @@ Describe 'Get-Methods' {
         }
 
         It 'returns defaults when Methods.json is absent' {
-            $dir = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), [System.Guid]::NewGuid())
-            [System.IO.Directory]::CreateDirectory($dir) | Out-Null
+            $dir = Join-Path $TestDrive ([System.Guid]::NewGuid())
+            New-Item -ItemType Directory -Path $dir | Out-Null
             $result = Get-Methods -ConfigRoot $dir
             $result | Should -Contain 'Card'
             $result | Should -Contain 'Checking'
+            $result.Count | Should -Be 6
         }
 
         It 'returns defaults when Methods.json is malformed' {
-            $dir = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), [System.Guid]::NewGuid())
-            [System.IO.Directory]::CreateDirectory($dir) | Out-Null
+            $dir = Join-Path $TestDrive ([System.Guid]::NewGuid())
+            New-Item -ItemType Directory -Path $dir | Out-Null
             'not valid json' | Set-Content (Join-Path $dir 'Methods.json')
             $result = Get-Methods -ConfigRoot $dir
             $result | Should -Contain 'Card'
         }
 
+        It 'returns defaults when Methods.json contains an empty array' {
+            $dir = Join-Path $TestDrive ([System.Guid]::NewGuid())
+            New-Item -ItemType Directory -Path $dir | Out-Null
+            '[]' | Set-Content (Join-Path $dir 'Methods.json')
+            $result = Get-Methods -ConfigRoot $dir
+            $result | Should -Contain 'Card'
+            $result.Count | Should -Be 6
+        }
+
         It 'skips tokens containing spaces or special characters' {
-            $dir = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), [System.Guid]::NewGuid())
-            [System.IO.Directory]::CreateDirectory($dir) | Out-Null
+            $dir = Join-Path $TestDrive ([System.Guid]::NewGuid())
+            New-Item -ItemType Directory -Path $dir | Out-Null
             '["Card","Bad Token","Wire"]' | Set-Content (Join-Path $dir 'Methods.json')
             $result = Get-Methods -ConfigRoot $dir
             $result | Should -Contain 'Card'
@@ -57,8 +67,8 @@ Describe 'Get-Methods' {
         }
 
         It 'returns defaults when all tokens are invalid' {
-            $dir = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), [System.Guid]::NewGuid())
-            [System.IO.Directory]::CreateDirectory($dir) | Out-Null
+            $dir = Join-Path $TestDrive ([System.Guid]::NewGuid())
+            New-Item -ItemType Directory -Path $dir | Out-Null
             '["bad token","another bad"]' | Set-Content (Join-Path $dir 'Methods.json')
             $result = Get-Methods -ConfigRoot $dir
             $result | Should -Contain 'Card'

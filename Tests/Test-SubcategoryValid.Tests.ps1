@@ -66,4 +66,11 @@ Describe 'Test-SubcategoryValid' {
                 Should -BeTrue
         }
     }
+
+    Context 'given an empty subcategory string' {
+        It 'returns false, clearing any preserved subcategory value' {
+            Test-SubcategoryValid -Category 'Food & Dining' -Subcategory '' -Categories $script:cats |
+                Should -BeFalse
+        }
+    }
 }
