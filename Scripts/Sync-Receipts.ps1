@@ -927,14 +927,18 @@ function Set-SubcategoryValidationXml {
             $lastRow   = $sr.Result.DataEndRow
             $sheetName = $sr.SheetName
 
-            $sheetNode = $wbDoc.SelectSingleNode("//main:sheet[@name='$sheetName']", $nsWb)
+            $sheetNode = $wbDoc.SelectNodes("//main:sheet", $nsWb) |
+                         Where-Object { $_.GetAttribute("name") -eq $sheetName } |
+                         Select-Object -First 1
             if (-not $sheetNode) {
                 Write-SyncLog "XML patch: sheet '$sheetName' not found in workbook.xml" -Tag WARN
                 continue
             }
             $rId = $sheetNode.GetAttribute("id", "http://schemas.openxmlformats.org/officeDocument/2006/relationships")
 
-            $relNode = $relsDoc.SelectSingleNode("//rel:Relationship[@Id='$rId']", $nsRels)
+            $relNode = $relsDoc.SelectNodes("//rel:Relationship", $nsRels) |
+                       Where-Object { $_.GetAttribute("Id") -eq $rId } |
+                       Select-Object -First 1
             if (-not $relNode) {
                 Write-SyncLog "XML patch: rId '$rId' not found in workbook.xml.rels" -Tag WARN
                 continue
@@ -1471,7 +1475,7 @@ if ($All) {
 } else {
     $yearSingle  = "20" + $YearMonth.Substring(0, 2)
     $monthFolder = Get-ChildItem -Path (Join-Path $ReceiptsRoot $yearSingle) -Directory |
-                   Where-Object { $_.Name -match "^$YearMonth" } |
+                   Where-Object { $_.Name -match ("^" + [regex]::Escape($YearMonth)) } |
                    Select-Object -First 1
     if (-not $monthFolder) {
         Write-Error "Could not find a folder matching '$YearMonth*' under '$ReceiptsRoot\$yearSingle'"
