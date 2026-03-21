@@ -76,9 +76,12 @@ Scripts/
     New-AccountsTemplate.ps1 <- regenerates Config\Templates\Accounts.template.xlsx from current schema; run after schema changes
     Install-GitHooks.ps1     <- copies Scripts\hooks\ into .git\hooks\
     hooks/
-        commit-msg           <- enforces Conventional Commits format
-        pre-commit           <- ASCII check and PSScriptAnalyzer lint on staged .ps1 files
-        pre-push             <- full Pester suite
+        commit-msg                  <- enforces Conventional Commits format (delegates to Invoke-CommitMsgCheck.ps1)
+        Invoke-CommitMsgCheck.ps1   <- PowerShell implementation of commit-msg hook
+        pre-commit                  <- ASCII check and PSScriptAnalyzer lint on staged .ps1 files (delegates to Invoke-PreCommitCheck.ps1)
+        Invoke-PreCommitCheck.ps1   <- PowerShell implementation of pre-commit hook
+        pre-push                    <- full Pester suite (delegates to Invoke-PrePushCheck.ps1)
+        Invoke-PrePushCheck.ps1     <- PowerShell implementation of pre-push hook
 Launchers/
     Run-SyncReceipts.bat     <- reads Config/Config.ini, syncs current month
     Run-SyncMonthReceipts.bat <- reads Config/Config.ini, syncs a specific month
@@ -99,12 +102,19 @@ Tests/
         Invoke-NewAccountsTemplateTest.ps1    <- runs New-AccountsTemplate.ps1; validates schema
         Invoke-InitializeSyncReceiptsTest.ps1 <- idempotency smoke test; asserts 4 .lnk shortcuts
 .github/
-    workflows/tests.yml     <- CI: runs Pester on windows-latest
-    ISSUE_TEMPLATE/         <- bug report and feature request templates
-    dependabot.yml          <- weekly dependency update checks
+    workflows/tests.yml          <- CI: runs Pester on windows-latest
+    workflows/release.yml        <- publishes GitHub Release from CHANGELOG entry on tag push
+    workflows/commit-lint.yml    <- enforces Conventional Commits format on pull requests
+    workflows/labeler.yml        <- auto-applies labels to PRs based on changed files
+    ISSUE_TEMPLATE/              <- bug report and feature request templates
+    PULL_REQUEST_TEMPLATE.md     <- PR checklist template
+    labeling.yml                 <- file-to-label mapping for the labeler workflow
+    dependabot.yml               <- weekly dependency update checks
 Kill-Excel.bat            <- standalone utility: force-closes hung EXCEL.EXE (gitignored)
 CONTRIBUTING.md           <- dev guide: prerequisites, test instructions, commit format
 CHANGELOG.md              <- version history; hand-crafted before each tag; release workflow reads the top entry as the GitHub Release body
+SECURITY.md               <- responsible disclosure policy
+.vscode/                  <- editor settings (extensions.json, settings.json, launch.json, tasks.json)
 ```
 
 The script files live in their own directory. The data (per-year workbooks and receipt folders) lives at `RECEIPTS_ROOT`, which is set in `Config/Config.ini`. Each year gets its own workbook (`2026.xlsx`, `2025.xlsx`, etc.) created automatically on first sync. Workbooks are written to `WORKBOOKS_ROOT` when set in `Config/Config.ini`, defaulting to `RECEIPTS_ROOT`; this allows workbooks to be stored on a fast local drive while receipts remain on a network share (see ADR-006). `Categories.json` and `Accounts.xlsx` both live in `Config/` (gitignored) and are read via `Join-Path (Split-Path $PSScriptRoot -Parent) "Config"`. The two locations are completely independent -- `-ReceiptsRoot` defaults to the parent of Scripts/ but should always be set explicitly via Config/Config.ini.
@@ -117,7 +127,7 @@ The script files live in their own directory. The data (per-year workbooks and r
 | `ConvertFrom-ReceiptFileName` | Regex-parses a receipt filename stem into date, vendor, amount, method, account; two-pass parse validates method tokens against the Methods list |
 | `Read-PreservedCategoryValues` | Pure helper: extracts Category/Subcategory keyed by File Name from a 2D string array (no COM dependency; unit-testable) |
 | `Get-Methods` | Loads configurable non-Cash method tokens from `Config/Methods.json`; falls back to built-in defaults on missing or malformed file |
-| `Get-ValidAccounts` | Reads structured account records (Last4, Method, Account, Status) from `Accounts.xlsx` in `Config\`; skips validation if absent |
+| `Get-ValidAccounts` | Reads structured account records (Last4, Method, Holder, Institution, Account, Status) from `Accounts.xlsx` in `Config\`; skips validation if absent |
 | `Get-Categories` | Reads category/subcategory data from `Categories.json` in `Config/` (repo root + "Config") |
 | `Write-CategorySheet` | Writes category data from hashtable into the Category sheet (creates if absent, overwrites if present, hides the sheet) |
 | `Get-ExcelColumnLetter` | Converts a 1-based column index to an Excel column letter (e.g. 1 -> "A", 27 -> "AA"); used to build named range address strings without COM |
@@ -125,6 +135,7 @@ The script files live in their own directory. The data (per-year workbooks and r
 | `Test-SubcategoryValid` | Pure helper: returns true if a subcategory belongs to a given category; used to clear stale subcategories on re-sync |
 | `Set-CategoryNamedRanges` | Creates named ranges in the workbook for Category/Subcategory dropdowns |
 | `Set-SubcategoryValidationXml` | Post-save XML patch: injects both dropdown validations and fixes zip headers |
+| `Get-ReceiptFlag` | Evaluates a parsed receipt row against configured rules and returns a flag string; called by `Write-MonthSheet` for every receipt |
 | `Set-MonthSheetOrder` | Sorts all month sheet tabs (4-digit YYMM names) into chronological order |
 | `Write-MonthSheet` | Main workhorse: creates/overwrites a month sheet and writes all receipt rows |
 
