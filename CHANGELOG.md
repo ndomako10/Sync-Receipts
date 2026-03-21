@@ -6,6 +6,12 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- Corrected `Install-Module` splatting in `Initialize-SyncReceipts.ps1` so PSScriptAnalyzer installs without error on first setup
+- Guarded `NumberFormat` assignment against null `DataBodyRange` when a month sheet has zero receipts
+- Corrected inactive account flag cell value to `"Account inactive"` to match documented behaviour
+
 ---
 
 ## [3.0.1] - 2026-03-20
@@ -68,17 +74,6 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   via `Setup.bat` create it automatically.
 
 ### Added
-- `-WorkbooksRoot` parameter: store per-year workbooks separately from receipts
-  (e.g. a local drive while receipts live on a network share). Set `WORKBOOKS_ROOT`
-  in `Config\Config.env`. `Setup.bat` now prompts for this during setup, defaulting
-  to `RECEIPTS_ROOT`.
-- `-DateFormat` parameter: configurable `.NET ParseExact` format string for the
-  date portion of receipt filenames (default: `yyMMdd`). Set `DATE_FORMAT` in
-  `Config\Config.env`. Separator-delimited single-digit tokens (`M`, `d`) are
-  supported (e.g. `M-d-yy` produces `3-1-26` for March 1, 2026).
-- `Method` and `Account` fields in receipt filenames are now optional. Rows with a
-  missing Method are written with both fields blank and flagged `Method missing` in
-  the Flag column.
 - Stale subcategories are cleared on re-sync: if a row's saved Subcategory is no
   longer valid for its current Category, it is cleared automatically rather than
   silently preserved.
@@ -88,8 +83,6 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   correctly as Excel named ranges and in the dependent subcategory dropdown.
 - The subcategory INDIRECT formula now correctly XML-escapes `&` as `&amp;`,
   preventing an Excel parse error on open.
-- `Accounts.xlsx` was being looked up in `ReceiptsRoot` instead of `Config\`
-  after the v1.0.0 reorganisation.
 
 ---
 
