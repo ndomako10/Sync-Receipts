@@ -71,6 +71,11 @@
     separators (e.g. M-d-yy produces 3-1-26 for March 1, 2026). Without separators,
     use MM and dd to avoid ambiguous parsing.
 
+.PARAMETER ConfigRoot
+    Path to the directory containing configuration files (Accounts.xlsx, Categories.json,
+    Methods.json). Defaults to the Config subfolder in the repo root. Override this to
+    point the script at a test fixture config directory without touching the real Config/.
+
 .PARAMETER KillExcel
     Force-terminates any running EXCEL.EXE processes before starting.
     Use when a previous run crashed and left Excel holding the file locked.
@@ -113,6 +118,7 @@ param (
     [string]$Year          = "",
     [string]$WorkbookPath  = "",
     [string]$DateFormat    = 'yyMMdd',
+    [string]$ConfigRoot    = (Join-Path (Split-Path $PSScriptRoot -Parent) "Config"),
     [switch]$All,
     [switch]$KillExcel
 )
@@ -1578,7 +1584,7 @@ foreach ($yearEntry in ($yearGroups.GetEnumerator() | Sort-Object Key)) {
     Write-SyncLog "Accounts: loading" -Tag VERB
     $validAccounts = @()
     try {
-        $validAccounts = Get-ValidAccounts -Excel $excel
+        $validAccounts = Get-ValidAccounts -Excel $excel -ReceiptsRoot $ConfigRoot
     } catch {
         Write-SyncLog "Accounts: error in Get-ValidAccounts -- $_" -Tag WARN
     }
@@ -1586,14 +1592,14 @@ foreach ($yearEntry in ($yearGroups.GetEnumerator() | Sort-Object Key)) {
     Write-SyncLog "Categories: loading" -Tag VERB
     $methods = @('Card', 'Check', 'Checking', 'Savings', 'Transfer', 'Wire')
     try {
-        $methods = Get-Methods
+        $methods = Get-Methods -ConfigRoot $ConfigRoot
     } catch {
         Write-SyncLog "Methods: error in Get-Methods -- $_" -Tag WARN
     }
 
     $categories = $null
     try {
-        $categories = Get-Categories
+        $categories = Get-Categories -ReceiptsRoot $ConfigRoot
     } catch {
         Write-SyncLog "Categories: error in Get-Categories -- $_" -Tag WARN
     }
