@@ -101,9 +101,9 @@ Describe 'Invoke-SensitiveDataCheck' {
 
         It 'still checks other lines in the same file' {
             $content = "Card 1234 # nocheck`nCard 5678"
-            $result = Invoke-SensitiveDataCheck -Content $content -FileName 'doc.md' -Patterns @($script:accountPattern)
+            $result = @(Invoke-SensitiveDataCheck -Content $content -FileName 'doc.md' -Patterns @($script:accountPattern))
             $result.Count | Should -Be 1
-            $result.LineNumber | Should -Be 2
+            $result[0].LineNumber | Should -Be 2
         }
     }
 
