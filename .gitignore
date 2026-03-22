@@ -30,7 +30,8 @@ Config/Methods.json
 Receipts/
 
 # Claude Code local state
-.claude/
+.claude/*
+!.claude/commands/
 
 # Test output logs
 Tests/sync-output.txt
