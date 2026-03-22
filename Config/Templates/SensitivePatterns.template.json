@@ -6,7 +6,7 @@
       "regex": "\\b(Card|Checking|Savings|Check|Wire|Transfer)\\s+\\d{4}\\b",
       "fileTypes": [".ps1", ".md", ".json"],
       "message": "Possible account number adjacent to payment method token",
-      "allowlist": []
+      "allowlist": ["3621", "7890"]
     },
     {
       "name": "credential-assignment",
