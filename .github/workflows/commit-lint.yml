@@ -45,7 +45,7 @@ jobs:
           fi
 
           # Warn if scope is not in the known list (non-blocking)
-          KNOWN="ps1 logging categories accounts write-month convert-receipt xml tests readme claude.md ci config changelog contributing security"
+          KNOWN="ps1 logging categories accounts write-month convert-receipt xml tests readme claude.md ci config changelog contributing security methods adr"
           SCOPE=$(echo "$MSG" | grep -oP '(?<=\()[^)]+' || true)
           if [ -n "$SCOPE" ]; then
             if ! echo "$KNOWN" | grep -qw "$SCOPE"; then
