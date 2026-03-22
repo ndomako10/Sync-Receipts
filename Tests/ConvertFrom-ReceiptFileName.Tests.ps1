@@ -17,7 +17,7 @@ BeforeAll {
 
 Describe 'ConvertFrom-ReceiptFileName' {
 
-    Context 'valid filenames' {
+    Context 'given a filename with all fields present' {
 
         # Baseline
         It 'parses all fields: date, vendor, amount, method, account' {
@@ -124,7 +124,7 @@ Describe 'ConvertFrom-ReceiptFileName' {
         }
     }
 
-    Context 'invalid filenames' {
+    Context 'given a filename that cannot be parsed' {
 
         # Structural failures
         It 'returns OK=false for a non-receipt filename' {
@@ -216,7 +216,7 @@ Describe 'ConvertFrom-ReceiptFileName' {
         }
     }
 
-    Context 'no Method or Account' {
+    Context 'given a filename with Method and Account omitted' {
 
         It 'returns OK=true when Method and Account are omitted' {
             $r = ConvertFrom-ReceiptFileName -Stem '260301 Amazon -$10.00'
@@ -248,7 +248,7 @@ Describe 'ConvertFrom-ReceiptFileName' {
         }
     }
 
-    Context '-DateFormat variations' {
+    Context 'when a non-default -DateFormat is supplied' {
 
         It 'parses yyyyMMdd format' {
             $r = ConvertFrom-ReceiptFileName -Stem '20260316 Sunoco $5.27 Card 9080' -DateFormat 'yyyyMMdd'
@@ -296,7 +296,7 @@ Describe 'ConvertFrom-ReceiptFileName' {
         }
     }
 
-    Context '-Methods parameter' {
+    Context 'when a custom -Methods list is supplied' {
 
         It 'accepts a custom token when it is included in -Methods' {
             $r = ConvertFrom-ReceiptFileName -Stem '260301 Shop -$10.00 Crypto 1234' -Methods @('Card', 'Crypto')

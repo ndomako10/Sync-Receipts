@@ -17,7 +17,7 @@ BeforeAll {
 
 Describe 'Write-SyncLog' {
 
-    Context 'output format' {
+    Context 'given any log message' {
 
         It 'includes a [HH:mm:ss] timestamp' {
             Mock Write-Host {}
@@ -62,7 +62,7 @@ Describe 'Write-SyncLog' {
         }
     }
 
-    Context 'tag routing and color' {
+    Context 'when a specific tag is supplied' {
 
         It 'INFO writes to Write-Host and not Write-Verbose' {
             Mock Write-Host {}
@@ -105,7 +105,7 @@ Describe 'Write-SyncLog' {
         }
     }
 
-    Context 'default tag' {
+    Context 'when no tag is specified' {
 
         It 'defaults to INFO when no tag is specified' {
             Mock Write-Host {}
@@ -114,7 +114,7 @@ Describe 'Write-SyncLog' {
         }
     }
 
-    Context 'parameter validation' {
+    Context 'given an unrecognised tag value' {
 
         It 'throws for an unrecognised tag' {
             { Write-SyncLog 'msg' -Tag 'UNKNOWN' } | Should -Throw
