@@ -13,11 +13,12 @@
       5. Copies Accounts.template.xlsx to Config\Accounts.xlsx (skipped if present).
       6. Copies Categories.template.json to Config\Categories.json (skipped if present).
       7. Copies Methods.template.json to Config\Methods.json (skipped if present).
-      8. Creates Windows shortcut (.lnk) files in WORKBOOKS_ROOT that point to the batch
+      8. Copies SensitivePatterns.template.json to Config\SensitivePatterns.json (skipped if present).
+      9. Creates Windows shortcut (.lnk) files in WORKBOOKS_ROOT that point to the batch
          launchers in the script directory, with WorkingDirectory set so UNC-path shortcuts
          open without the "UNC paths are not supported" CMD error.
-      9. Installs Pester and PSScriptAnalyzer (required by the pre-commit and pre-push hooks).
-     10. Installs local git hooks from Scripts\hooks\ into .git\hooks\.
+     10. Installs Pester and PSScriptAnalyzer (required by the pre-commit and pre-push hooks).
+     11. Installs local git hooks from Scripts\hooks\ into .git\hooks\.
 
     Run via Setup.bat (recommended), or directly:
         PowerShell -NoProfile -ExecutionPolicy Bypass -File Initialize-SyncReceipts.ps1
@@ -403,6 +404,22 @@ if (Copy-ConfigTemplate -Source $templateMethods -Destination $methodsJson -Labe
     Write-Host ""
     Write-Host "  Edit Config\Methods.json to add or remove payment method tokens" -ForegroundColor Yellow
     Write-Host "  before running the script. Cash is always valid and must not be added." -ForegroundColor Yellow
+}
+
+# ---------------------------------------------------------------------------
+# 4.7 Copy SensitivePatterns.template.json -> Config\SensitivePatterns.json
+# ---------------------------------------------------------------------------
+
+Write-Host ""
+Write-Step "Setting up SensitivePatterns.json..."
+
+$templatePatterns  = Join-Path $repoRoot "Config\Templates\SensitivePatterns.template.json"
+$sensitivePatterns = Join-Path $repoRoot "Config\SensitivePatterns.json"
+
+if (Copy-ConfigTemplate -Source $templatePatterns -Destination $sensitivePatterns -Label 'SensitivePatterns.json') {
+    Write-Host ""
+    Write-Host "  Edit Config\SensitivePatterns.json to add institution names, personal" -ForegroundColor Yellow
+    Write-Host "  identifiers, or other keywords you want the pre-commit hook to flag." -ForegroundColor Yellow
 }
 
 # ---------------------------------------------------------------------------

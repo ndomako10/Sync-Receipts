@@ -51,8 +51,9 @@ or code before they are committed.
 
 ### Customising patterns
 
-Copy `Config\Templates\SensitivePatterns.template.json` to `Config\SensitivePatterns.json`
-(gitignored) to customise patterns or add allowlist entries:
+`Config\SensitivePatterns.json` is created automatically by `Setup.bat` (or
+`Scripts\Initialize-SyncReceipts.ps1`). Edit it directly to customise patterns or add
+allowlist entries. If the file is absent, the hook falls back to the committed template.
 
 ```json
 {
