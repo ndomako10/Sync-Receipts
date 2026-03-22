@@ -1,0 +1,86 @@
+name: Auto Release
+
+on:
+  push:
+    branches: [master]
+
+permissions:
+  contents: write
+
+jobs:
+  auto-release:
+    name: Cut release if [Unreleased] has content
+    runs-on: ubuntu-latest
+    if: github.actor != 'github-actions[bot]'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for unreleased content
+        id: check
+        run: |
+          CONTENT=$(awk '/^## \[Unreleased\]/{found=1; next} found && /^---$/{exit} found && NF{print}' CHANGELOG.md)
+          if [ -z "$CONTENT" ]; then
+            echo "No [Unreleased] content -- skipping release."
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Infer version bump from commits
+        if: steps.check.outputs.skip == 'false'
+        id: bump
+        run: |
+          COMMITS=$(git log "${{ github.event.before }}..HEAD" --format='%s %b' 2>/dev/null || git log -1 --format='%s %b')
+          if echo "$COMMITS" | grep -qE '!:|BREAKING CHANGE'; then
+            BUMP=major
+          elif echo "$COMMITS" | grep -qE '^feat(\([^)]+\))?:'; then
+            BUMP=minor
+          else
+            BUMP=patch
+          fi
+          echo "type=$BUMP" >> $GITHUB_OUTPUT
+          echo "Bump type: $BUMP"
+
+      - name: Compute new version
+        if: steps.check.outputs.skip == 'false'
+        id: version
+        run: |
+          LATEST=$(git tag --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
+          [ -z "$LATEST" ] && LATEST="v0.0.0"
+          echo "Latest tag: $LATEST"
+          MAJOR=$(echo "$LATEST" | sed 's/v\([0-9]*\)\.\([0-9]*\)\.\([0-9]*\)/\1/')
+          MINOR=$(echo "$LATEST" | sed 's/v\([0-9]*\)\.\([0-9]*\)\.\([0-9]*\)/\2/')
+          PATCH=$(echo "$LATEST" | sed 's/v\([0-9]*\)\.\([0-9]*\)\.\([0-9]*\)/\3/')
+          BUMP="${{ steps.bump.outputs.type }}"
+          if   [ "$BUMP" = "major" ]; then MAJOR=$((MAJOR+1)); MINOR=0; PATCH=0
+          elif [ "$BUMP" = "minor" ]; then MINOR=$((MINOR+1)); PATCH=0
+          else PATCH=$((PATCH+1))
+          fi
+          NEW="$MAJOR.$MINOR.$PATCH"
+          echo "new=$NEW"       >> $GITHUB_OUTPUT
+          echo "tag=v$NEW"      >> $GITHUB_OUTPUT
+          echo "New version: v$NEW"
+
+      - name: Stamp CHANGELOG with new version
+        if: steps.check.outputs.skip == 'false'
+        run: |
+          VERSION="${{ steps.version.outputs.new }}"
+          DATE=$(date -u +%Y-%m-%d)
+          sed -i "s/^## \[Unreleased\]/## [$VERSION] - $DATE/" CHANGELOG.md
+          echo "Stamped CHANGELOG.md with [$VERSION] - $DATE"
+
+      - name: Commit, tag, and push
+        if: steps.check.outputs.skip == 'false'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.md
+          git commit -m "chore(changelog): release ${{ steps.version.outputs.tag }}"
+          git push
+          git tag "${{ steps.version.outputs.tag }}"
+          git push origin "${{ steps.version.outputs.tag }}"
+          echo "Tagged and pushed ${{ steps.version.outputs.tag }}"
