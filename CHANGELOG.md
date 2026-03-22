@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [4.0.4] - 2026-03-22
 
 ### Fixed
 - `auto-release.yml` now creates the GitHub Release directly instead of relying on a tag push to trigger `release.yml`. The previous approach silently failed because GitHub Actions does not fire downstream workflows when `GITHUB_TOKEN` pushes a tag.
