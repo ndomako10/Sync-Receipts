@@ -23,6 +23,14 @@
       "fileTypes": [".ps1", ".md", ".json"],
       "message": "Possible real email address",
       "allowlist": []
+    },
+    {
+      "name": "keyword-search",
+      "description": "Simple word search. Duplicate this entry and replace the regex with '\\bYOUR_TERM\\b' to flag institution names, personal identifiers, or any project-specific keyword. Add '.json' to fileTypes if you also want to scan JSON files.",
+      "regex": "\\bREPLACE_ME\\b",
+      "fileTypes": [".ps1", ".md"],
+      "message": "Possible sensitive keyword (customise this message to name the term)",
+      "allowlist": []
     }
   ]
 }
