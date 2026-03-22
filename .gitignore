@@ -15,6 +15,7 @@ Kill-Excel.bat
 !Accounts.template.xlsx
 !Categories.template.json
 !Methods.template.json
+!SensitivePatterns.template.json
 
 # Integration test fixture config is safe to commit (fictitious data only)
 !Tests/Integration/Config/Accounts.xlsx
@@ -25,6 +26,7 @@ Kill-Excel.bat
 Config/Accounts.xlsx
 Config/Categories.json
 Config/Methods.json
+Config/SensitivePatterns.json
 
 # Receipt files (personal financial documents)
 Receipts/

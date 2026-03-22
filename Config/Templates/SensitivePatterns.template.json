@@ -1,0 +1,28 @@
+{
+  "patterns": [
+    {
+      "name": "account-number-in-context",
+      "description": "4-digit number adjacent to a payment method token. Add documentation example lines to allowlist, or append '# nocheck' to suppress individual lines.",
+      "regex": "\\b(Card|Checking|Savings|Check|Wire|Transfer)\\s+\\d{4}\\b",
+      "fileTypes": [".ps1", ".md", ".json"],
+      "message": "Possible account number adjacent to payment method token",
+      "allowlist": []
+    },
+    {
+      "name": "credential-assignment",
+      "description": "Credential key followed by what appears to be a real value. Placeholder values (placeholder, example, test, fake, xxx, $variables, {templates}) are not flagged.",
+      "regex": "(?i)(password|secret|api_key|token)\\s*[=:]\\s*(?!(<[^>]+>|\\$|\\{|placeholder|example|test|fake|xxx|\\*+))",
+      "fileTypes": [".ps1", ".md", ".json"],
+      "message": "Possible credential value detected",
+      "allowlist": []
+    },
+    {
+      "name": "email-address",
+      "description": "Email address not using a recognised placeholder domain (example.com, placeholder.com). Add your own placeholder domains to the allowlist.",
+      "regex": "[a-zA-Z0-9._%+\\-]+@(?!example\\.com|placeholder\\.com)[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}",
+      "fileTypes": [".ps1", ".md", ".json"],
+      "message": "Possible real email address",
+      "allowlist": []
+    }
+  ]
+}
