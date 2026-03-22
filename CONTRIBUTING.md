@@ -28,11 +28,51 @@ This is done automatically when you run `Setup.bat` on a new machine.
 | Hook | What it checks |
 |------|----------------|
 | `commit-msg` | Commit message follows Conventional Commits format (`type(scope): description`) |
-| `pre-commit` | ASCII-only check on staged `.ps1`, `.json`, and `.md` files; PSScriptAnalyzer (`-Severity Error,Warning`) on `.ps1` files |
+| `pre-commit` | ASCII-only check on staged `.ps1`, `.json`, and `.md` files; PSScriptAnalyzer (`-Severity Error,Warning`) on `.ps1` files; sensitive data scan on all staged files |
 | `pre-push` | Full Pester test suite (`Invoke-Pester Tests/`) |
 
 Hook sources live in `Scripts/hooks/` and are installed into `.git/hooks/` by the installer.
 Re-run the installer after pulling changes to `Scripts/hooks/` to pick up updates.
+
+## Sensitive Data Patterns
+
+The pre-commit hook scans staged files for sensitive data before they reach the remote.
+Three checks run by default:
+
+| Check | What it flags |
+|-------|---------------|
+| Account number in context | A 4-digit number adjacent to a payment method token (e.g. a method name followed by four digits) |
+| Credential assignment | `password`, `api_key`, `secret`, etc. followed by `=` or `:` and what appears to be a real value |
+| Email address | Any email address not using `@example.com` or `@placeholder.com` |
+
+Additionally, the hook reads `Config\Accounts.xlsx` at runtime and checks every staged file
+for any Last4 account number stored there. This catches real account numbers in documentation
+or code before they are committed.
+
+### Customising patterns
+
+`Config\SensitivePatterns.json` is created automatically by `Setup.bat` (or
+`Scripts\Initialize-SyncReceipts.ps1`). Edit it directly to customise patterns or add
+allowlist entries. If the file is absent, the hook falls back to the committed template.
+
+```json
+{
+  "patterns": [
+    {
+      "name": "account-number-in-context",
+      "regex": "\\b(Card|Checking|Savings|Check|Wire|Transfer)\\s+\\d{4}\\b",
+      "fileTypes": [".ps1", ".md", ".json"],
+      "message": "Possible account number adjacent to payment method token",
+      "allowlist": ["Landlord"]
+    }
+  ]
+}
+```
+
+`allowlist` entries are literal strings -- any matching line containing one of them is skipped.
+To suppress a single line, append `# nocheck` to it.
+
+If `Config\SensitivePatterns.json` is absent, the hook falls back to the template.
 
 ## Running Tests
 

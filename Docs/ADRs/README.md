@@ -19,6 +19,7 @@ ADRs capture *why* a significant decision was made -- the context, alternatives 
 | [ADR-009](ADR-009-accounts-schema.md) | Accounts.xlsx Schema Restructure | Accepted |
 | [ADR-010](ADR-010-configurable-method-tokens.md) | Configurable Payment Method Tokens | Accepted |
 | [ADR-011](ADR-011-ini-config-format.md) | Rename Configuration File Extension from .env to .ini | Accepted |
+| [ADR-012](ADR-012-sensitive-data-pre-commit-hook.md) | Sensitive Data Pre-Commit Hook Design | Accepted |
 
 ## Template
 
