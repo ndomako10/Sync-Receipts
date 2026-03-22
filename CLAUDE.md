@@ -65,11 +65,13 @@ Config/
     Accounts.xlsx            <- gitignored; personal accounts
     Categories.json          <- gitignored; personal categories
     Methods.json             <- gitignored; personal method token list
+    SensitivePatterns.json   <- gitignored; user-customisable sensitive data patterns
     Templates/
-        Config.template.ini      <- generic template committed to git
-        Accounts.template.xlsx   <- default accounts template; committed to git
-        Categories.template.json <- default categories template; committed to git
-        Methods.template.json    <- default method token list; committed to git
+        Config.template.ini              <- generic template committed to git
+        Accounts.template.xlsx           <- default accounts template; committed to git
+        Categories.template.json         <- default categories template; committed to git
+        Methods.template.json            <- default method token list; committed to git
+        SensitivePatterns.template.json  <- default sensitive data patterns; committed to git
 Scripts/
     Initialize-SyncReceipts.ps1 <- one-time setup: checks prerequisites, creates Config\Config.ini,
                              copies template files from Config\Templates\ to Config\, installs git hooks, creates shortcuts in RECEIPTS_ROOT
@@ -79,8 +81,9 @@ Scripts/
     hooks/
         commit-msg                  <- enforces Conventional Commits format (delegates to Invoke-CommitMsgCheck.ps1)
         Invoke-CommitMsgCheck.ps1   <- PowerShell implementation of commit-msg hook
-        pre-commit                  <- ASCII check and PSScriptAnalyzer lint on staged .ps1 files (delegates to Invoke-PreCommitCheck.ps1)
+        pre-commit                  <- ASCII check, PSScriptAnalyzer lint, and sensitive data scan on staged files (delegates to Invoke-PreCommitCheck.ps1)
         Invoke-PreCommitCheck.ps1   <- PowerShell implementation of pre-commit hook
+        Invoke-SensitiveDataCheck.ps1 <- pure helpers: Invoke-SensitiveDataCheck (pattern scan) and Get-AccountsLast4 (ZIP/XML reader)
         pre-push                    <- full Pester suite (delegates to Invoke-PrePushCheck.ps1)
         Invoke-PrePushCheck.ps1     <- PowerShell implementation of pre-push hook
 Launchers/

@@ -30,12 +30,12 @@ Cash receipts carry no account number.
 
 Examples:
 ```
-260301 Landlord $1200.00 Checking 4455.pdf
+260301 Landlord $1200.00 Checking xxxx.pdf
 260305 CVS $12.00 Cash.pdf
-260310 Sunoco $5.27 Card 9080.pdf
+260310 Sunoco $5.27 Card xxxx.pdf
 260315 Amazon $34.99 Card xxxx.pdf
 260320 Costco $67.50 Card ----.pdf
-260325 Employer -$2500.00 Savings 7890.pdf
+260325 Employer -$2500.00 Savings xxxx.pdf
 260328 Vendor $5.00.pdf
 ```
 
@@ -72,14 +72,16 @@ Script files (e.g. C:\Scripts\Sync-Receipts\):
     Setup.bat                <- one-time setup launcher
     Config\
         Config.ini               <- gitignored; sets RECEIPTS_ROOT
-        Accounts.xlsx           <- gitignored; your personal accounts
+        Accounts.xlsx            <- gitignored; your personal accounts
         Categories.json          <- gitignored; your personal categories
         Methods.json             <- gitignored; your personal method tokens
+        SensitivePatterns.json   <- gitignored; your sensitive data patterns (created by Setup.bat)
         Templates\
-            Config.template.ini      <- generic template committed to git
-            Accounts.template.xlsx   <- default accounts template; committed to git
-            Categories.template.json <- default categories template; committed to git
-            Methods.template.json    <- default method tokens template; committed to git
+            Config.template.ini             <- generic template committed to git
+            Accounts.template.xlsx          <- default accounts template; committed to git
+            Categories.template.json        <- default categories template; committed to git
+            Methods.template.json           <- default method tokens template; committed to git
+            SensitivePatterns.template.json <- default sensitive data patterns; committed to git
     Scripts\
         Initialize-SyncReceipts.ps1
         Sync-Receipts.ps1
@@ -97,7 +99,7 @@ RECEIPTS_ROOT (e.g. \\Server\Share\Receipts\):
     2025.xlsx
     2026\
         2603 - March\
-            260301 Vendor $10.00 Card 1234.pdf
+            260301 Vendor $10.00 Card xxxx.pdf
             ...
         2602 - February\
             ...
