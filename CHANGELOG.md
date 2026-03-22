@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [4.1.0] - 2026-03-22
 
 ### Added
 - Pre-commit hook now scans staged files for sensitive data before they reach the remote. Three patterns run by default: account numbers adjacent to a payment method token, credential assignments, and email addresses not using a placeholder domain.
