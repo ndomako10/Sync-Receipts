@@ -6,6 +6,9 @@ This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- Releases are now cut automatically when a PR merges. If `## [Unreleased]` in `CHANGELOG.md` has content, the workflow stamps the version, commits, and pushes the tag -- triggering the existing GitHub Release workflow. The version bump is inferred from commit types (`feat` -> minor, breaking change -> major, everything else -> patch).
+
 ---
 
 ## [4.0.2] - 2026-03-21
