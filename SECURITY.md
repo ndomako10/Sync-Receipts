@@ -6,8 +6,8 @@ Only the latest release is actively maintained.
 
 | Version | Supported |
 |---------|-----------|
-| 1.0.x   | Yes       |
-| < 1.0   | No        |
+| 4.x     | Yes       |
+| < 4     | No        |
 
 ## Reporting a Vulnerability
 

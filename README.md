@@ -83,6 +83,8 @@ Script files (e.g. C:\Scripts\Sync-Receipts\):
     Scripts\
         Initialize-SyncReceipts.ps1
         Sync-Receipts.ps1
+        New-AccountsTemplate.ps1     <- regenerates Config\Templates\Accounts.template.xlsx after schema changes
+        Install-GitHooks.ps1         <- copies Scripts\hooks\ into .git\hooks\
     Launchers\
         Run-SyncReceipts.bat
         Run-SyncMonthReceipts.bat

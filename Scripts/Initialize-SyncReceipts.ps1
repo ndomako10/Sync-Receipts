@@ -24,6 +24,11 @@
 
     The script is safe to re-run -- steps that are already complete are skipped.
 
+.EXAMPLE
+    PowerShell -NoProfile -ExecutionPolicy Bypass -File Scripts\Initialize-SyncReceipts.ps1
+
+    Runs the setup script from the repo root. Equivalent to running Setup.bat.
+
 .NOTES
     Requires: PowerShell 5.0+, Microsoft Excel (COM automation)
     Tested on: Windows 10/11
