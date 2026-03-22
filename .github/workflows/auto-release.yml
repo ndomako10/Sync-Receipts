@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
         with:
           fetch-depth: 0
 
@@ -97,7 +97,7 @@ jobs:
 
       - name: Create GitHub Release
         if: steps.check.outputs.skip == 'false'
-        uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe # v2
+        uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe # v2.6.1 (node20 -- update when node24 release available)
         with:
           tag_name: ${{ steps.version.outputs.tag }}
           body: ${{ steps.notes.outputs.content }}
