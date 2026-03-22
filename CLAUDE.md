@@ -42,8 +42,9 @@ This project uses [Semantic Versioning](https://semver.org) and [Conventional Co
 | `adr` | Docs/ADRs/ |
 | `readme` | README.md |
 | `claude.md` | CLAUDE.md |
-| `ci` | GitHub Actions workflows (.github/) |
+| `ci` | GitHub Actions workflows (.github/), hook scripts (Scripts/hooks/) |
 | `config` | Config.ini, Config/ subfolder, .vscode/, batch launcher files |
+| `sensitive-patterns` | Config/SensitivePatterns.json, Config/Templates/SensitivePatterns.template.json, Scripts/hooks/Invoke-SensitiveDataCheck.ps1 |
 | `changelog` | CHANGELOG.md |
 | `contributing` | CONTRIBUTING.md |
 | `security` | SECURITY.md |
