@@ -84,3 +84,20 @@ jobs:
           git tag "${{ steps.version.outputs.tag }}"
           git push origin "${{ steps.version.outputs.tag }}"
           echo "Tagged and pushed ${{ steps.version.outputs.tag }}"
+
+      - name: Extract release notes
+        if: steps.check.outputs.skip == 'false'
+        id: notes
+        run: |
+          VERSION="${{ steps.version.outputs.new }}"
+          notes=$(awk "/^## \[$VERSION\]/{found=1; next} found && /^---$/{exit} found{print}" CHANGELOG.md)
+          echo "content<<EOF" >> $GITHUB_OUTPUT
+          echo "$notes"       >> $GITHUB_OUTPUT
+          echo "EOF"          >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        if: steps.check.outputs.skip == 'false'
+        uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe # v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          body: ${{ steps.notes.outputs.content }}
