@@ -137,7 +137,7 @@ BeforeAll {
 
 Describe 'Set-SubcategoryValidationXml' {
 
-    Context 'happy path -- single sheet' {
+    Context 'given a workbook with a single sheet and valid sync results' {
         BeforeAll {
             $script:xlsxPath = Join-Path $TestDrive 'happy.xlsx'
             New-MinimalXlsx -Path $script:xlsxPath -SheetName '2603'
@@ -200,7 +200,7 @@ Describe 'Set-SubcategoryValidationXml' {
         }
     }
 
-    Context 'edge cases' {
+    Context 'given sync results that do not match workbook content' {
 
         It 'skips a sheet whose DataEndRow is less than 2' {
             $p = Join-Path $TestDrive 'skip-nodata.xlsx'

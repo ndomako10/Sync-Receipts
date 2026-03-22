@@ -17,7 +17,7 @@ BeforeAll {
 
 Describe 'Get-Methods' {
 
-    Context 'reading from Methods.json' {
+    Context 'given a ConfigRoot directory' {
 
         It 'returns the token list from a valid JSON file' {
             $dir = Join-Path $TestDrive ([System.Guid]::NewGuid())
