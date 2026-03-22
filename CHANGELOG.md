@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- Pre-commit hook now scans staged files for sensitive data before they reach the remote. Three patterns run by default: account numbers adjacent to a payment method token, credential assignments, and email addresses not using a placeholder domain.
+- Account numbers are also checked dynamically: the hook reads `Config\Accounts.xlsx` at commit time and flags any real Last4 value found in staged files.
+- Patterns are configurable via `Config\SensitivePatterns.json` (created automatically by `Setup.bat`). Users can add institution names, personal identifiers, or any project-specific keyword using the `keyword-search` template entry. Matches can be suppressed per-line with `# nocheck` or per-pattern with an `allowlist` array.
+
+---
+
 ## [4.0.4] - 2026-03-22
 
 ### Fixed
