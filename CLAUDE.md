@@ -94,6 +94,7 @@ Tests/
     <Function>.Tests.ps1     <- Pester unit tests (one file per pure-PowerShell function)
     Lint.Tests.ps1           <- PSScriptAnalyzer validation
     run-sync-test.bat        <- local integration test launcher (tracked; not gitignored)
+    Receipts (test).xlsx     <- Excel fixture used by integration tests (tracked)
     Integration/             <- COM-dependent integration tests (local-only; not run in CI)
         Fixture/             <- zero-byte placeholder receipt files covering every flag scenario
             2026/2601/       <- month folder matching YearMonth=2601
@@ -103,6 +104,7 @@ Tests/
         Invoke-InitializeSyncReceiptsTest.ps1 <- idempotency smoke test; asserts 4 .lnk shortcuts
 .github/
     workflows/tests.yml          <- CI: runs Pester on windows-latest
+    workflows/auto-release.yml   <- stamps CHANGELOG version and tags on merge when [Unreleased] has content
     workflows/release.yml        <- publishes GitHub Release from CHANGELOG entry on tag push
     workflows/commit-lint.yml    <- enforces Conventional Commits format on pull requests
     workflows/labeler.yml        <- auto-applies labels to PRs based on changed files
@@ -111,8 +113,10 @@ Tests/
     labeling.yml                 <- file-to-label mapping for the labeler workflow
     dependabot.yml               <- weekly dependency update checks
 Kill-Excel.bat            <- standalone utility: force-closes hung EXCEL.EXE (gitignored)
-CONTRIBUTING.md           <- dev guide: prerequisites, test instructions, commit format
 CHANGELOG.md              <- version history; hand-crafted before each tag; release workflow reads the top entry as the GitHub Release body
+CODE_OF_CONDUCT.md        <- community conduct policy
+CONTRIBUTING.md           <- dev guide: prerequisites, test instructions, commit format
+LICENSE                   <- project license
 SECURITY.md               <- responsible disclosure policy
 .vscode/                  <- editor settings (extensions.json, settings.json, launch.json, tasks.json)
 ```
@@ -146,3 +150,24 @@ The script files live in their own directory. The data (per-year workbooks and r
 - `$sheet.Hyperlinks.Add(...)` -- file hyperlinks in the File Name column
 - `$workbook.Names.Add(name, ref)` -- creates/replaces named ranges
 - Post-save XML patch via `System.IO.Compression.ZipFile` + binary header fix (see `Set-SubcategoryValidationXml`)
+
+## Slash Commands
+
+Reusable task instructions live in `.claude/commands/`. Invoke with `/command-name` in Claude Code.
+
+| Command | Purpose |
+|---------|---------|
+| `prep-pr` | Draft CHANGELOG entry, commit it, push branch, and open PR |
+| `merge-pr` | Check CI status and merge the current branch's PR |
+| `open-issues` | List and triage open GitHub issues |
+| `review-all` | Run all review commands in sequence |
+| `review-changelog` | Audit CHANGELOG.md for correctness and completeness |
+| `review-claude` | Audit CLAUDE.md for accuracy and token efficiency |
+| `review-commands` | Audit `.claude/commands/` for stale or missing entries |
+| `review-config` | Audit Config/ templates and Config.ini structure |
+| `review-docs` | Audit Docs/ and ADRs for completeness |
+| `review-help` | Audit PowerShell comment-based help blocks |
+| `review-launchers` | Audit Launchers/ batch files for correctness |
+| `review-security` | Audit security posture and SECURITY.md |
+| `review-tests` | Audit Tests/ coverage and Pester structure |
+| `review-tooling` | Audit CI workflows, hooks, and tooling config |
